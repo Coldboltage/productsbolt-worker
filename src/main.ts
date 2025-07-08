@@ -7,6 +7,8 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  await app.init();
+
 
   const processQueue = app.connectMicroservice<MicroserviceOptions>(
     {
@@ -20,7 +22,7 @@ async function bootstrap() {
           autoDelete: false,  // <-- add this
         },
         noAck: false,        // <-- manual ack mode
-        prefetchCount: 15,   // <-- cap concurrency
+        prefetchCount: 10,   // <-- cap concurrency
       },
     },
   );
@@ -37,7 +39,7 @@ async function bootstrap() {
           autoDelete: false,  // <-- add this
         },
         noAck: false,        // <-- manual ack mode
-        prefetchCount: 25,   // <-- cap concurrency
+        prefetchCount: 1,   // <-- cap concurrency
       },
     },
   );

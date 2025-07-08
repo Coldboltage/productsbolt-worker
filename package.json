@@ -49,6 +49,7 @@
     "sitemap-parser": "^0.1.0",
     "sitemap-stream-parser": "^1.7.0",
     "sitemapper": "^4.0.2",
+    "string-strip-html": "^13.4.12",
     "ts-dotenv": "^0.9.1",
     "undetected-browser": "^2.0.4",
     "undici": "^7.10.0",
