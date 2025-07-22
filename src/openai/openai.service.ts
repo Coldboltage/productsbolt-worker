@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
 import z from 'zod';
 import { ProductType, BestSitesInterface } from '../app.type.js';
+import { ProductInStockWithAnalysis } from 'src/process/entities/process.entity.js';
 
 @Injectable()
 export class OpenaiService {
@@ -105,7 +106,7 @@ export class OpenaiService {
     type: ProductType,
     mode: string, // e.g., 'mini', 'pro'
     context = ''
-  ) => {
+  ): Promise<ProductInStockWithAnalysis> => {
     const openai = new OpenAI();
 
     const schema = {

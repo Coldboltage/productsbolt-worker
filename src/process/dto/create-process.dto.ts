@@ -1,5 +1,9 @@
-import { IsArray, IsEnum, IsNumber, IsString, IsUrl, IsUUID } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsNumber, IsOptional, IsString, IsUrl, IsUUID, ValidateNested } from 'class-validator';
 import { ProductType } from '../../app.type.js';
+import { UniqueShopType } from '../entities/process.entity.js';
+import { EbayProductDetailDto } from './ebay-product-detail.dto.js';
+import { Type } from 'class-transformer';
+
 
 export class CreateProcessDto {
   @IsUrl()
@@ -14,14 +18,17 @@ export class CreateProcessDto {
   @IsString()
   name: string;
 
-  @IsString()
-  context: string;
+  @IsUUID()
+  shopProductId: string
 
   @IsString()
-  shopWebsite: string
+  shopWebsite: string;
 
   @IsEnum(ProductType)
   type: ProductType;
+
+  @IsString()
+  context: string;
 
   @IsNumber()
   crawlAmount: number;
@@ -32,8 +39,18 @@ export class CreateProcessDto {
   @IsUUID()
   shopId: string;
 
+  @IsBoolean()
+  shopifySite: boolean
+
+  @IsEnum(UniqueShopType)
+  shopType: UniqueShopType
 
   @IsArray()
   @IsString({ each: true })
-  sitemapUrls: string[]
+  sitemapUrls: string[];
+
+  @ValidateNested()
+  @Type(() => EbayProductDetailDto)
+  @IsOptional()
+  ebayProductDetail?: EbayProductDetailDto
 }

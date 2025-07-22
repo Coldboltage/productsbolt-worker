@@ -11,6 +11,8 @@ import { UpdateProcessDto } from './dto/update-process.dto.js';
 import { CheckPageDto } from './dto/check-page.dto.js';
 import { encoding_for_model } from '@dqbd/tiktoken';
 import { ShopDto } from './dto/shop.dto.js';
+import { ProductInStockWithAnalysisStripped, UniqueShopType } from './entities/process.entity.js';
+import { EbayService } from './../ebay/ebay.service.js';
 
 
 @Injectable()
@@ -19,10 +21,22 @@ export class ProcessService {
     private utilService: UtilsService,
     private browserService: BrowserService,
     private openaiService: OpenaiService,
+    private ebayService: EbayService
   ) { }
 
-  async sitemapSearch(shopDto: ShopDto) {
+  
+  async shopifySearch(shopDto: ShopDto) {
+    const result = await this.browserService.isShopifySite(`${shopDto.protocol}${shopDto.website}`)
+    const setup =  await fetch(`http://localhost:3000/shop/${shopDto.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({isShopifySite: result}),
+    });
+    if (setup.ok === true) return true
+    throw new Error('update_to_server_failed')
+  }
 
+  async sitemapSearch(shopDto: ShopDto) {
     const sitemapUrls = await this.utilService.getUrlsFromSitemap(
       shopDto.sitemap,
       `https://${shopDto.website}${shopDto.category}`,
@@ -31,14 +45,59 @@ export class ProcessService {
     return sitemapUrls
   }
 
-  async webpageDiscovery(createProcessDto: CreateProcessDto, mode: string) {
-    const { sitemap, url, category, name, type, context, crawlAmount, sitemapUrls } = createProcessDto;
-    const result = await this.rotateTest(sitemap, url, category, name, type, context, crawlAmount, sitemapUrls, mode);
-    return result;
+  async webDiscoverySend(webpage: ProductInStockWithAnalysisStripped, createProcessDto: CreateProcessDto) {
+    const webPage = {
+      url: webpage.specificUrl,
+      shopWebsite: createProcessDto.shopWebsite,
+      inStock: webpage.inStock,
+      price: webpage.price,
+      currencyCode: webpage.currencyCode,
+      productName: createProcessDto.name,
+      reason: webpage.analysis,
+      productId: createProcessDto.productId,
+      shopId: createProcessDto.shopId
+    };
+    console.log(webPage);
+    await fetch('http://localhost:3000/webpage/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(webPage),
+    });
   }
 
-  async test(url: string, query: string, type: ProductType, mode: string, context: string) {
-    const { html, mainText } = await this.browserService.getPageInfo(url);
+  async webpageDiscovery(createProcessDto: CreateProcessDto, mode: string) {
+    const { sitemap, url, category, name, type, context, crawlAmount, sitemapUrls, shopifySite, shopType} = createProcessDto;
+
+    if (shopType === UniqueShopType.EBAY) {
+      const result = await this.ebayService.getUrlsFromApiCall(name, context, type)
+      for (const webpage of result) {
+        await this.webDiscoverySend(webpage, createProcessDto)
+        return true
+      }
+    }
+    
+     const result = await this.rotateTest(sitemap, url, category, name, type, context, crawlAmount, sitemapUrls, mode, shopifySite);
+     await this.webDiscoverySend(result, createProcessDto)
+     return true
+
+     
+  }
+
+  async test(url: string, query: string, type: ProductType, mode: string, context: string, shopifySite: boolean): Promise<ProductInStockWithAnalysisStripped> {
+    // Think the router has to be added here
+    let html: string
+    let mainText: string
+    
+    if (shopifySite) {
+      const textInformation = await this.utilService.extractShopifyWebsite(url)
+      html = textInformation.html
+      mainText = textInformation.mainText
+    } else {
+      const textInformation = await this.browserService.getPageInfo(url)
+      html = textInformation.html
+      mainText = textInformation.mainText
+    }
+
 
     const dom = new JSDOM(html);
     const document = dom.window.document;
@@ -119,11 +178,14 @@ export class ProcessService {
     context: string,
     crawlAmount: number,
     sitemapUrls: string[],
-    mode: string
-    // foundProducts: AnswerInterface[],
-  ) {
+    mode: string,
+    shopifySite: boolean,
+  ): Promise<ProductInStockWithAnalysisStripped> {
     console.log(`https://${base}${seed}`)
-    const foundSitemapUrls = await this.utilService.getUrlsFromSitemap(
+
+    let foundSitemapUrls: string[] = []
+
+    foundSitemapUrls = await this.utilService.getUrlsFromSitemap(
       sitemap,
       `https://${base}${seed}`,
       crawlAmount,
@@ -145,7 +207,7 @@ export class ProcessService {
 
     for (const singleUrl of bestSites) {
       console.log(`${singleUrl.url}`);
-      const answer = await this.test(`${singleUrl.url}`, query, type, "mini", context);
+      const answer = await this.test(`${singleUrl.url}`, query, type, "mini", context, shopifySite);
       if (answer) {
         console.log('Product Found');
         // foundProducts.push({ ...answer, website: `${singleUrl.url}` });
@@ -188,7 +250,7 @@ export class ProcessService {
     const allUrls = this.utilService.gatherLinks(mapFinalBestSites);
 
     console.log(`https://${base}${allUrls[0]}`);
-    const answer = await this.test(`https://${base}${allUrls[0]}`, query, type, "mini", context);
+    const answer = await this.test(`https://${base}${allUrls[0]}`, query, type, "mini", context, shopifySite);
     if (answer) {
       console.log('Product Found');
       // foundProducts.push({ ...answer, website: `${base}${singleUrl}` });

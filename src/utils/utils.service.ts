@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
 import fetch from 'node-fetch';
+import { ShopifyProduct } from './utils.type.js';
+import { stripHtml } from "string-strip-html";
+
 
 
 @Injectable()
@@ -258,4 +261,12 @@ export class UtilsService {
 
     throw new Error('Timed out waiting for Cloudflare challenge to complete');
   };
+
+  extractShopifyWebsite = async(url: string) => {
+    const response = await fetch(`${url}.json`)
+    const json: ShopifyProduct = await response.json() as ShopifyProduct
+    const html = json.body_html
+    const mainText = stripHtml(json.body_html).result
+    return {html, mainText}
+  }
 }

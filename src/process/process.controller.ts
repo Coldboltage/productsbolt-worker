@@ -12,6 +12,21 @@ import { NotFoundError } from 'rxjs';
 export class ProcessController {
   constructor(private readonly processService: ProcessService) { }
 
+  @EventPattern('shopyifyCheck')
+  async shopifySearch(@Payload() shopDto: ShopDto, @Ctx() context: RmqContext) {
+    const channel = context.getChannelRef()
+    const originalMsg = context.getMessage();
+
+    try {
+      await this.processService.shopifySearch(shopDto)
+      channel.ack(originalMsg);
+    } catch (error) {
+      console.error(error)
+      channel.nack(originalMsg, false, false);
+
+    }
+  }
+  
   @EventPattern('sitemapSearch')
   async sitemapSearch(@Payload() shopDto: ShopDto,
     @Ctx() context: RmqContext,) {
@@ -48,29 +63,12 @@ export class ProcessController {
 
     try {
       const result = await this.processService.webpageDiscovery(createProcessDto, "nano");
-      const { url, name, shopWebsite } = createProcessDto;
       console.log(result);
       if (!result) {
         channel.ack(originalMsg);
         return false;
       }
-      const webPage = {
-        url: result.specificUrl,
-        shopWebsite,
-        inStock: result.inStock,
-        price: result.price,
-        currencyCode: result.currencyCode,
-        productName: name,
-        reason: result.analysis,
-        productId: createProcessDto.productId,
-        shopId: createProcessDto.shopId
-      };
-      console.log(webPage);
-      await fetch('http://localhost:3000/webpage/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(webPage),
-      });
+
 
       // ACK message on success
       channel.ack(originalMsg);
