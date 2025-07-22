@@ -10,6 +10,10 @@ import { stripHtml } from "string-strip-html";
 @Injectable()
 export class UtilsService {
   constructor() { }
+
+
+
+
   gatherLinks = (urls: string[]): string[] => {
     // Remove duplicates
     return [...new Set(urls)];
@@ -126,20 +130,22 @@ export class UtilsService {
   };
 
   async testProxyFetch() {
-    const proxyUrl = 'http://hojxmjyg-rotate:5ybel41yit49@p.webshare.io:80';
-    const agent =
-      proxyUrl.startsWith('https:')
-        ? new HttpsProxyAgent({ proxy: proxyUrl })
-        : new HttpProxyAgent({ proxy: proxyUrl });
+    const proxyUrl =
+      'http://c9c43b907848ee719c48:76aaa2b2f96928c9@gw.dataimpulse.com:823';
 
-    const res = await fetch('http://ipv4.webshare.io/', {
-      agent: agent,   // <—— here
-      // you can still set a timeout via AbortController if needed
-    });
+    // Pick agent based on **target** URL, not the proxy URL
+    // const agent = 
+    //   new URL(target).protocol === 'https:'
+    //     ? new HttpsProxyAgent({ proxy: proxyUrl, keepAlive: true })
+    //     : new HttpProxyAgent({ proxy: proxyUrl, keepAlive: true });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.text();
-    console.log('Response via proxy:', data);
+    const agent = new HttpsProxyAgent({ proxy: proxyUrl, keepAlive: true })
+
+
+    // const res = await fetch(target, { agent });
+    // if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    // console.log(res.statusText)
+    // console.log('response via proxy:', await res.text());
     return agent
   }
 
@@ -149,7 +155,7 @@ export class UtilsService {
     crawlAmount: number,
     importSites?: string[]
   ): Promise<string[]> => {
-    const proxy = await this.testProxyFetch()
+    const agent = await this.testProxyFetch()
 
     if (importSites && importSites.length > 1) {
       const filtered = this.filterObviousNonPages(importSites, seed);
@@ -171,16 +177,31 @@ export class UtilsService {
       console.log(crawlAmountDaysAgo)
 
       const { default: Sitemapper } = await import('sitemapper');
+
+
       // const test = await this.testProxyFetch()
       // console.log(test)
+      // throw new Error()
+
+      // const res = await fetch(sitemapUrl, { agent });  // 10‑s timeout
+      // if (!res.ok) throw new Error(`status ${res.status}`);
+      // console.log('headers →', res.headers.get('content-type'),
+      //   res.headers.get('content-encoding'));
+      // const xml = await res.text();
+      // console.log('size →', xml.length, 'bytes');
+
+
       const sitemap = new Sitemapper({
+        url: sitemapUrl,
         lastmod: crawlAmountDaysAgo.getTime(),
-        timeout: 5000,
-        concurrency: 25,
+        timeout: 30000,
+        concurrency: 1,
         retries: 1,
-        debug: true,
-        // proxyAgent: await this.testProxyFetch()
+        debug: false,
+        proxyAgent: { https: agent } as unknown as any
       });
+
+      // console.log(sitemap)
 
       // console.log({
       //   timeout: sitemap.timeout,
@@ -190,9 +211,18 @@ export class UtilsService {
       //   exclusions: sitemap.exclusions,
       // });
 
+      let scannedSites: string[] = []
 
-      const { sites: scannedSites } = await sitemap.fetch(sitemapUrl);
+      try {
+        const test = (await sitemap.fetch())
+        console.log(test.errors.length === 0 ? "No Errors" : test.errors)
+        scannedSites = test.sites
+      } catch (error) {
+        console.dir(error, { depth: 5 });   // should show a Z_DATA_ERROR or BrotliDecodeError
+        throw error;
+      }
 
+      // console.log(scannedSites)
       console.log(scannedSites.length);
 
 
