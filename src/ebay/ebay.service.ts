@@ -9,7 +9,7 @@ import { EbayTokenInterface } from './entities/ebay.entity.js';
 export class EbayService implements OnModuleInit {
    async onModuleInit() {
     try {
-      const test = await this.getUrlsFromApiCall('VOX AC30', 'It is an old amp, from the 1960s', 'AMP')
+      const test = await this.getUrlsFromApiCall('Magic The Gathering Final Fantasy Collector', 'It is an old amp, from the 1960s', 'AMP')
       console.log(test)
     } catch (error) {
       console.log(error)
@@ -26,10 +26,11 @@ export class EbayService implements OnModuleInit {
   async getUrlsFromApiCall(productName: string, productContext: string, productType: string): Promise<ProductInStockWithAnalysisStripped[]> {
     const apiKey = await this.getApiKey(process.env.EBAY_APPID, process.env.EBAY_CERTID)
     console.log(apiKey)
-    const productEpidList = await fetch(`https://api.ebay.com/commerce/catalog/v1_beta/product_summary/search?q=${encodeURIComponent(productName)}&limit=5`, {
+    const productEpidList = await fetch(`https://api.ebay.com/commerce/catalog/v1_beta/product_summary/search?q=${encodeURIComponent(productName)}`, {
       method: "GET",
       headers: {
-        'Authorization': `Bearer ${apiKey.access_token}`,
+        // 'Authorization': `Bearer ${process.env.EBAY_API_KEY}`, // Use the API key from the environment variable
+        'Authorization': `Bearer ${apiKey.access_token}`, // Use the API key from the environment variable
         'Content-Type': 'application/json',
       }
     })
@@ -54,6 +55,7 @@ export class EbayService implements OnModuleInit {
 
   async getApiKey(appId: string, certId: string): Promise<EbayTokenInterface> {
     const credentials =  Buffer.from(`${appId}:${certId}`).toString('base64')
+    const refreshToken = 'v^1.1#i^1#r^1#I^3#f^0#p^3#t^Ul4xMF8yOjQ3MTY2NThBMDNENDVBM0RCNTYxNjExOTUzNkQ5QzBBXzFfMSNFXjI2MA==';
     const response = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
       method: "POST",
       headers: {
@@ -61,10 +63,11 @@ export class EbayService implements OnModuleInit {
         "Authorization": `Basic ${credentials}`
       },
       body: new URLSearchParams({
-        grant_type: 'client_credentials',
-        scope:      'https://api.ebay.com/oauth/api_scope/commerce.catalog.readonly',
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        scope: 'https://api.ebay.com/oauth/api_scope/sell.inventory'
       })
-    })
+    });
     const json: EbayTokenInterface = await response.json()
     return json
   }
