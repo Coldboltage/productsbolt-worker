@@ -40,8 +40,9 @@ export class UtilsService {
   reduceSitemap(urls: string[], query: string) {
     type Product = { url: string; keywords: string[] };
 
-    const extractKeywords = (url: string) => {
-      const name = url.split('/').pop()?.split('?')[0].toLowerCase() || '';
+    const extractKeywords = (rawUrl: string) => {
+      const noQuery = rawUrl.split('?')[0].replace(/\/+$/, ''); // strip trailing slash(es)
+      const name = noQuery.split('/').pop()!.toLowerCase();
       return name.split('-').filter(Boolean);
     };
 
@@ -54,6 +55,8 @@ export class UtilsService {
       const products = urls.map(url => ({ url, keywords: extractKeywords(url) }));
       const queryKeys = query.toLowerCase().split(' ').filter(Boolean);
       const minMatches = requiredMatches(queryKeys.length);
+      console.log(queryKeys)
+      console.log(minMatches)
       return products
         .filter(p => countMatches(p.keywords, queryKeys) >= minMatches)
         .map(p => p.url);
@@ -131,7 +134,7 @@ export class UtilsService {
 
   async testProxyFetch() {
     const proxyUrl =
-      'http://c9c43b907848ee719c48:76aaa2b2f96928c9@gw.dataimpulse.com:823';
+      `http://c9c43b907848ee719c48:${process.env.PROXY_PASSWORD}@gw.dataimpulse.com:823`;
 
     // Pick agent based on **target** URL, not the proxy URL
     // const agent = 
@@ -155,7 +158,6 @@ export class UtilsService {
     crawlAmount: number,
     importSites?: string[]
   ): Promise<string[]> => {
-    const agent = await this.testProxyFetch()
 
     if (importSites && importSites.length > 1) {
       const filtered = this.filterObviousNonPages(importSites, seed);
@@ -163,8 +165,7 @@ export class UtilsService {
       return filtered;
     }
 
-
-
+    const agent = await this.testProxyFetch()
 
     let sites: string[] = [];
     let days = crawlAmount;
@@ -262,11 +263,26 @@ export class UtilsService {
     throw new Error('Timed out waiting for Cloudflare challenge to complete');
   };
 
-  extractShopifyWebsite = async(url: string) => {
-    const response = await fetch(`${url}.json`)
-    const json: ShopifyProduct = await response.json() as ShopifyProduct
-    const html = json.body_html
-    const mainText = stripHtml(json.body_html).result
-    return {html, mainText}
+  extractShopifyWebsite = async (url: string) => {
+    console.log(url)
+    try {
+      const response = await fetch(`${url}.js`)
+      const json: ShopifyProduct = await response.json() as ShopifyProduct
+      const title = json.title
+      let mainText = stripHtml(json.description).result
+      mainText = `${mainText}. Price is ${json.price / 100}`
+      console.log({ title, mainText })
+      return { title, mainText, ...json }
+    } catch (error) {
+      return {
+        url,
+        inStock: false,
+        price: 0,
+        available: false,
+        title: 'default',
+        mainText: 'default'
+      }
+    }
+
   }
 }

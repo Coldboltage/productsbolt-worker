@@ -217,17 +217,41 @@ The product type should reflect the actual item sold to the customer, not merely
     mode: string
 
   ) => {
-    const productInfo = z.object({
-      inStock: z.boolean(),
-      price: z.number(),
-    });
-
     const openai = new OpenAI();
 
-    const openAiResponse = await openai.responses.parse({
+    const schema = {
+      name: 'product_update',
+      strict: true,
+      schema: {
+        type: 'object',
+        properties: {
+          analysis: {
+            type: 'string',
+            description:
+              'Using the product page, break down rational if the product is available or not and in what capacity. Usually if it says Notify when in stock or in those lines, it is not in stock'
+          },
+          inStock: {
+            type: 'boolean',
+            description: 'Using the analysis, confirm true if the item is currently in stock or preorder is available and available for purchase. If it says something like Notify when in stock, the product is not in stock'
+          },
+          price: {
+            type: 'number',
+            description: 'The numeric price of the product, without currency symbol.'
+          },
+        },
+        required: [
+          'analysis',
+          'inStock',
+          'price',
+        ],
+        additionalProperties: false
+      }
+    };
+
+    const openAiResponse = await openai.chat.completions.create({
       model: `gpt-4.1-${mode}`,
       temperature: 0,
-      input: [
+      messages: [
         {
           role: 'system',
           content:
@@ -242,17 +266,13 @@ Page content: ${content}
 `,
         },
       ],
-      text: {
-        format: zodTextFormat(productInfo, 'stock'),
-      },
+      response_format: {
+        type: 'json_schema',
+        json_schema: schema
+      }
     });
 
-    const productResponse = openAiResponse.output_parsed;
-    const usage = openAiResponse.usage;
-    console.log('Input tokens:', usage.input_tokens);
-    console.log('Output tokens:', usage.output_tokens);
-    console.log('Total tokens:', usage.total_tokens);
-    console.log(productResponse);
+    const productResponse = JSON.parse(openAiResponse.choices[0].message?.content || '{}');
     return productResponse;
   };
 
@@ -260,6 +280,7 @@ Page content: ${content}
     sitemapUrls: string[],
     query: string,
     version: string,
+    mainUrl: string,
   ): Promise<BestSitesInterface> => {
     const sitemapBestLinkSchema = z.object({
       bestSites: z.array(
@@ -278,7 +299,7 @@ Page content: ${content}
         { role: 'system', content: 'Extract product page information' },
         {
           role: 'user',
-          content: `Please use the sitemap URLs and figure the best links to use for ${query}. URLs: ${sitemapUrls.join(', ')}`,
+          content: `Please use the sitemap URLs and figure the best links to use for ${query}. The URLs must include ${mainUrl} within the url. URLs: ${sitemapUrls.join(', ')}`,
         },
       ],
       text: {

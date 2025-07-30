@@ -24,13 +24,13 @@ export class ProcessService {
     private ebayService: EbayService
   ) { }
 
-  
+
   async shopifySearch(shopDto: ShopDto) {
     const result = await this.browserService.isShopifySite(`${shopDto.protocol}${shopDto.website}`)
-    const setup =  await fetch(`http://localhost:3000/shop/${shopDto.id}`, {
+    const setup = await fetch(`http://localhost:3000/shop/${shopDto.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({isShopifySite: result}),
+      body: JSON.stringify({ isShopifySite: result }),
     });
     if (setup.ok === true) return true
     throw new Error('update_to_server_failed')
@@ -40,7 +40,7 @@ export class ProcessService {
     const sitemapUrls = await this.utilService.getUrlsFromSitemap(
       shopDto.sitemap,
       `https://${shopDto.website}${shopDto.category}`,
-      10
+      90
     );
     return sitemapUrls
   }
@@ -66,7 +66,7 @@ export class ProcessService {
   }
 
   async webpageDiscovery(createProcessDto: CreateProcessDto, mode: string) {
-    const { sitemap, url, category, name, type, context, crawlAmount, sitemapUrls, shopifySite, shopType} = createProcessDto;
+    const { sitemap, url, category, name, type, context, crawlAmount, sitemapUrls, shopifySite, shopType } = createProcessDto;
 
     if (shopType === UniqueShopType.EBAY) {
       const result = await this.ebayService.getUrlsFromApiCall(name, context, type)
@@ -75,38 +75,53 @@ export class ProcessService {
         return true
       }
     }
-    
-     const result = await this.rotateTest(sitemap, url, category, name, type, context, crawlAmount, sitemapUrls, mode, shopifySite);
-     await this.webDiscoverySend(result, createProcessDto)
-     return true
 
-     
+    const result = await this.rotateTest(sitemap, url, category, name, type, context, crawlAmount, sitemapUrls, mode, shopifySite);
+    if (result) {
+      await this.webDiscoverySend(result, createProcessDto)
+      return true
+    }
+    return false
   }
 
   async test(url: string, query: string, type: ProductType, mode: string, context: string, shopifySite: boolean): Promise<ProductInStockWithAnalysisStripped> {
     // Think the router has to be added here
     let html: string
     let mainText: string
-    
+
+    console.log(`shopifySite: ${shopifySite}`)
+    let title: string
+    let allText: string
+
     if (shopifySite) {
+      console.log('extractShopifyWebsite activated')
       const textInformation = await this.utilService.extractShopifyWebsite(url)
-      html = textInformation.html
-      mainText = textInformation.mainText
+      title = textInformation.title
+      allText = textInformation.mainText
     } else {
+      console.log('getPageInfo activated')
       const textInformation = await this.browserService.getPageInfo(url)
       html = textInformation.html
       mainText = textInformation.mainText
+      const dom = new JSDOM(html);
+      const document = dom.window.document;
+      title = document.title;
+      console.log('Page title:', title);
+
+      const allText = htmlToText(mainText, {
+        wordwrap: false,
+      });
     }
 
+    console.log({
+      title,
+      allText,
+      query,
+      type,
+      mode,
+      context
+    })
 
-    const dom = new JSDOM(html);
-    const document = dom.window.document;
-    const title = document.title;
-    console.log('Page title:', title);
-
-    const allText = htmlToText(mainText, {
-      wordwrap: false,
-    });
 
     // console.log(allText)
 
@@ -132,21 +147,49 @@ export class ProcessService {
     console.error(answer)
   }
 
-  async testTwo(url: string, query: string, type: ProductType, mode: string) {
+  async testTwo(url: string, query: string, type: ProductType, mode: string, shopifySite) {
     // Note, the html discovery part should be it's own function
     // This is for testing for now
-    const { html, mainText } = await this.browserService.getPageInfo(url);
+    // Think the router has to be added here
+    let html: string
+    let mainText: string
 
-    const dom = new JSDOM(html);
-    const document = dom.window.document;
-    const title = document.title;
-    console.log('Page title:', title);
+    console.log(`shopifySite: ${shopifySite}`)
+    let title: string
+    let allText: string
 
-    const allText = htmlToText(mainText, {
-      wordwrap: false,
-    });
+    if (shopifySite) {
+      console.log('extractShopifyWebsite activated')
+      const result = await this.utilService.extractShopifyWebsite(url)
+      return {
+        url,
+        inStock: result.available,
+        price: result.price / 100,
+        productName: query,
+        specificUrl: url,
+      }
+    } else {
+      console.log('getPageInfo activated')
+      const textInformation = await this.browserService.getPageInfo(url)
+      html = textInformation.html
+      mainText = textInformation.mainText
+      const dom = new JSDOM(html);
+      const document = dom.window.document;
+      title = document.title;
+      console.log('Page title:', title);
 
-    // console.log(allText)
+      allText = htmlToText(mainText, {
+        wordwrap: false,
+      });
+    }
+
+    console.log({
+      title,
+      allText,
+      query,
+      type,
+      mode
+    })
 
     const answer = await this.openaiService.checkProduct(
       title,
@@ -155,6 +198,8 @@ export class ProcessService {
       type,
       mode
     );
+
+    console.log(answer)
 
     const enc = encoding_for_model(`gpt-4.1-nano`); // or 'gpt-4', 'gpt-3.5-turbo', etc.
 
@@ -203,6 +248,7 @@ export class ProcessService {
       reducedUrls,
       query,
       mode,
+      `${base}${seed}`
     );
 
     for (const singleUrl of bestSites) {
@@ -238,6 +284,7 @@ export class ProcessService {
         uniqueBestSitesAllLinks,
         query,
         mode,
+        `${base}${seed}`
       );
 
     const mapFinalBestSites = finalBestSites.map((site) => {
@@ -271,7 +318,7 @@ export class ProcessService {
   }
 
   async updatePage(checkPageDto: CheckPageDto) {
-    const result = await this.testTwo(checkPageDto.url, checkPageDto.query, checkPageDto.type, "mini")
+    const result = await this.testTwo(checkPageDto.url, checkPageDto.query, checkPageDto.type, "mini", checkPageDto.shopifySite)
     return result
   }
 

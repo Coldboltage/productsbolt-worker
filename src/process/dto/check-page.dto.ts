@@ -1,4 +1,4 @@
-import { IsEnum, IsString, IsUrl, IsUUID } from "class-validator";
+import { IsBoolean, IsEnum, IsString, IsUrl, IsUUID } from "class-validator";
 import { ProductType } from "../../app.type.js";
 
 export class CheckPageDto {
@@ -16,4 +16,7 @@ export class CheckPageDto {
 
   @IsUUID()
   webPageId: string
+
+  @IsBoolean()
+  shopifySite: boolean
 }

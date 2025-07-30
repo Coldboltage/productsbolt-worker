@@ -1,20 +1,15 @@
 export interface ShopifyProduct {
   id: number;
   title: string;
-  body_html: string;
+  description: string;
+  published_at: Date;
+  created_at: Date;
   vendor: string;
-  product_type: string;
-  created_at: string;
-  handle: string;
-  updated_at: string;
-  published_at: string;
-  template_suffix: string;
-  published_scope: string;
-  tags: string;
-  variants: Variant[];
-  options: Option[];
-  images: ProductImage[];
-  image: ProductImage;
+  type: string;
+  price: number;
+  price_min: number;
+  price_max: number;
+  available: boolean;
 }
 
 export interface Variant {

@@ -40,7 +40,7 @@ export class BrowserService {
         const isShopyifySite = document.querySelector('link[href="https://cdn.shopify.com"]');
         return isShopyifySite ? true : false
       }
-    )
+      )
 
       return { html, mainText, shopyifySite };
     })();
@@ -98,7 +98,7 @@ export class BrowserService {
         const isShopyifySite = document.querySelector('link[href="https://cdn.shopify.com"]');
         return isShopyifySite ? true : false
       }
-    )
+      )
       return shopyifySite;
     })();
 
