@@ -208,10 +208,10 @@ export class ProcessService {
 
     console.log(`Token count: ${tokens.length}`);
 
-    if (answer?.price !== 0) {
 
-      return { ...answer, specificUrl: url };
-    }
+
+    return { ...answer, specificUrl: url };
+
   }
 
   async rotateTest(
@@ -296,6 +296,7 @@ export class ProcessService {
 
     const allUrls = this.utilService.gatherLinks(mapFinalBestSites);
 
+    if (!allUrls[0]) throw new Error('no link found')
     console.log(`https://${base}${allUrls[0]}`);
     const answer = await this.test(`https://${base}${allUrls[0]}`, query, type, "mini", context, shopifySite);
     if (answer) {
