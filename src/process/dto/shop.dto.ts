@@ -1,4 +1,4 @@
-import { IsBoolean, IsString } from "class-validator";
+import { IsBoolean, IsNumber, IsString } from "class-validator";
 
 export class ShopDto {
   @IsString()
@@ -21,4 +21,10 @@ export class ShopDto {
 
   @IsBoolean()
   active: true;
+
+  @IsString()
+  etag: string
+
+  @IsNumber()
+  etagCount: number
 }

@@ -20,10 +20,10 @@ export class BrowserService {
       ignoreAllFlags: false,
     });
 
-    await page.goto(url, { waitUntil: ['networkidle2'] });
-
     // Promise that resolves with the page content and mainText
     const pageTask = (async () => {
+      await page.goto(url, { waitUntil: ['networkidle2'], timeout: 60000 });
+
       try {
         await this.utilService.waitForCloudflareBypass(page);
       } catch (e) {
@@ -46,27 +46,23 @@ export class BrowserService {
     })();
 
     // Timeout promise that closes browser after 10 seconds
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(async () => {
-        console.log(`Timeout reached, closing browser: ${url}`);
-        try {
-          await browser.close();
-        } catch (e) {
-          console.error('Error closing browser after timeout', e);
-        }
-        reject(new Error('Timeout: Browser closed after 20 seconds'));
-      }, 20000),
-    );
+    let timer: ReturnType<typeof setTimeout>;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error('Timeout: 60s')), 60_000);
+    });
 
-    // Race pageTask and timeout, so whichever finishes first wins
-    const result = await Promise.race([pageTask, timeout]);
-
-    // If pageTask won, close browser normally
-    if (result) {
-      await browser.close();
+    try {
+      // Whichever finishes first wins
+      return await Promise.race([pageTask, timeoutPromise]);
+    } finally {
+      // Always clean up: cancel the timer and kill the browser exactly once
+      if (timer) clearTimeout(timer);
+      try {
+        await browser.close();
+      } catch (e) {
+        console.error('Error closing browser', e);
+      }
     }
-
-    return result;
   };
 
   isShopifySite = async (
@@ -81,17 +77,14 @@ export class BrowserService {
       disableXvfb: false,
       ignoreAllFlags: false,
     });
-
-    await page.goto(url, { waitUntil: ['networkidle2'] });
-
     // Promise that resolves with the page content and mainText
     const pageTask = (async () => {
+      await page.goto(url, { waitUntil: ['networkidle2'], timeout: 60000 });
+
       try {
         await this.utilService.waitForCloudflareBypass(page);
       } catch (e) {
-        // This needs tested properly will get back to this.
-        // console.log('Error during Cloudflare bypass, continuing anyway');
-        await browser.close();
+        console.log('Error during Cloudflare bypass, continuing anyway');
       }
 
       const shopyifySite = await page.evaluate(() => {
@@ -103,26 +96,23 @@ export class BrowserService {
     })();
 
     // Timeout promise that closes browser after 10 seconds
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(async () => {
-        console.log(`Timeout reached, closing browser: ${url}`);
-        try {
-          await browser.close();
-        } catch (e) {
-          console.error('Error closing browser after timeout', e);
-        }
-        reject(new Error('Timeout: Browser closed after 20 seconds'));
-      }, 40000),
-    );
+    let timer: ReturnType<typeof setTimeout>;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error('Timeout: 60s')), 60_000);
+    });
 
-    // Race pageTask and timeout, so whichever finishes first wins
-    const result = await Promise.race([pageTask, timeout]);
-
-    // If pageTask won, close browser normally
-    if (result) {
-      await browser.close();
+    try {
+      // Whichever finishes first wins
+      return await Promise.race([pageTask, timeoutPromise]);
+    } finally {
+      // Always clean up: cancel the timer and kill the browser exactly once
+      if (timer) clearTimeout(timer);
+      try {
+        await browser.close();
+      } catch (e) {
+        console.error('Error closing browser', e);
+      }
     }
-    return result;
   };
 
   getLinksFromPage = async (url: string) => {

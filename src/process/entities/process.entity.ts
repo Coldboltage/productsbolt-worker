@@ -1,4 +1,4 @@
-export class Process {}
+export class Process { }
 
 export enum UniqueShopType {
   TIKTOK = "TIKTOK",
@@ -18,6 +18,7 @@ export interface ProductInStockWithAnalysis {
   detectedVariant: string;
   detectedFullName: string;
   variantMatchStrict: boolean;
+  justifications: Justification
 }
 
 export interface ProductInStockWithAnalysisStripped {
@@ -27,4 +28,15 @@ export interface ProductInStockWithAnalysisStripped {
   currencyCode: string;
   conciseReason: string;
   specificUrl: string;
+}
+
+export interface Justification {
+  inStock: string;
+  price: string;
+  currencyCode: string;
+  isMainProductPage: string;
+  isNamedProduct: string;
+  productTypeMatchStrict: string;
+  variantMatchStrict: string;
+
 }

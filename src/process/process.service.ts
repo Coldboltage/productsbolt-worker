@@ -13,6 +13,8 @@ import { encoding_for_model } from '@dqbd/tiktoken';
 import { ShopDto } from './dto/shop.dto.js';
 import { ProductInStockWithAnalysisStripped, UniqueShopType } from './entities/process.entity.js';
 import { EbayService } from './../ebay/ebay.service.js';
+import crypto from 'node:crypto';
+import { promise } from 'zod';
 
 
 @Injectable()
@@ -36,11 +38,58 @@ export class ProcessService {
     throw new Error('update_to_server_failed')
   }
 
+  async hasSitemapChanged(sitemapUrl: string, etag: string) {
+
+
+
+    const headers = {}
+    if (etag) headers['If-None-Match'] = etag
+    const sitemapStatus = await fetch(sitemapUrl, {
+      method: 'HEAD',
+      headers
+    })
+
+    const status = sitemapStatus.status
+
+    let newEtag: string | null = null;
+    let lastMod: string | null = null;
+    let contentLength: string | null = null;
+    let generatedSiteHash: string | null = null;
+
+
+    if (status === 304) {
+      return {
+        newEtag, lastMod, contentLength, generatedSiteHash
+      }
+    }
+
+    if (status === 200) {
+      newEtag = sitemapStatus.headers.get('etag')
+      lastMod = sitemapStatus.headers.get('last-modified')
+      contentLength = sitemapStatus.headers.get('content-length')
+      console.log(`header change: ${newEtag} ${lastMod} ${contentLength}`)
+    }
+
+
+    if (!newEtag && !lastMod && !contentLength) {
+      const res = await fetch(sitemapUrl)
+      const body = await res.arrayBuffer();
+      generatedSiteHash = crypto.createHash('sha256').update(Buffer.from(body)).digest('hex')
+    }
+
+    return {
+      newEtag, lastMod, contentLength, generatedSiteHash
+    }
+
+  }
+
   async sitemapSearch(shopDto: ShopDto) {
+    // await this.hasSitemapChanged(shopDto.sitemap, shopDto.etag)
+    // throw new Error('lawl')
     const sitemapUrls = await this.utilService.getUrlsFromSitemap(
       shopDto.sitemap,
       `https://${shopDto.website}${shopDto.category}`,
-      90
+      360
     );
     return sitemapUrls
   }
@@ -66,7 +115,7 @@ export class ProcessService {
   }
 
   async webpageDiscovery(createProcessDto: CreateProcessDto, mode: string) {
-    const { sitemap, url, category, name, type, context, crawlAmount, sitemapUrls, shopifySite, shopType } = createProcessDto;
+    const { sitemap, url, category, name, type, context, crawlAmount, shopifySite, shopType, sitemapUrls } = createProcessDto;
 
     if (shopType === UniqueShopType.EBAY) {
       const result = await this.ebayService.getUrlsFromApiCall(name, context, type)
@@ -99,7 +148,12 @@ export class ProcessService {
       title = textInformation.title
       allText = textInformation.mainText
     } else {
-      console.log('getPageInfo activated')
+      // console.log('getPageInfo activated')
+      // console.log({
+      //   url,
+      //   shopifySite
+      // })
+      // await new Promise(r => setTimeout(() => r, 10000000))
       const textInformation = await this.browserService.getPageInfo(url)
       html = textInformation.html
       mainText = textInformation.mainText
@@ -108,7 +162,7 @@ export class ProcessService {
       title = document.title;
       console.log('Page title:', title);
 
-      const allText = htmlToText(mainText, {
+      allText = htmlToText(mainText, {
         wordwrap: false,
       });
     }
@@ -209,7 +263,6 @@ export class ProcessService {
     console.log(`Token count: ${tokens.length}`);
 
 
-
     return { ...answer, specificUrl: url };
 
   }
@@ -240,9 +293,6 @@ export class ProcessService {
     const reducedUrls = this.utilService.reduceSitemap(foundSitemapUrls, query)
 
     console.log(`ReducedUrls: ${reducedUrls.length}`)
-    // console.log(reducedUrls)
-
-    await fs.writeFile('urls.txt', reducedUrls.join('\n'));
 
     const { bestSites } = await this.openaiService.crawlFromSitemap(
       reducedUrls,
@@ -261,18 +311,36 @@ export class ProcessService {
         return answer;
       }
     }
+    if (shopifySite) throw new Error('nothing_else_to_do')
 
     const bestSitesAllLinks = [];
 
-    for (const site of bestSites) {
-      if (site.score < 0.8) continue
-      bestSitesAllLinks.push(
-        ...(await this.browserService.getLinksFromPage(site.url)),
-      );
-      console.log(bestSitesAllLinks.length);
-    }
+    console.log(bestSites.length > 0)
 
-    const reducedUrlsbestSitesAllLinks = this.utilService.reduceSitemap(foundSitemapUrls, query)
+
+    if (bestSites.length > 0) {
+      for (const site of bestSites) {
+        if (site.score < 0.8 || shopifySite === true) continue
+        bestSitesAllLinks.push(
+          ...(await this.browserService.getLinksFromPage(site.url)),
+        );
+        console.log(bestSitesAllLinks.length);
+      }
+    }
+    // else {
+    //   for (const [index, site] of reducedUrls.entries()) {
+    //     if (index < 2) {
+    //       bestSitesAllLinks.push(
+    //         ...(await this.browserService.getLinksFromPage(site)),
+    //       );
+    //     }
+
+    //   }
+    // }
+
+    const reducedUrlsbestSitesAllLinks = this.utilService.reduceSitemap(bestSitesAllLinks, query)
+
+    console.log(reducedUrlsbestSitesAllLinks)
 
     const uniqueBestSitesAllLinks = [...new Set(reducedUrlsbestSitesAllLinks)];
     console.log(uniqueBestSitesAllLinks.length);
@@ -296,7 +364,8 @@ export class ProcessService {
 
     const allUrls = this.utilService.gatherLinks(mapFinalBestSites);
 
-    if (!allUrls[0]) throw new Error('no link found')
+    if (allUrls[0]) throw new Error('no link found')
+
     console.log(`https://${base}${allUrls[0]}`);
     const answer = await this.test(`https://${base}${allUrls[0]}`, query, type, "mini", context, shopifySite);
     if (answer) {
@@ -304,6 +373,9 @@ export class ProcessService {
       // foundProducts.push({ ...answer, website: `${base}${singleUrl}` });
       return answer;
     }
+
+
+
 
     // for (const singleUrl of allUrls) {
     //   console.log(`https://${base}${singleUrl}`);

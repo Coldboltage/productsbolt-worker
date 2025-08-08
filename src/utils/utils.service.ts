@@ -41,9 +41,18 @@ export class UtilsService {
     type Product = { url: string; keywords: string[] };
 
     const extractKeywords = (rawUrl: string) => {
-      const noQuery = rawUrl.split('?')[0].replace(/\/+$/, ''); // strip trailing slash(es)
-      const name = noQuery.split('/').pop()!.toLowerCase();
-      return name.split('-').filter(Boolean);
+      const noQuery = rawUrl.split('?')[0].replace(/\/+$/, '');
+      const name = decodeURIComponent(noQuery.split('/').pop() || '');
+
+      const cleaned = name
+        .toLowerCase()
+        .normalize('NFKD')                    // normalize accents
+        .replace(/[\u0300-\u036f]/g, '')      // strip accent marks
+        .replace(/[’'`]/g, '')                // drop apostrophes (smart + straight)
+        .replace(/[^a-z0-9]+/g, ' ')          // everything non-alnum -> space
+        .trim();
+
+      return cleaned.split(/\s+/);            // ['magic','the','gathering','assassins','creed','collector','booster','box']
     };
 
     const requiredMatches = (n: number) => Math.max(1, Math.floor((3 / 5) * n));
@@ -270,10 +279,11 @@ export class UtilsService {
       const json: ShopifyProduct = await response.json() as ShopifyProduct
       const title = json.title
       let mainText = stripHtml(json.description).result
-      mainText = `${mainText}. Price is ${json.price / 100}`
+      mainText = `${mainText}. Price is ${json.price / 100}, InStock Status: ${json.available}`
       console.log({ title, mainText })
       return { title, mainText, ...json }
     } catch (error) {
+      console.log(error)
       return {
         url,
         inStock: false,
@@ -285,4 +295,4 @@ export class UtilsService {
     }
 
   }
-}
+} 

@@ -15,14 +15,14 @@ async function bootstrap() {
       transport: Transport.RMQ,
       options: {
         urls: ['amqp://localhost:5672'],
-        queue: 'process_queue',
+        queue: 'headful_queue',
         queueOptions: {
           durable: false,
           exclusive: false,
           autoDelete: false,  // <-- add this
         },
         noAck: false,        // <-- manual ack mode
-        prefetchCount: 10,   // <-- cap concurrency
+        prefetchCount: 20,   // <-- cap concurrency
       },
     },
   );
@@ -32,14 +32,14 @@ async function bootstrap() {
       transport: Transport.RMQ,
       options: {
         urls: ['amqp://localhost:5672'],
-        queue: 'misc_queue',
+        queue: 'headless_queue',
         queueOptions: {
           durable: false,
           exclusive: false,
           autoDelete: false,  // <-- add this
         },
         noAck: false,        // <-- manual ack mode
-        prefetchCount: 100,   // <-- cap concurrency
+        prefetchCount: 300,   // <-- cap concurrency
       },
     },
   );

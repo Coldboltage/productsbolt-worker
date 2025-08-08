@@ -118,8 +118,33 @@ export class OpenaiService {
           analysis: {
             type: 'string',
             description:
-              'Use this field to reason about what the product fundamentally is, based on all available evidence. Analyze the product title, description, and any contextual information to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked "Add to Cart", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”) \n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching.'
+              'Very Concisely, use this field to reason about what the product fundamentally is, based on all available evidence. Analyze the product title, description, and any contextual information to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked "Add to Cart", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”) \n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching.'
           },
+          justifications: {
+            type: 'object',
+            description:
+              'For every flag below, very concisely quote or paraphrase the page snippet that proves it.',
+            properties: {
+              inStock: { type: 'string' },
+              price: { type: 'string' },
+              currencyCode: { type: 'string' },
+              isMainProductPage: { type: 'string' },
+              isNamedProduct: { type: 'string' },
+              productTypeMatchStrict: { type: 'string' },
+              variantMatchStrict: { type: 'string' }
+            },
+            required: [
+              'inStock',
+              'price',
+              'currencyCode',
+              'isMainProductPage',
+              'isNamedProduct',
+              'productTypeMatchStrict',
+              'variantMatchStrict'
+            ],
+            additionalProperties: false
+          },
+
           inStock: {
             type: 'boolean',
             description: 'True if the item is currently in stock and available for purchase.'
@@ -175,14 +200,20 @@ The product type should reflect the actual item sold to the customer, not merely
           'conciseReason',
           'detectedVariant',
           'detectedFullName',
-          'variantMatchStrict'
+          'variantMatchStrict',
+          'justifications'
         ],
         additionalProperties: false
       }
     };
 
     const response = await openai.chat.completions.create({
-      model: `gpt-4.1-${mode}`,
+      // model: `gpt-4.1-${mode}`,
+      model: `gpt-4.1-mini`,
+      temperature: 0,
+      // model: `gpt-5-nano`,
+      // reasoning_effort: "low",
+      // temperature: 0,
       messages: [
         {
           role: 'system',
@@ -228,7 +259,7 @@ The product type should reflect the actual item sold to the customer, not merely
           analysis: {
             type: 'string',
             description:
-              'Using the product page, break down rational if the product is available or not and in what capacity. Usually if it says Notify when in stock or in those lines, it is not in stock'
+              'Using the product page, very concisely break down rational if the product is available or not and in what capacity. Usually if it says Notify when in stock or in those lines, it is not in stock'
           },
           inStock: {
             type: 'boolean',
@@ -282,6 +313,7 @@ Page content: ${content}
     version: string,
     mainUrl: string,
   ): Promise<BestSitesInterface> => {
+    console.log(sitemapUrls)
     const sitemapBestLinkSchema = z.object({
       bestSites: z.array(
         z.object({
@@ -295,6 +327,7 @@ Page content: ${content}
 
     const openAiResponse = await openai.responses.parse({
       model: `gpt-4.1-${version}`,
+      temperature: 0,
       input: [
         { role: 'system', content: 'Extract product page information' },
         {
