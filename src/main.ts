@@ -44,6 +44,23 @@ async function bootstrap() {
     },
   );
 
+  const sitemapQueue = app.connectMicroservice<MicroserviceOptions>(
+    {
+      transport: Transport.RMQ,
+      options: {
+        urls: ['amqp://localhost:5672'],
+        queue: 'sitemap_queue',
+        queueOptions: {
+          durable: false,
+          exclusive: false,
+          autoDelete: false,  // <-- add this
+        },
+        noAck: false,        // <-- manual ack mode
+        prefetchCount: 300,   // <-- cap concurrency
+      },
+    },
+  );
+
 
   await app.startAllMicroservices();;
 }

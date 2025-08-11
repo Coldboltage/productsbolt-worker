@@ -206,7 +206,7 @@ export class UtilsService {
         lastmod: crawlAmountDaysAgo.getTime(),
         timeout: 30000,
         concurrency: 1,
-        retries: 1,
+        retries: 0,
         debug: false,
         proxyAgent: { https: agent } as unknown as any
       });
@@ -226,6 +226,7 @@ export class UtilsService {
       try {
         const test = (await sitemap.fetch())
         console.log(test.errors.length === 0 ? "No Errors" : test.errors)
+        if (test.errors.length > 0) await new Promise(r => setTimeout(r, 1));
         scannedSites = test.sites
       } catch (error) {
         console.dir(error, { depth: 5 });   // should show a Z_DATA_ERROR or BrotliDecodeError
@@ -243,6 +244,7 @@ export class UtilsService {
     } while (siteMapAmount > 100000000000);
 
     const filtered = this.filterObviousNonPages(sites, seed);
+    await new Promise(r => setTimeout(r, 1))
     // console.log(filtered)
     return filtered;
   };
