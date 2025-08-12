@@ -39,7 +39,7 @@ async function bootstrap() {
           autoDelete: false,  // <-- add this
         },
         noAck: false,        // <-- manual ack mode
-        prefetchCount: 300,   // <-- cap concurrency
+        prefetchCount: 1,   // <-- cap concurrency
       },
     },
   );
@@ -57,6 +57,23 @@ async function bootstrap() {
         },
         noAck: false,        // <-- manual ack mode
         prefetchCount: 300,   // <-- cap concurrency
+      },
+    },
+  );
+
+  const slowSitemapQueue = app.connectMicroservice<MicroserviceOptions>(
+    {
+      transport: Transport.RMQ,
+      options: {
+        urls: ['amqp://localhost:5672'],
+        queue: 'slow_sitemap_queue',
+        queueOptions: {
+          durable: false,
+          exclusive: false,
+          autoDelete: false,  // <-- add this
+        },
+        noAck: false,        // <-- manual ack mode
+        prefetchCount: 1,   // <-- cap concurrency
       },
     },
   );

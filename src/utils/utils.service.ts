@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
 import fetch from 'node-fetch';
-import { ShopifyProduct } from './utils.type.js';
+import { ShopifyProduct, ShopifyProductCollections, ShopifyProductCollectionsFullCall } from './utils.type.js';
 import { stripHtml } from "string-strip-html";
 
 
@@ -10,10 +10,6 @@ import { stripHtml } from "string-strip-html";
 @Injectable()
 export class UtilsService {
   constructor() { }
-
-
-
-
   gatherLinks = (urls: string[]): string[] => {
     // Remove duplicates
     return [...new Set(urls)];
@@ -161,17 +157,63 @@ export class UtilsService {
     return agent
   }
 
-  getUrlsFromSitemap = async (
+  async collectionsTest(websiteUrl: string) {
+    const response = await fetch(`${websiteUrl}/collections/all/products.json?limit=250`)
+    const status = response.status
+    console.log({
+      status,
+      websiteUrl
+    })
+    if (status === 200) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  // Hasn't proven to work well this. Decided to go headful
+  async getUrlsFromShopify(websiteUrl: string, category: string) {
+    // Rotate until we can't
+    // We just need the URL but I think we need to test if this works or not for all sites so we'll do that first
+    // We can do that via checking if we can even get collections and go from there
+    let pageLength: number
+    const websiteUrls: string[] = []
+    for (let index = 1; pageLength !== 0; index++) {
+      let response
+      try {
+        response = await fetch(`${websiteUrl}/collections/all/products.json?limit=250&page=${index}`)
+        console.log({
+          status: response.status,
+          website: websiteUrl,
+          page: index
+        })
+      } catch (error) {
+        console.error(response.status)
+      }
+      const json: ShopifyProductCollectionsFullCall = await response.json() as ShopifyProductCollectionsFullCall
+      pageLength = json.products.length
+      json.products.forEach(product => websiteUrls.push(`${websiteUrl}${category}/${product.handle}`))
+      await new Promise(r => setTimeout(r, 350))
+    }
+    // console.log(websiteUrls)
+    return websiteUrls
+  }
+
+  async getUrlsFromSitemap(
     sitemapUrl: string,
     seed: string,
     crawlAmount: number,
+    fast: boolean,
     importSites?: string[]
-  ): Promise<string[]> => {
+  ): Promise<{ websiteUrls: string[], fast: boolean }> {
 
     if (importSites && importSites.length > 1) {
       const filtered = this.filterObviousNonPages(importSites, seed);
       // console.log(filtered)
-      return filtered;
+      return {
+        websiteUrls: filtered,
+        fast
+      };
     }
 
     const agent = await this.testProxyFetch()
@@ -179,6 +221,8 @@ export class UtilsService {
     let sites: string[] = [];
     let days = crawlAmount;
     let siteMapAmount = 0;
+    let response
+    let pauseTimer = fast ? 1 : 60000
     do {
       const now = new Date();
       const crawlAmountDaysAgo = new Date();
@@ -188,46 +232,26 @@ export class UtilsService {
 
       const { default: Sitemapper } = await import('sitemapper');
 
-
-      // const test = await this.testProxyFetch()
-      // console.log(test)
-      // throw new Error()
-
-      // const res = await fetch(sitemapUrl, { agent });  // 10‑s timeout
-      // if (!res.ok) throw new Error(`status ${res.status}`);
-      // console.log('headers →', res.headers.get('content-type'),
-      //   res.headers.get('content-encoding'));
-      // const xml = await res.text();
-      // console.log('size →', xml.length, 'bytes');
-
-
       const sitemap = new Sitemapper({
         url: sitemapUrl,
         lastmod: crawlAmountDaysAgo.getTime(),
         timeout: 30000,
         concurrency: 1,
         retries: 0,
-        debug: false,
-        proxyAgent: { https: agent } as unknown as any
+        debug: true,
+        // proxyAgent: { https: agent } as unknown as any
       });
 
-      // console.log(sitemap)
-
-      // console.log({
-      //   timeout: sitemap.timeout,
-      //   concurrency: sitemap.concurrency,
-      //   retries: sitemap.retries,
-      //   rejectUnauthorized: sitemap.rejectUnauthorized,
-      //   exclusions: sitemap.exclusions,
-      // });
+      if (fast) sitemap.proxyAgent = { https: agent } as unknown as any
 
       let scannedSites: string[] = []
 
+
       try {
-        const test = (await sitemap.fetch())
-        console.log(test.errors.length === 0 ? "No Errors" : test.errors)
-        if (test.errors.length > 0) await new Promise(r => setTimeout(r, 1));
-        scannedSites = test.sites
+        response = (await sitemap.fetch())
+        console.log(response.errors.length === 0 ? "No Errors" : response.errors)
+        if (response.errors.length > 0) await new Promise(r => setTimeout(r, pauseTimer));
+        scannedSites = response.sites
       } catch (error) {
         console.dir(error, { depth: 5 });   // should show a Z_DATA_ERROR or BrotliDecodeError
         throw error;
@@ -244,9 +268,20 @@ export class UtilsService {
     } while (siteMapAmount > 100000000000);
 
     const filtered = this.filterObviousNonPages(sites, seed);
-    await new Promise(r => setTimeout(r, 1))
+    await new Promise(r => setTimeout(r, pauseTimer))
     // console.log(filtered)
-    return filtered;
+    if (response.errors.length === 0) {
+      return {
+        websiteUrls: filtered,
+        fast: false,
+      }
+    } else {
+      return {
+        websiteUrls: filtered,
+        fast: true,
+      }
+    }
+
   };
 
   getUrlsList = (sites: string[], seed: string): string[] => {
@@ -255,20 +290,23 @@ export class UtilsService {
     return filtered;
   };
 
-  waitForCloudflareBypass = async (page: any, timeout = 60000) => {
+  async waitForCloudflareBypass(page: any, timeout = 60000, waitingTimeout = 2000, resolveTimeout = 10000) {
     const start = Date.now();
+
+    const title = await page.title();
+    if (title.includes('...') === false) return
 
     while (Date.now() - start < timeout) {
       const title = await page.title();
       if (title.includes('...') === false) {
         // Challenge passed, page loaded
         console.log('passed');
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        await new Promise((resolve) => setTimeout(resolve, resolveTimeout));
         return;
       }
       // Wait a bit before checking again
       console.log('waiting');
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, waitingTimeout));
     }
 
     throw new Error('Timed out waiting for Cloudflare challenge to complete');
@@ -278,6 +316,7 @@ export class UtilsService {
     console.log(url)
     try {
       const response = await fetch(`${url}.js`)
+      console.log(response.status)
       const json: ShopifyProduct = await response.json() as ShopifyProduct
       const title = json.title
       let mainText = stripHtml(json.description).result

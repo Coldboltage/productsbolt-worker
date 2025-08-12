@@ -3,6 +3,7 @@ import { ProductType } from '../../app.type.js';
 import { UniqueShopType } from '../entities/process.entity.js';
 import { EbayProductDetailDto } from './ebay-product-detail.dto.js';
 import { Type } from 'class-transformer';
+import { SitemapDto } from './sitemap-dto.js';
 
 
 export class CreateProcessDto {
@@ -53,4 +54,8 @@ export class CreateProcessDto {
   @Type(() => EbayProductDetailDto)
   @IsOptional()
   ebayProductDetail?: EbayProductDetailDto
+
+  @ValidateNested()
+  @Type(() => SitemapDto)
+  sitemapEntity: SitemapDto
 }

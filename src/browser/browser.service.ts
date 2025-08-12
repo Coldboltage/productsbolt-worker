@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { connect } from 'puppeteer-real-browser';
 import { JSDOM } from 'jsdom';
 import { UtilsService } from '../utils/utils.service.js';
+import { ShopifyProductCollectionsFullCall } from '../utils/utils.type.js';
 
 
 @Injectable()
@@ -126,4 +127,105 @@ export class BrowserService {
 
     return links;
   };
+
+  async shopifySitemapSearch(websiteUrl: string, category: string): Promise<{ websiteUrls: string[], error: boolean }> {
+    const { browser, page } = await connect({
+      headless: false,
+      args: [],
+      customConfig: {},
+      turnstile: true,
+      connectOption: {},
+      disableXvfb: false,
+      ignoreAllFlags: false,
+    });
+
+
+
+    let pageLength: number
+    const websiteUrls: string[] = []
+    for (let index = 1; pageLength !== 0; index++) {
+
+      let response
+      const url = `${websiteUrl}collections/all/products.json?limit=250&page=${index}`;
+
+      try {
+        // await page.goto(url);
+        try {
+          await page.goto(url, { waitUntil: 'load' });
+          await new Promise(r => setTimeout(r, 100))
+          await this.utilService.waitForCloudflareBypass(page, 10000);
+          response = await page.goto(url);
+
+        } catch (e) {
+          console.log('Error during Cloudflare bypass, continuing anyway');
+        }
+        const status = await response.status()
+        console.log({
+          // title: await response.title(),
+          status,
+          website: websiteUrl,
+          page: index
+        })
+
+        if (status === 429) {
+          console.log({
+            status: response.status(),
+            website: websiteUrl,
+            page: index,
+            error: "429 Error"
+          })
+          await new Promise(r => setTimeout(r, 1000000))
+          await browser.close()
+          return {
+            websiteUrls: websiteUrls,
+            error: true
+          }
+        }
+
+
+      } catch (error) {
+        console.error(response.status)
+      }
+      let json: ShopifyProductCollectionsFullCall
+      try {
+        json = await response.json() as ShopifyProductCollectionsFullCall
+      } catch (error) {
+        pageLength = 0
+        console.log({
+          status: response.status(),
+          website: websiteUrl,
+          page: index,
+          error: "401 Error"
+        })
+        await browser.close()
+        return {
+          websiteUrls: websiteUrls,
+          error: true
+        }
+      }
+
+      if (!json.products || !json || await response.status() >= 400) {
+        console.error({
+          status: response.status(),
+          website: websiteUrl,
+          page: index,
+          error: "Exceeded 100 pages"
+        })
+        pageLength = 0
+        await browser.close()
+        return {
+          websiteUrls: websiteUrls,
+          error: true
+        }
+      }
+      pageLength = json.products.length
+      json.products.forEach(product => websiteUrls.push(`${websiteUrl}${category}/${product.handle}`))
+    }
+    await browser.close()
+    // console.log(websiteUrls)
+    return {
+      websiteUrls: websiteUrls,
+      error: false
+    }
+  }
 }

@@ -12,6 +12,23 @@ export interface ShopifyProduct {
   available: boolean;
 }
 
+export interface ShopifyProductCollections {
+  id: number;
+  title: string;
+  handle: string;
+  body_html: string;
+  published_at: string;
+  created_at: string;
+  updated_at: string;
+  vendor: string;
+  product_type: string;
+}
+
+export interface ShopifyProductCollectionsFullCall {
+  products: ShopifyProductCollections[]
+}
+
+
 export interface Variant {
   id: number;
   product_id: number;

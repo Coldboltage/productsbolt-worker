@@ -15,6 +15,7 @@ import { ProductInStockWithAnalysisStripped, UniqueShopType } from './entities/p
 import { EbayService } from './../ebay/ebay.service.js';
 import crypto from 'node:crypto';
 import { promise } from 'zod';
+import { SitemapDto } from './dto/sitemap-dto.js';
 
 
 @Injectable()
@@ -25,6 +26,10 @@ export class ProcessService {
     private openaiService: OpenaiService,
     private ebayService: EbayService
   ) { }
+
+  async shopifyCollectionsTest(shopDto: ShopDto) {
+    return this.utilService.collectionsTest(`${shopDto.protocol}${shopDto.website}`)
+  }
 
 
   async shopifySearch(shopDto: ShopDto) {
@@ -39,9 +44,6 @@ export class ProcessService {
   }
 
   async hasSitemapChanged(sitemapUrl: string, etag: string) {
-
-
-
     const headers = {}
     if (etag) headers['If-None-Match'] = etag
     const sitemapStatus = await fetch(sitemapUrl, {
@@ -83,13 +85,20 @@ export class ProcessService {
 
   }
 
+  async shopifySitemapSearch(shopDto: ShopDto) {
+    const test = await this.browserService.shopifySitemapSearch(`https://${shopDto.website}`, shopDto.category)
+    // console.log(test)
+    return test
+  }
+
   async sitemapSearch(shopDto: ShopDto) {
+    console.log(shopDto.sitemapEntity)
     // await this.hasSitemapChanged(shopDto.sitemap, shopDto.etag)
-    // throw new Error('lawl')
     const sitemapUrls = await this.utilService.getUrlsFromSitemap(
-      shopDto.sitemap,
+      shopDto.sitemapEntity.sitemap,
       `https://${shopDto.website}${shopDto.category}`,
-      360
+      90,
+      shopDto.sitemapEntity.fast
     );
     return sitemapUrls
   }
@@ -115,7 +124,8 @@ export class ProcessService {
   }
 
   async webpageDiscovery(createProcessDto: CreateProcessDto, mode: string) {
-    const { sitemap, url, category, name, type, context, crawlAmount, shopifySite, shopType, sitemapUrls } = createProcessDto;
+    const { url, category, name, type, context, crawlAmount, shopType } = createProcessDto;
+    const { sitemap, isShopifySite: shopifySite, sitemapUrls, fast } = createProcessDto.sitemapEntity
 
     if (shopType === UniqueShopType.EBAY) {
       const result = await this.ebayService.getUrlsFromApiCall(name, context, type)
@@ -125,7 +135,7 @@ export class ProcessService {
       }
     }
 
-    const result = await this.rotateTest(sitemap, url, category, name, type, context, crawlAmount, sitemapUrls, mode, shopifySite);
+    const result = await this.rotateTest(sitemap, url, category, name, type, context, crawlAmount, sitemapUrls, mode, shopifySite, fast);
     if (result) {
       await this.webDiscoverySend(result, createProcessDto)
       return true
@@ -214,6 +224,7 @@ export class ProcessService {
 
     if (shopifySite) {
       console.log('extractShopifyWebsite activated')
+      await new Promise(r => setTimeout(r, 50))
       const result = await this.utilService.extractShopifyWebsite(url)
       return {
         url,
@@ -278,19 +289,24 @@ export class ProcessService {
     sitemapUrls: string[],
     mode: string,
     shopifySite: boolean,
+    fast: boolean
   ): Promise<ProductInStockWithAnalysisStripped> {
     console.log(`https://${base}${seed}`)
 
-    let foundSitemapUrls: string[] = []
+    let foundSitemapUrls: {
+      websiteUrls: string[];
+      fast: boolean;
+    } = { websiteUrls: [], fast: false };
 
     foundSitemapUrls = await this.utilService.getUrlsFromSitemap(
       sitemap,
       `https://${base}${seed}`,
       crawlAmount,
+      fast,
       sitemapUrls,
     );
 
-    const reducedUrls = this.utilService.reduceSitemap(foundSitemapUrls, query)
+    const reducedUrls = this.utilService.reduceSitemap(foundSitemapUrls.websiteUrls, query)
 
     console.log(`ReducedUrls: ${reducedUrls.length}`)
 

@@ -27,19 +27,21 @@ export class ProcessController {
     }
   }
 
-  @EventPattern('sitemapSearch')
-  async sitemapSearch(@Payload() shopDto: ShopDto,
+  @EventPattern('shopifyCollectionsTest')
+  async shopifyCollectionsTest(@Payload() shopDto: ShopDto,
     @Ctx() context: RmqContext,) {
     const channel = context.getChannelRef();
     const originalMsg = context.getMessage();
 
     try {
-      const result = await this.processService.sitemapSearch(shopDto)
-      if (result.length === 0) throw new NotFoundException(`No sitemap URLs found for shop ${shopDto.id}`);
-      await fetch(`http://localhost:3000/shop/${shopDto.id}`, {
+      await new Promise(r => setTimeout(r, 750))
+      const result = await this.processService.shopifyCollectionsTest(shopDto)
+      console.log(result)
+      // if (result.length === 0) throw new NotFoundException(`No sitemap URLs found for shop ${shopDto.id}`);
+      await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sitemapUrls: result }),
+        body: JSON.stringify({ collections: result }),
       });
       // ACK message on success
       channel.ack(originalMsg);
@@ -49,8 +51,54 @@ export class ProcessController {
       // Optionally nack with requeue false to avoid infinite retry loops
       channel.nack(originalMsg, false, false);
     }
+  }
 
+  @EventPattern('shopifySitemapSearch')
+  async shopifySitemapSearch(@Payload() shopDto: ShopDto,
+    @Ctx() context: RmqContext,) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
 
+    try {
+      const result = await this.processService.shopifySitemapSearch(shopDto)
+      // if (result.length === 0) throw new NotFoundException(`No sitemap URLs found for shop ${shopDto.id}`);
+      await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sitemapUrls: result.websiteUrls, error: result.error }),
+      });
+      // ACK message on success
+      channel.ack(originalMsg);
+    } catch (error) {
+      console.error(error);
+
+      // Optionally nack with requeue false to avoid infinite retry loops
+      channel.nack(originalMsg, false, false);
+    }
+  }
+
+  @EventPattern('sitemapSearch')
+  async sitemapSearch(@Payload() shopDto: ShopDto,
+    @Ctx() context: RmqContext,) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    try {
+      const result = await this.processService.sitemapSearch(shopDto)
+      if (result.websiteUrls.length === 0) throw new NotFoundException(`No sitemap URLs found for shop ${shopDto.id}`);
+      await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sitemapUrls: result.websiteUrls, fast: result.fast }),
+      });
+      // ACK message on success
+      channel.ack(originalMsg);
+    } catch (error) {
+      console.error(error);
+
+      // Optionally nack with requeue false to avoid infinite retry loops
+      channel.nack(originalMsg, false, false);
+    }
   }
 
   @EventPattern('webpageDiscovery')

@@ -1,4 +1,6 @@
-import { IsBoolean, IsNumber, IsString } from "class-validator";
+import { Type } from "class-transformer";
+import { IsBoolean, IsNumber, IsString, ValidateNested } from "class-validator";
+import { SitemapDto } from "./sitemap-dto.js";
 
 export class ShopDto {
   @IsString()
@@ -27,4 +29,8 @@ export class ShopDto {
 
   @IsNumber()
   etagCount: number
+
+  @ValidateNested()
+  @Type(() => SitemapDto)
+  sitemapEntity: SitemapDto
 }
