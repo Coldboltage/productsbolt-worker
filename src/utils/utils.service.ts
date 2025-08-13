@@ -272,7 +272,7 @@ export class UtilsService {
     if (response.errors.length === 0) {
       return {
         websiteUrls: filtered,
-        fast: false,
+        fast: fast === true ? true : false,
       }
     } else {
       return {
