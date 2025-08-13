@@ -22,7 +22,7 @@ async function bootstrap() {
           autoDelete: false,  // <-- add this
         },
         noAck: false,        // <-- manual ack mode
-        prefetchCount: 20,   // <-- cap concurrency
+        prefetchCount: +process.env.HEADFUL_CONCURRENNCY,   // <-- cap concurrency
       },
     },
   );
