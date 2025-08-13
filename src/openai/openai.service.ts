@@ -259,11 +259,11 @@ The product type should reflect the actual item sold to the customer, not merely
           analysis: {
             type: 'string',
             description:
-              'Using the product page, very concisely break down rational if the product is available or not and in what capacity. Usually if it says Notify when in stock or in those lines, it is not in stock'
+              'Using the product page, very concisely break down rational if the product is available or not and in what capacity. Usually if it says Notify when in stock or in those lines, it is not in stock. A product will not be deemed instock if the request for notification is in place as it is impossible to acquire stock at this point. If the product can be pre-ordered and there isnt any gates to that, then it is deemed instock as the mechanism for me to number in the amount of orders or preorders I wish, is available'
           },
           inStock: {
             type: 'boolean',
-            description: 'Using the analysis, confirm true if the item is currently in stock or preorder is available and available for purchase. If it says something like Notify when in stock, the product is not in stock'
+            description: 'Using the analysis, confirm true if the item is currently in stock or preorder is available and available for purchase. If it says something like Notify when in stock, the product is not in stock. If the page is undefined, we have to assume it is out of stock. If the product has a notify me or request notification, it is not instock'
           },
           price: {
             type: 'number',

@@ -50,7 +50,6 @@ export class UtilsService {
 
       return cleaned.split(/\s+/);            // ['magic','the','gathering','assassins','creed','collector','booster','box']
     };
-
     const requiredMatches = (n: number) => Math.max(1, Math.floor((3 / 5) * n));
 
     const countMatches = (productKeys: string[], queryKeys: string[]) =>

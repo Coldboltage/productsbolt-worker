@@ -228,7 +228,7 @@ export class ProcessService {
       const result = await this.utilService.extractShopifyWebsite(url)
       return {
         url,
-        inStock: result.available,
+        inStock: result.available ? result.available : false,
         price: result.price / 100,
         productName: query,
         specificUrl: url,
