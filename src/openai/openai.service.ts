@@ -214,6 +214,11 @@ The product type should reflect the actual item sold to the customer, not merely
       // model: `gpt-5-nano`,
       // reasoning_effort: "low",
       // temperature: 0,
+      top_p: 1,
+      presence_penalty: 0,
+      frequency_penalty: 0,
+      n: 1,
+      seed: 42,
       messages: [
         {
           role: 'system',
@@ -258,21 +263,20 @@ The product type should reflect the actual item sold to the customer, not merely
         properties: {
           analysis: {
             type: 'string',
-            description:
-              `
-Using the product page, very concisely explain if the product is available and in what capacity.
-- If the page says "Notify when in stock", "Request notification", or similar, it is not in stock.
-- A preorder is considered available only if there is a visible purchase mechanism such as an "Add to cart" or "Preorder now" button with no restrictions on quantity.
-- A release date or price alone, without the ability to place an order, is not considered available.
-`
+            description: `
+    Using the product page, state if the product can be ordered right now and how.
+    - Consider "available" (including preorder) ONLY if there is a visible, enabled purchase mechanism such as "Add to cart", "Buy now", or "Preorder now" with quantity selection.
+    - If the page only shows "Notify me", "Request notification", a date, or a price with no purchase button, it is NOT available.
+    - If uncertain, assume NOT available.
+    `
           },
           inStock: {
             type: 'boolean',
             description: `
-True only if the product can be purchased now or preordered through a visible purchase mechanism with quantity selection.
-False if there is only a "Notify me" option, only a release date, or no way to place an order.
-If the page is undefined, assume false.
-`
+    True ONLY if a visible, enabled purchase mechanism exists (e.g., "Add to cart", "Buy now", "Preorder now") with quantity selection.
+    False if there is only "Notify me"/"Request notification", only a release date, the purchase button is disabled/hidden, or ordering is otherwise impossible.
+    If the page is undefined or ambiguous, assume false.
+    `
           },
           price: {
             type: 'number',
@@ -291,6 +295,11 @@ If the page is undefined, assume false.
     const openAiResponse = await openai.chat.completions.create({
       model: `gpt-4.1-${mode}`,
       temperature: 0,
+      top_p: 1,
+      presence_penalty: 0,
+      frequency_penalty: 0,
+      n: 1,
+      seed: 42,
       messages: [
         {
           role: 'system',

@@ -318,6 +318,7 @@ export class ProcessService {
     );
 
     for (const singleUrl of bestSites) {
+      if (singleUrl.score <= 0.9) continue
       console.log(`${singleUrl.url}`);
       const answer = await this.test(`${singleUrl.url}`, query, type, "mini", context, shopifySite);
       if (answer) {
@@ -327,6 +328,9 @@ export class ProcessService {
         return answer;
       }
     }
+
+    // Temp change to see if odd websites do not get added
+    throw new Error('no_site_found')
     if (shopifySite) throw new Error('nothing_else_to_do')
 
     const bestSitesAllLinks = [];
