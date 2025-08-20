@@ -91,6 +91,10 @@ export class ProcessService {
     return test
   }
 
+  async manualSitemapSearch(shopDto: ShopDto) {
+    const result = await this.browserService.manualSitemapSearch(shopDto.sitemapEntity.sitemap)
+  }
+
   async sitemapSearch(shopDto: ShopDto) {
     console.log(shopDto.sitemapEntity)
     // await this.hasSitemapChanged(shopDto.sitemap, shopDto.etag)

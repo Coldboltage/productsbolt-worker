@@ -77,6 +77,23 @@ export class ProcessController {
     }
   }
 
+  // Whenever a sitemap can not be found, we will use crawlee
+  @EventPattern('manualSitemapSearch')
+  async manualSitemapSearch(@Payload() shopDto: ShopDto, @Ctx() context: RmqContext) {
+    const channel = context.getChannelRef()
+    const originalMsg = context.getMessage()
+
+    let result: any
+
+    try {
+      const result = await this.processService.manualSitemapSearch(shopDto)
+      // If successful and group of links found, send back
+      await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`)
+    } catch (error) {
+
+    }
+  }
+
   @EventPattern('sitemapSearch')
   async sitemapSearch(@Payload() shopDto: ShopDto,
     @Ctx() context: RmqContext,) {

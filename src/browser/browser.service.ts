@@ -3,11 +3,31 @@ import { connect } from 'puppeteer-real-browser';
 import { JSDOM } from 'jsdom';
 import { UtilsService } from '../utils/utils.service.js';
 import { ShopifyProductCollectionsFullCall } from '../utils/utils.type.js';
+import { Dataset, PlaywrightCrawler } from 'crawlee';
 
 
 @Injectable()
 export class BrowserService {
   constructor(private utilService: UtilsService) { }
+
+  async manualSitemapSearch(manualSitemapUrl: string) {
+    const crawler = new PlaywrightCrawler({
+      async requestHandler({ page, pushData }) {
+        const links: string[] = await page.$$eval('a', (anchor: Element[]) => {
+          return anchor.map(anchor => (anchor as HTMLAnchorElement).href);
+        });
+        for (const url of links) await pushData({ url })
+      }, headless: false
+    })
+    await crawler.run([manualSitemapUrl])
+
+
+    const dataset = await Dataset.open();
+    const { items } = await dataset.getData();
+    console.log(items);
+    return items
+  }
+
   getPageInfo = async (
     url: string,
   ): Promise<{ html: string; mainText: string }> => {
