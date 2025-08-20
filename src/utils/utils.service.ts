@@ -157,7 +157,7 @@ export class UtilsService {
   }
 
   async collectionsTest(websiteUrl: string) {
-    const response = await fetch(`${websiteUrl}/collections/all/products.json?limit=250`)
+    const response = await fetch(`${websiteUrl}collections/all/products.json?limit=250`)
     const status = response.status
     console.log({
       status,
