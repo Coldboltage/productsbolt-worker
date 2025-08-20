@@ -11,21 +11,26 @@ export class BrowserService {
   constructor(private utilService: UtilsService) { }
 
   async manualSitemapSearch(manualSitemapUrl: string) {
-    const crawler = new PlaywrightCrawler({
-      async requestHandler({ page, pushData }) {
-        const links: string[] = await page.$$eval('a', (anchor: Element[]) => {
-          return anchor.map(anchor => (anchor as HTMLAnchorElement).href);
-        });
-        for (const url of links) await pushData({ url })
-      }, headless: false
-    })
-    await crawler.run([manualSitemapUrl])
+    console.log(manualSitemapUrl)
+    // const crawler = new PlaywrightCrawler({
+    //   async requestHandler({ page, pushData }) {
+    //     console.log('fired')
+    //     const links: string[] = await page.$$eval('a', (anchor: Element[]) => {
+    //       return anchor.map(anchor => (anchor as HTMLAnchorElement).href);
+    //     });
+    //     for (const url of links) await pushData({ url })
+    //   }
+    // })
+    // console.log("hmm")
+    // await crawler.run([manualSitemapUrl])
 
 
-    const dataset = await Dataset.open();
-    const { items } = await dataset.getData();
-    console.log(items);
-    return items
+    // const dataset = await Dataset.open();
+    // const { items } = await dataset.getData();
+    // console.log(items);
+
+    const result = await this.getPageInfo(manualSitemapUrl)
+    return result
   }
 
   getPageInfo = async (

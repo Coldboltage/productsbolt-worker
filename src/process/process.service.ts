@@ -92,7 +92,10 @@ export class ProcessService {
   }
 
   async manualSitemapSearch(shopDto: ShopDto) {
-    const result = await this.browserService.manualSitemapSearch(shopDto.sitemapEntity.sitemap)
+    const links = await this.browserService.getLinksFromPage(shopDto.sitemapEntity.sitemap)
+    console.log(links)
+    const cleanLinks = this.utilService.filterObviousNonPages(links, shopDto.sitemapEntity.sitemap)
+    return cleanLinks
   }
 
   async sitemapSearch(shopDto: ShopDto) {
