@@ -5,7 +5,6 @@ import { UpdateProcessDto } from './dto/update-process.dto.js';
 import { ProcessService } from './process.service.js';
 import { CheckPageDto } from './dto/check-page.dto.js';
 import { ShopDto } from './dto/shop.dto.js';
-import { NotFoundError } from 'rxjs';
 
 
 @Controller()
