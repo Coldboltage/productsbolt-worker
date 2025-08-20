@@ -34,7 +34,7 @@ export class ProcessService {
 
   async shopifySearch(shopDto: ShopDto) {
     const result = await this.browserService.isShopifySite(`${shopDto.protocol}${shopDto.website}`)
-    const setup = await fetch(`http://localhost:3000/shop/${shopDto.id}`, {
+    const setup = await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isShopifySite: result }),
