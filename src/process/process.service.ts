@@ -94,7 +94,8 @@ export class ProcessService {
   async manualSitemapSearch(shopDto: ShopDto) {
     const links = await this.browserService.getLinksFromPage(shopDto.sitemapEntity.sitemap)
     console.log(links)
-    const cleanLinks = this.utilService.filterObviousNonPages(links, shopDto.sitemapEntity.sitemap)
+    console.log(shopDto.website)
+    const cleanLinks = this.utilService.filterObviousNonPages(links, `https://${shopDto.website}`)
     return cleanLinks
   }
 
