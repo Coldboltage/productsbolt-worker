@@ -14,8 +14,6 @@ import { ShopDto } from './dto/shop.dto.js';
 import { ProductInStockWithAnalysisStripped, UniqueShopType } from './entities/process.entity.js';
 import { EbayService } from './../ebay/ebay.service.js';
 import crypto from 'node:crypto';
-import { promise } from 'zod';
-import { SitemapDto } from './dto/sitemap-dto.js';
 
 
 @Injectable()
@@ -39,6 +37,12 @@ export class ProcessService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isShopifySite: result }),
     });
+    if (result === true) {
+      await fetch(`http://localhost:3000/sitemap/test-shopify-site-collection/${shopDto.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
     if (setup.ok === true) return true
     throw new Error('update_to_server_failed')
   }
