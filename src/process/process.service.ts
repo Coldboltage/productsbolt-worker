@@ -92,11 +92,23 @@ export class ProcessService {
   }
 
   async manualSitemapSearch(shopDto: ShopDto) {
-    const links = await this.browserService.getLinksFromPage(shopDto.sitemapEntity.sitemap)
-    console.log(links)
-    console.log(shopDto.website)
-    const cleanLinks = this.utilService.filterObviousNonPages(links, `https://${shopDto.website}`)
-    return cleanLinks
+    const checkSitemapUrlsCombined: string[] = [shopDto.sitemapEntity.sitemap]
+    const urls: string[] = [
+
+    ]
+    if (shopDto.sitemapEntity.additionalSitemaps.length > 0) {
+      checkSitemapUrlsCombined.push(...shopDto.sitemapEntity.additionalSitemaps)
+    }
+
+    for (const sitemapUrl of checkSitemapUrlsCombined) {
+      const links = await this.browserService.getLinksFromPage(sitemapUrl)
+      console.log(links)
+      console.log(shopDto.website)
+      const cleanLinks = this.utilService.filterObviousNonPages(links, `https://${shopDto.website}`)
+      urls.push(...cleanLinks)
+    }
+
+    return urls
   }
 
   async sitemapSearch(shopDto: ShopDto) {
