@@ -93,9 +93,10 @@ export class ProcessService {
 
   async manualSitemapSearch(shopDto: ShopDto) {
     const checkSitemapUrlsCombined: string[] = [shopDto.sitemapEntity.sitemap]
-    const urls: string[] = [
+    const urls: string[] = []
 
-    ]
+    console.log(shopDto.sitemapEntity)
+
     if (shopDto.sitemapEntity.additionalSitemaps.length > 0) {
       checkSitemapUrlsCombined.push(...shopDto.sitemapEntity.additionalSitemaps)
     }
