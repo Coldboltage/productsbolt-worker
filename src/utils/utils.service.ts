@@ -120,9 +120,11 @@ export class UtilsService {
     console.log(`Before startsWith: ${urls.length}`)
     const filteredByPrefix = urls.filter((url) => {
 
+      // return url.startsWith(prefix)
       return url.startsWith(prefix)
+
     });
-    console.log(prefix)
+    console.log(`prefix is: ${prefix}`)
     console.log('After prefix filter:', filteredByPrefix.length);
 
     // Step 2: Filter out URLs ending with excluded extensions
