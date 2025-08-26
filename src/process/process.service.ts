@@ -101,15 +101,16 @@ export class ProcessService {
 
     console.log(shopDto.sitemapEntity)
 
-    if (shopDto.sitemapEntity.additionalSitemaps.length > 0) {
+    if (shopDto.sitemapEntity.additionalSitemaps && shopDto.sitemapEntity.additionalSitemaps.length > 0) {
       checkSitemapUrlsCombined.push(...shopDto.sitemapEntity.additionalSitemaps)
     }
 
     for (const sitemapUrl of checkSitemapUrlsCombined) {
       const links = await this.browserService.getLinksFromPage(sitemapUrl)
-      console.log(links)
       console.log(shopDto.website)
       const cleanLinks = this.utilService.filterObviousNonPages(links, `https://${shopDto.website}`)
+      console.log(`Found ${cleanLinks.length} links in sitemap ${sitemapUrl}`)
+      console.log(cleanLinks)
       urls.push(...cleanLinks)
     }
 
