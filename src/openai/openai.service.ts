@@ -274,7 +274,7 @@ The product type should reflect the actual item sold to the customer, not merely
             type: 'boolean',
             description: `
     True ONLY if a visible, enabled purchase mechanism exists (e.g., "Add to cart", "Buy now", "Preorder now") with quantity selection.
-    False if there is only "Notify me"/"Request notification", only a release date, the purchase button is disabled/hidden, or ordering is otherwise impossible. It should also be false if SOLD OUT TO PRE-ORDER.
+    False if there is only "Notify me"/"Request notification", only a release date, the purchase button is disabled/hidden, or ordering is otherwise impossible. It should also be false if SOLD OUT TO PRE-ORDER found.
     If the page is undefined or ambiguous, assume false.
     `
           },
