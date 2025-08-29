@@ -252,7 +252,11 @@ The product type should reflect the actual item sold to the customer, not merely
     type: ProductType,
     mode: string
 
-  ) => {
+  ): Promise<{
+    analysis: string,
+    inStock: string,
+    price: number
+  }> => {
     const openai = new OpenAI();
 
     const schema = {
@@ -292,6 +296,9 @@ The product type should reflect the actual item sold to the customer, not merely
       }
     };
 
+    // 'analysis',
+    // 'inStock',
+    // 'price',
     const openAiResponse = await openai.chat.completions.create({
       model: `gpt-4.1-${mode}`,
       temperature: 0,

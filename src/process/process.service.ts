@@ -299,6 +299,7 @@ export class ProcessService {
 
     console.log(`Token count: ${tokens.length}`);
 
+    if (url.includes('games-island')) answer.price = answer.price * 0.81
 
     return { ...answer, specificUrl: url };
 
