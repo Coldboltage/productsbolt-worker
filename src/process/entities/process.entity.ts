@@ -38,5 +38,14 @@ export interface Justification {
   isNamedProduct: string;
   productTypeMatchStrict: string;
   variantMatchStrict: string;
+}
 
+export interface TestTwoInterface {
+  url: string;
+    inStock: boolean;
+    price: number;
+    productName: string;
+    specificUrl: string;
+    hash: string;
+    count: number;
 }

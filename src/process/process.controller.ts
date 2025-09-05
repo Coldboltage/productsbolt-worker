@@ -176,9 +176,11 @@ export class ProcessController {
         price: result.price,
         productName: query,
         webPageId: checkPageDto.webPageId,
+        hash: result.hash,
+        count: result.count
       };
       console.log(webPage);
-      await fetch(`http://localhost:3000/webpage/${webPage.webPageId}`, {
+      await fetch(`http://localhost:3000/webpage/update-single-page-and-cache/${webPage.webPageId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(webPage),

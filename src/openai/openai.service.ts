@@ -254,7 +254,7 @@ The product type should reflect the actual item sold to the customer, not merely
 
   ): Promise<{
     analysis: string,
-    inStock: string,
+    inStock: boolean,
     price: number
   }> => {
     const openai = new OpenAI();

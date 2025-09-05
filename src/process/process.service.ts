@@ -11,7 +11,7 @@ import { UpdateProcessDto } from './dto/update-process.dto.js';
 import { CheckPageDto } from './dto/check-page.dto.js';
 import { encoding_for_model } from '@dqbd/tiktoken';
 import { ShopDto } from './dto/shop.dto.js';
-import { ProductInStockWithAnalysisStripped, UniqueShopType } from './entities/process.entity.js';
+import { ProductInStockWithAnalysisStripped, TestTwoInterface, UniqueShopType } from './entities/process.entity.js';
 import { EbayService } from './../ebay/ebay.service.js';
 import crypto from 'node:crypto';
 
@@ -237,7 +237,7 @@ export class ProcessService {
     console.error(answer)
   }
 
-  async testTwo(url: string, query: string, type: ProductType, mode: string, shopifySite) {
+  async testTwo(url: string, query: string, type: ProductType, mode: string, shopifySite, hash: string, confirmed: boolean, count: number): Promise<TestTwoInterface> {
     // Note, the html discovery part should be it's own function
     // This is for testing for now
     // Think the router has to be added here
@@ -258,6 +258,8 @@ export class ProcessService {
         price: result.price / 100,
         productName: query,
         specificUrl: url,
+        hash: "",
+        count: 0,
       }
     } else {
       console.log('getPageInfo activated')
@@ -282,6 +284,13 @@ export class ProcessService {
       mode
     })
 
+    // Create Hash from maintext. We shall assume this text must change if something has changed
+    const currentHash = crypto.createHash('sha256').update(allText).digest('hex')
+
+    if (currentHash === hash && confirmed === true) {
+      throw new Error('no-need-to-continue')
+    }
+
     const answer = await this.openaiService.checkProduct(
       title,
       allText,
@@ -301,7 +310,7 @@ export class ProcessService {
 
     if (url.includes('games-island')) answer.price = Math.round(answer.price * 0.81)
 
-    return { ...answer, specificUrl: url };
+    return { ...answer,productName: query, specificUrl: url, url, hash, count: count };
 
   }
 
@@ -438,7 +447,7 @@ export class ProcessService {
   }
 
   async updatePage(checkPageDto: CheckPageDto) {
-    const result = await this.testTwo(checkPageDto.url, checkPageDto.query, checkPageDto.type, "mini", checkPageDto.shopifySite)
+    const result = await this.testTwo(checkPageDto.url, checkPageDto.query, checkPageDto.type, "mini", checkPageDto.shopifySite, checkPageDto.hash, checkPageDto.confirmed, checkPageDto.count)
     return result
   }
 
