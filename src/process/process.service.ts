@@ -237,7 +237,7 @@ export class ProcessService {
     console.error(answer)
   }
 
-  async testTwo(url: string, query: string, type: ProductType, mode: string, shopifySite, hash: string, confirmed: boolean, count: number): Promise<TestTwoInterface> {
+  async testTwo(url: string, query: string, type: ProductType, mode: string, shopifySite: boolean, hash: string, confirmed: boolean, count: number,): Promise<TestTwoInterface> {
     // Note, the html discovery part should be it's own function
     // This is for testing for now
     // Think the router has to be added here
@@ -258,8 +258,9 @@ export class ProcessService {
         price: result.price / 100,
         productName: query,
         specificUrl: url,
-        hash: "",
+        hash: "shopify",
         count: 0,
+        shopifySite
       }
     } else {
       console.log('getPageInfo activated')
@@ -288,8 +289,13 @@ export class ProcessService {
     const currentHash = crypto.createHash('sha256').update(allText).digest('hex')
 
     if (currentHash === hash && confirmed === true) {
+      console.log({
+        message: 'no-need-to-continue',
+        webpage: url
+      })
       throw new Error('no-need-to-continue')
     }
+    hash = currentHash
 
     const answer = await this.openaiService.checkProduct(
       title,
@@ -310,7 +316,7 @@ export class ProcessService {
 
     if (url.includes('games-island')) answer.price = Math.round(answer.price * 0.81)
 
-    return { ...answer,productName: query, specificUrl: url, url, hash, count: count };
+    return { ...answer,productName: query, specificUrl: url, url, hash, count: count, shopifySite };
 
   }
 

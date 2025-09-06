@@ -177,10 +177,11 @@ export class ProcessController {
         productName: query,
         webPageId: checkPageDto.webPageId,
         hash: result.hash,
-        count: result.count
+        count: result.count,
+        shopifySite: result.shopifySite
       };
       console.log(webPage);
-      await fetch(`http://localhost:3000/webpage/update-single-page-and-cache/${webPage.webPageId}`, {
+      await fetch(`http://localhost:3000/webpage-cache/update-single-page-and-cache/${webPage.webPageId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(webPage),

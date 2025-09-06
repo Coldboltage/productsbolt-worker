@@ -48,4 +48,5 @@ export interface TestTwoInterface {
     specificUrl: string;
     hash: string;
     count: number;
+    shopifySite: boolean
 }
