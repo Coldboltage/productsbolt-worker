@@ -46,6 +46,17 @@ export class BrowserService {
       ignoreAllFlags: false,
     });
 
+    await page.setRequestInterception(true);
+
+    page.on("request", (req) => {
+      const block = ["image", "stylesheet", "font", "media", "other"];
+      if (block.includes(req.resourceType())) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+
     // Promise that resolves with the page content and mainText
     const pageTask = (async () => {
       await page.goto(url, { waitUntil: ['networkidle2'], timeout: 60000 });
