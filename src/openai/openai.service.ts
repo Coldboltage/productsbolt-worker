@@ -388,12 +388,16 @@ The product type should reflect the actual item sold to the customer, not merely
         {
           "type": "object",
           "properties": {
+           "analysis": {
+              "type": "string"
+              "description": "justification to why product either in stock or not tldr"
+            },
             "inStock": {
               "type": "boolean"
             },
             "price": {
               "type": "number"
-            }
+            },
           },
           "required": [
             "inStock",
