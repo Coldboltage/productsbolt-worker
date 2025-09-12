@@ -347,7 +347,7 @@ The product type should reflect the actual item sold to the customer, not merely
     price: number
   }> => {
     const openai = new OpenAI({
-      baseURL: "http://127.0.0.1:1234/v1"
+      baseURL: "http://192.168.1.204:1234/v1"
     });
 
 
