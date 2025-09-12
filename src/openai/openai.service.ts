@@ -390,7 +390,7 @@ The product type should reflect the actual item sold to the customer, not merely
           "properties": {
            "analysis": {
               "type": "string"
-              "description": "justification to why product either in stock or not tldr"
+              "description": "justification to why product either in stock or not tldr. Click here to be notified when it’s back in stock is considered out of stock"
             },
             "inStock": {
               "type": "boolean"
