@@ -346,16 +346,15 @@ The product type should reflect the actual item sold to the customer, not merely
     inStock: boolean,
     price: number
   }> => {
-    const openai = new OpenAI({
-      baseURL: "http://192.168.1.204:1234/v1"
-    });
+    const openai = new OpenAI();
 
+    if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
     // 'analysis',
     // 'inStock',
     // 'price',
     const openAiResponse = await openai.chat.completions.create({
-      model: "openai/gpt-oss-20b",
+      model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
       temperature: 0,
       top_p: 1,
       presence_penalty: 0,
