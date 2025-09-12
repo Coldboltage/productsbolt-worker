@@ -49,7 +49,7 @@ export class BrowserService {
     await page.setRequestInterception(true);
 
     page.on("request", (req) => {
-      const block = ["image", "stylesheet", "font", "media", "other"];
+      const block = ["image", "font", "media", "other"];
       if (block.includes(req.resourceType())) {
         req.abort();
       } else {
