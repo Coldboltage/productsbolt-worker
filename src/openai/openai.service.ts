@@ -245,6 +245,95 @@ The product type should reflect the actual item sold to the customer, not merely
   };
 
 
+  //   checkProduct = async (
+  //     title: string,
+  //     content: string,
+  //     productName: string,
+  //     type: ProductType,
+  //     mode: string
+
+  //   ): Promise<{
+  //     analysis: string,
+  //     inStock: boolean,
+  //     price: number
+  //   }> => {
+  //     const openai = new OpenAI({
+  //       baseURL: "http://127.0.0.1:1234/v1"
+  //     });
+
+  //     const schema = {
+  //       name: 'product_update',
+  //       strict: true,
+  //       schema: {
+  //         type: 'object',
+  //         properties: {
+  //           analysis: {
+  //             type: 'string',
+  //             description: `
+  //     Using the product page, state if the product can be ordered right now and how.
+  //     - Consider "available" (including preorder) ONLY if there is a visible, enabled purchase mechanism such as "Add to cart", "Buy now", or "Preorder now" with quantity selection.
+  //     - If the page only shows "Notify me", "Request notification", a date, or a price with no purchase button, it is NOT available.
+  //     - If uncertain, assume NOT available.
+  //     `
+  //           },
+  //           inStock: {
+  //             type: 'boolean',
+  //             description: `
+  //     True ONLY if a visible, enabled purchase mechanism exists (e.g., "Add to cart", "Buy now", "Preorder now") with quantity selection.
+  //     False if there is only "Notify me"/"Request notification", only a release date, the purchase button is disabled/hidden, or ordering is otherwise impossible. It should also be false if SOLD OUT TO PRE-ORDER found.
+  //     If the page is undefined or ambiguous, assume false.
+  //     `
+  //           },
+  //           price: {
+  //             type: 'number',
+  //             description: 'The numeric price of the product, without currency symbol.'
+  //           },
+  //         },
+  //         required: [
+  //           'analysis',
+  //           'inStock',
+  //           'price',
+  //         ],
+  //         additionalProperties: false
+  //       }
+  //     };
+
+  //     // 'analysis',
+  //     // 'inStock',
+  //     // 'price',
+  //     const openAiResponse = await openai.chat.completions.create({
+  //       model: `gpt-4.1-${mode}`,
+  //       temperature: 0,
+  //       top_p: 1,
+  //       presence_penalty: 0,
+  //       frequency_penalty: 0,
+  //       n: 1,
+  //       seed: 42,
+  //       messages: [
+  //         {
+  //           role: 'system',
+  //           content:
+  //             'Your task is to extract structured product page information. Always verify product name match and ensure the product type (e.g., box or pack) is strictly respected.',
+  //         },
+  //         {
+  //           role: 'user',
+  //           content: `
+  //           From the page content, find if the product is in stock and its price.
+  // Product title: "${title}"
+  // Page content: ${content}
+  // `,
+  //         },
+  //       ],
+  //       response_format: {
+  //         type: 'json_schema',
+  //         json_schema: schema
+  //       }
+  //     });
+
+  //     const productResponse = JSON.parse(openAiResponse.choices[0].message?.content || '{}');
+  //     return productResponse;
+  //   };
+
   checkProduct = async (
     title: string,
     content: string,
@@ -257,50 +346,16 @@ The product type should reflect the actual item sold to the customer, not merely
     inStock: boolean,
     price: number
   }> => {
-    const openai = new OpenAI();
+    const openai = new OpenAI({
+      baseURL: "http://127.0.0.1:1234/v1"
+    });
 
-    const schema = {
-      name: 'product_update',
-      strict: true,
-      schema: {
-        type: 'object',
-        properties: {
-          analysis: {
-            type: 'string',
-            description: `
-    Using the product page, state if the product can be ordered right now and how.
-    - Consider "available" (including preorder) ONLY if there is a visible, enabled purchase mechanism such as "Add to cart", "Buy now", or "Preorder now" with quantity selection.
-    - If the page only shows "Notify me", "Request notification", a date, or a price with no purchase button, it is NOT available.
-    - If uncertain, assume NOT available.
-    `
-          },
-          inStock: {
-            type: 'boolean',
-            description: `
-    True ONLY if a visible, enabled purchase mechanism exists (e.g., "Add to cart", "Buy now", "Preorder now") with quantity selection.
-    False if there is only "Notify me"/"Request notification", only a release date, the purchase button is disabled/hidden, or ordering is otherwise impossible. It should also be false if SOLD OUT TO PRE-ORDER found.
-    If the page is undefined or ambiguous, assume false.
-    `
-          },
-          price: {
-            type: 'number',
-            description: 'The numeric price of the product, without currency symbol.'
-          },
-        },
-        required: [
-          'analysis',
-          'inStock',
-          'price',
-        ],
-        additionalProperties: false
-      }
-    };
 
     // 'analysis',
     // 'inStock',
     // 'price',
     const openAiResponse = await openai.chat.completions.create({
-      model: `gpt-4.1-${mode}`,
+      model: "openai/gpt-oss-20b",
       temperature: 0,
       top_p: 1,
       presence_penalty: 0,
@@ -311,27 +366,50 @@ The product type should reflect the actual item sold to the customer, not merely
         {
           role: 'system',
           content:
-            'Your task is to extract structured product page information. Always verify product name match and ensure the product type (e.g., box or pack) is strictly respected.',
+            `Your task is to extract structured product page information. Always verify product name match and ensure the product type (e.g., box or pack) is strictly respected.
+            
+            - Do not add \`\`\`json fences.
+            - Do not add explanations.
+            - Do not add extra text.
+            Just return valid JSON according to the schema.
+            `,
         },
         {
           role: 'user',
           content: `
-          From the page content, find if the product is in stock and its price.
-Product title: "${title}"
-Page content: ${content}
-`,
+        From the page content, find if the product is in stock and its price.
+        Product title: "${title}"
+        Page content: ${content}
+
+        ---
+
+        Output JSON 
+
+        {
+          "type": "object",
+          "properties": {
+            "inStock": {
+              "type": "boolean"
+            },
+            "price": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "inStock",
+            "price"
+          ]
+        }
+        `,
         },
       ],
-      response_format: {
-        type: 'json_schema',
-        json_schema: schema
-      }
     });
+
+    console.log(openAiResponse.choices[0].message?.content || '{}')
 
     const productResponse = JSON.parse(openAiResponse.choices[0].message?.content || '{}');
     return productResponse;
   };
-
   crawlFromSitemap = async (
     sitemapUrls: string[],
     query: string,
