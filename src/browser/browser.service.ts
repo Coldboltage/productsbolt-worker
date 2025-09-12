@@ -69,6 +69,7 @@ export class BrowserService {
 
       const html = await page.content();
       const mainText = await page.evaluate(() => {
+        document.querySelectorAll("header, footer, nav, aside").forEach(el => el.remove());
         const main = document.querySelector('main') || document.body;
         return main.innerText;
       });
