@@ -386,20 +386,32 @@ The product type should reflect the actual item sold to the customer, not merely
         Output JSON 
 
         {
-          "type": "object",
-          "properties": {
-            "inStock": {
-              "type": "boolean"
-            },
-            "price": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "inStock",
-            "price"
-          ]
-        }
+  "name": "product_update",
+  "strict": true,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "analysis": {
+        "type": "string",
+        "description": "Using the product page, state if the product can be ordered right now and how.\n- Consider \"available\" (including preorder) ONLY if there is a visible, enabled purchase mechanism such as \"Add to cart\", \"Buy now\", or \"Preorder now\" with quantity selection.\n- If the page only shows \"Notify me\", \"Request notification\", a date, or a price with no purchase button, it is NOT available.\n- If uncertain, assume NOT available."
+      },
+      "inStock": {
+        "type": "boolean",
+        "description": "True ONLY if a visible, enabled purchase mechanism exists (e.g., \"Add to cart\", \"Buy now\", \"Preorder now\") with quantity selection.\nFalse if there is only \"Notify me\"/\"Request notification\", only a release date, the purchase button is disabled/hidden, or ordering is otherwise impossible. It should also be false if SOLD OUT TO PRE-ORDER found.\nIf the page is undefined or ambiguous, assume false."
+      },
+      "price": {
+        "type": "number",
+        "description": "The numeric price of the product, without currency symbol."
+      }
+    },
+    "required": [
+      "analysis",
+      "inStock",
+      "price"
+    ],
+    "additionalProperties": false
+  }
+}
         `,
         },
       ],
