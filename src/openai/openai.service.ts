@@ -384,7 +384,7 @@ The product type should reflect the actual item sold to the customer, not merely
 
         ---
 
-        Output JSON 
+        Output JSON ouput single object
 
         {
           "type": "object",
