@@ -1,4 +1,6 @@
-import { IsEnum, IsString, IsUUID } from "class-validator";
+import { IsEnum, IsString, IsUUID, ValidateNested } from "class-validator";
+import { Type } from 'class-transformer';
+import { EbayStatDto } from "./ebayStat.dto.js";
 
 export enum ProductType {
   PACK = 'PACK',
@@ -20,5 +22,9 @@ export class ProductDto {
 
   @IsString()
   context: string
+
+  @ValidateNested()
+  @Type(() => EbayStatDto)
+  ebayStat: EbayStatDto
 }
 

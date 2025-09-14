@@ -208,9 +208,13 @@ export class ProcessController {
     const originalMsg = context.getMessage();
 
     try {
+      // console.log(productDto)
       const result = await this.processService.ebayStatCalc(productDto)
       console.log(result)
+      channel.ack(originalMsg);
+
     } catch (error) {
+      channel.nack(originalMsg, false, false);
 
     }
   }

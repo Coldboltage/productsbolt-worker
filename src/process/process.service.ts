@@ -462,6 +462,23 @@ export class ProcessService {
   async ebayStatCalc(product: ProductDto) {
     const ebayProductPrices: EbayProductStrip[] = await this.ebayService.productPrices(product)
     const pricePoints = await this.openaiService.ebayPricePoint(ebayProductPrices, product.name)
+
+    const pricePointTest = {
+      minPrice: pricePoints.minPrice,
+      averagePrice: pricePoints.averagePrice,
+      maxPrice: pricePoints.maxPrice
+    }
+
+    // Temp for test
+    try {
+      await fetch(`http://localhost:3000/ebay-stats/patch-and-update-price-points/${product.ebayStat.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pricePointTest),
+      })
+    } catch (error) {
+      console.error(error)
+    }
     return pricePoints
   }
 

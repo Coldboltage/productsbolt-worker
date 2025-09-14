@@ -11,12 +11,12 @@ import { ProductDto } from '../process/dto/product.dto.js';
 @Injectable()
 export class EbayService implements OnModuleInit {
   async onModuleInit() {
-    try {
-      const test = await this.getUrlsFromApiCall('Magic: The Gathering MTG - Final Fantasy Collector Booster Box', 'Magic: The Gathering MTG - Final Fantasy Collector Booster Box', 'TCG')
-      console.log(test)
-    } catch (error) {
-      console.log(error)
-    }
+    // try {
+    //   const test = await this.getUrlsFromApiCall('Magic: The Gathering MTG - Final Fantasy Collector Booster Box', 'Magic: The Gathering MTG - Final Fantasy Collector Booster Box', 'TCG')
+    //   console.log(test)
+    // } catch (error) {
+    //   console.log(error)
+    // }
   }
   create(createEbayDto: CreateEbayDto) {
     return 'This action adds a new ebay';
@@ -31,7 +31,7 @@ export class EbayService implements OnModuleInit {
       appid: process.env.EBAY_APPID,
       certId: process.env.EBAY_CERTID
     })
-    // const apiKey = await this.getApiKey(process.env.EBAY_APPID, process.env.EBAY_CERTID)
+    const apiKeyTest = await this.getApiKey(process.env.EBAY_APPID, process.env.EBAY_CERTID)
     const apiKey = {
       access_token: process.env.TEMP_EBAY_KEY
     }
@@ -98,7 +98,7 @@ export class EbayService implements OnModuleInit {
     const appToken = await ebayAuthToken.getApplicationToken('PRODUCTION');
     console.log(appToken);
 
-    return ebayAuthToken
+    return appToken
   }
 
   async productPrices(product: ProductDto): Promise<EbayProductStrip[]> {
@@ -106,7 +106,6 @@ export class EbayService implements OnModuleInit {
     const apiKey = {
       access_token: process.env.TEMP_EBAY_KEY
     }
-
 
     const searchResults = await fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(product.name)}&X-EBAY-C-MARKETPLACE-ID=EBAY_GB`, {
       headers: {

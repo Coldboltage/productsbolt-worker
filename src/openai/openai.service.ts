@@ -329,18 +329,21 @@ The product type should reflect the actual item sold to the customer, not merely
   };
 
   async ebayPricePoint(ebayProductPrices: EbayProductStrip[], productName: string) {
+    console.log(productName)
     const ebayProductPricesJson = JSON.stringify(ebayProductPrices)
 
     const openai = new OpenAI();
 
-    if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
+    if (process.env.EBAY_LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
     // 'analysis',
     // 'inStock',
     // 'price',
     const openAiResponse = await openai.chat.completions.create({
-      // model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
-      model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-mini`,
+      // model: process.env.EBAY_LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-mini`,
+      // model: process.env.EBAY_LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-mini`,
+      model: process.env.EBAY_LOCAL_LLM === "true" ? "nvidia-nemotron-nano-12b-v2" : `gpt-4.1-mini`,
+
 
       temperature: 0,
       top_p: 1,
@@ -348,6 +351,7 @@ The product type should reflect the actual item sold to the customer, not merely
       frequency_penalty: 0,
       n: 1,
       seed: 42,
+      // reasoning_effort: "low",
       messages: [
         {
           role: 'system',
@@ -365,13 +369,14 @@ The product type should reflect the actual item sold to the customer, not merely
           role: 'user',
           content: `
        From the array about to be provided, 
-        Product name: "${productName}". Is must be this product and if not, please ignore.
+        Product name: "${productName}" It should be as similar and the prices will be close enough but not significant so within reason, There will be products which won't match this and the prices should help indicate which is similar to others as this is a general search.
         Ebay Listings : ${ebayProductPricesJson}
 
         ---
 
-        Output JSON object only
+          Don't get stuck in recursive thinking
 
+          Output JSON object only
         {
           "type": "object",
           "properties": {
@@ -384,6 +389,9 @@ The product type should reflect the actual item sold to the customer, not merely
             "maxPrice": {
               "type": "number"
             },
+             "minActivePrice": {
+              "type": "number"
+            },
             "reasonForAnswer": {
               "type": "string"
             },
@@ -392,6 +400,7 @@ The product type should reflect the actual item sold to the customer, not merely
             "minPrice",
             "averagePrice",
             "maxPrice",
+            "minActivePrice",
             "reasonForAnswer"
           ]
         }
