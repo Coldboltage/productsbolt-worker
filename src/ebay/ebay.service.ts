@@ -107,15 +107,22 @@ export class EbayService implements OnModuleInit {
       access_token: process.env.TEMP_EBAY_KEY
     }
 
-    const searchResults = await fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(product.name)}&X-EBAY-C-MARKETPLACE-ID=EBAY_GB`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey.access_token}`, // Use the API key from the environment variable
-        'Content-Type': 'application/json',
-        "X-EBAY-C-MARKETPLACE-ID": "EBAY_GB"
+    let searchResults
+    try {
+      searchResults = await fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(product.name)}&X-EBAY-C-MARKETPLACE-ID=EBAY_GB`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey.access_token}`, // Use the API key from the environment variable
+          'Content-Type': 'application/json',
+          "X-EBAY-C-MARKETPLACE-ID": "EBAY_GB"
+  
+        }
+      })
+    } catch (error) {
+      console.error("Error fetching eBay data:", error)
+    }
 
-      }
-    })
     const searchJson = await searchResults.json()
+    // console.log(searchJson)
     const stripedProducts: EbayProductStrip[] = []
 
     for (const product of searchJson.itemSummaries) {
