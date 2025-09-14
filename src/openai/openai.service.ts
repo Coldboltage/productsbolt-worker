@@ -354,8 +354,8 @@ The product type should reflect the actual item sold to the customer, not merely
     // 'inStock',
     // 'price',
     const openAiResponse = await openai.chat.completions.create({
-      model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
-      // model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-${mode}`,
+      // model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
+      model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-${mode}`,
 
       temperature: 0,
       top_p: 1,
