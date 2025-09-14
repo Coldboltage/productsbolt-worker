@@ -3,8 +3,9 @@ import { ProductInStockWithAnalysisStripped } from 'src/process/entities/process
 import { CreateEbayDto } from './dto/create-ebay.dto.js';
 import { UpdateEbayDto } from './dto/update-ebay.dto.js';
 import 'dotenv/config';
-import { EbayTokenInterface } from './entities/ebay.entity.js';
+import { EbayProductStrip, EbayTokenInterface } from './entities/ebay.entity.js';
 import EbayAuthToken from 'ebay-oauth-nodejs-client';
+import { ProductDto } from '../process/dto/product.dto.js';
 
 
 @Injectable()
@@ -98,6 +99,40 @@ export class EbayService implements OnModuleInit {
     console.log(appToken);
 
     return ebayAuthToken
+  }
+
+  async productPrices(product: ProductDto): Promise<EbayProductStrip[]> {
+    // const apiKey = await this.getApiKey(process.env.EBAY_APPID, process.env.EBAY_CERTID)
+    const apiKey = {
+      access_token: process.env.TEMP_EBAY_KEY
+    }
+
+
+    const searchResults = await fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(product.name)}&X-EBAY-C-MARKETPLACE-ID=EBAY_GB`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey.access_token}`, // Use the API key from the environment variable
+        'Content-Type': 'application/json',
+        "X-EBAY-C-MARKETPLACE-ID": "EBAY_GB"
+
+      }
+    })
+    const searchJson = await searchResults.json()
+    const stripedProducts: EbayProductStrip[] = []
+
+    for (const product of searchJson.itemSummaries) {
+      const strippedItem = {
+        name: product.title,
+        price: {
+          value: product.price.value,
+          currency: product.price.currency
+        }
+      }
+
+      stripedProducts.push(strippedItem)
+    }
+
+    console.log(stripedProducts)
+    return stripedProducts
   }
 
   findOne(id: number) {

@@ -5,6 +5,7 @@ import { UpdateProcessDto } from './dto/update-process.dto.js';
 import { ProcessService } from './process.service.js';
 import { CheckPageDto } from './dto/check-page.dto.js';
 import { ShopDto } from './dto/shop.dto.js';
+import { ProductDto } from './dto/product.dto.js';
 
 
 @Controller()
@@ -195,6 +196,22 @@ export class ProcessController {
 
       // Optionally nack with requeue false
       channel.nack(originalMsg, false, false);
+    }
+  }
+
+  @EventPattern('ebayPrices')
+  async ebayPrices(
+    @Payload() productDto: ProductDto,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    try {
+      const result = await this.processService.ebayStatCalc(productDto)
+      console.log(result)
+    } catch (error) {
+
     }
   }
 

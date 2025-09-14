@@ -14,6 +14,8 @@ import { ShopDto } from './dto/shop.dto.js';
 import { ProductInStockWithAnalysisStripped, TestTwoInterface, UniqueShopType } from './entities/process.entity.js';
 import { EbayService } from './../ebay/ebay.service.js';
 import crypto from 'node:crypto';
+import { ProductDto } from './dto/product.dto.js';
+import { EbayProductStrip } from '../ebay/entities/ebay.entity.js';
 
 
 @Injectable()
@@ -316,7 +318,7 @@ export class ProcessService {
 
     if (url.includes('games-island')) answer.price = Math.round(answer.price * 0.81)
 
-    return { ...answer,productName: query, specificUrl: url, url, hash, count: count, shopifySite };
+    return { ...answer, productName: query, specificUrl: url, url, hash, count: count, shopifySite };
 
   }
 
@@ -455,6 +457,12 @@ export class ProcessService {
   async updatePage(checkPageDto: CheckPageDto) {
     const result = await this.testTwo(checkPageDto.url, checkPageDto.query, checkPageDto.type, "mini", checkPageDto.shopifySite, checkPageDto.hash, checkPageDto.confirmed, checkPageDto.count)
     return result
+  }
+
+  async ebayStatCalc(product: ProductDto) {
+    const ebayProductPrices: EbayProductStrip[] = await this.ebayService.productPrices(product)
+    const pricePoints = await this.openaiService.ebayPricePoint(ebayProductPrices, product.name)
+    return pricePoints
   }
 
   create(createProcessDto: CreateProcessDto) { }

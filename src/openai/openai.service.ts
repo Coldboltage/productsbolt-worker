@@ -4,99 +4,11 @@ import { zodTextFormat } from 'openai/helpers/zod';
 import z from 'zod';
 import { ProductType, BestSitesInterface } from '../app.type.js';
 import { ProductInStockWithAnalysis } from 'src/process/entities/process.entity.js';
+import { EbayProductStrip } from '../ebay/entities/ebay.entity.js';
 
 @Injectable()
 export class OpenaiService {
-  //   productInStock = async (
-  //     title: string,
-  //     content: string,
-  //     productName: string,
-  //     type: ProductType,
-  //     mode: string,
-  //     context: string
 
-  //   ) => {
-  //     const productInfo = z.object({
-  //       inStock: z.boolean(),
-  //       isMainProductPage: z.boolean(),
-  //       isNamedProduct: z.boolean(),
-  //       productTypeMatchStrict: z.boolean(),
-  //       price: z.number(),
-  //       currencyCode: z.string(),
-  //       conciseReason: z.string().max(160),
-  //       detectedVariant: z.string(),
-  //       detectedFullName: z.string(),
-  //       variantMatchStrict: z.boolean(),
-  //     });
-
-  //     const openai = new OpenAI();
-
-  //     const openAiResponse = await openai.responses.parse({
-  //       model: `gpt-4.1-${mode}`,
-  //       input: [
-  //         {
-  //           role: "system",
-  //           content:
-  //             "Extract structured product-page information. " +
-  //             "The primary sales-unit type (box, ETB, bundle, pack) must match, " +
-  //             "and any variant conflict must be rejected."
-  //         },
-  //         {
-  //           role: "user",
-  //           content: `Target product name  : **${productName}**
-  // Expected product type: **${type.toUpperCase()}**   (box · ETB · bundle · pack)
-
-  // Return **match: true** only if every rule passes.
-
-  // 0. **Primary sales unit**
-  //    • Identify the outer-most container the customer buys (“box”, “bundle”, “pack”, “ETB”, …).
-  //    • If the detected unit is "pack" while **${type}** is "box"
-  //      **and** you clearly see a quantity of **10 packs or more**
-  //      (e.g. “10 packs”, “12 x packs”, “(12 packs)”):
-  //        → treat this as a BOX for the purpose of the check.
-  //    • Otherwise, if the detected unit ≠ **${type}**
-  //        → **match: false** immediately.
-  //    • You do **not** need to output the detected unit; simply set
-  //      \`productTypeMatchStrict\` to \`true\` if the rule passes.
-
-  // 0 bis. **Variant-token consistency**
-  //    • Extract distinctive variant tokens from the target (set name, language,
-  //      character, colourway, year, size, etc.). Ignore generic words like
-  //      “sealed”, “official”, “trading”, “cards”, “game”.
-  //    • A listing qualifies only if  
-  //        1. every variant token appears in the title or description, **and**  
-  //        2. no extra distinctive variant token (absent from the target) appears,
-  //           unless it is generic marketing language (“sealed”, “fast shipping”).
-  //    • Any failure → **match: false**.
-
-  // ────────────────────────────
-  // Checks
-
-  // 1. **Type confirmation** – title/description must state it is a **${type}**.
-  // 2. **Capacity** – if the target name states a size (e.g. “6-Pack Bundle”,
-  //    “24-Can Box”) the listing must match it.
-  // 3. **Stock** – item must be available now (not sold-out / closed preorder).
-
-  // If any rule fails → **match: false**.
-
-  // ────────────────────────────
-  // Product title : "${title}"
-  // Page content  :
-  // ${content}
-  // Here is additional context for your reasoning (do NOT treat as part of the listing): ${context}
-
-  //     `
-  //         }
-  //       ],
-  //       text: { format: zodTextFormat(productInfo, "stock") }
-  //     });
-
-
-
-  //     const productResponse = openAiResponse.output_parsed;
-  //     console.log(productResponse);
-  //     return productResponse;
-  //   };
 
 
   productInStock = async (
@@ -415,6 +327,89 @@ The product type should reflect the actual item sold to the customer, not merely
     const productResponse = JSON.parse(openAiResponse.choices[0].message?.content || '{}');
     return productResponse;
   };
+
+  async ebayPricePoint(ebayProductPrices: EbayProductStrip[], productName: string) {
+    const ebayProductPricesJson = JSON.stringify(ebayProductPrices)
+
+    const openai = new OpenAI();
+
+    if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
+
+    // 'analysis',
+    // 'inStock',
+    // 'price',
+    const openAiResponse = await openai.chat.completions.create({
+      // model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
+      model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-mini`,
+
+      temperature: 0,
+      top_p: 1,
+      presence_penalty: 0,
+      frequency_penalty: 0,
+      n: 1,
+      seed: 42,
+      messages: [
+        {
+          role: 'system',
+          content:
+            `
+            Your job is to figure out what products should be included or not, and find out the min, average and max price from a list of the same products and it's prices.
+            
+            - Do not add \`\`\`json fences.
+            - Do not add explanations.
+            - Do not add extra text.
+            Just return valid JSON according to the schema.
+            `,
+        },
+        {
+          role: 'user',
+          content: `
+       From the array about to be provided, 
+        Product name: "${productName}". Is must be this product and if not, please ignore.
+        Ebay Listings : ${ebayProductPricesJson}
+
+        ---
+
+        Output JSON object only
+
+        {
+          "type": "object",
+          "properties": {
+           "minPrice": {
+              "type": "number"
+            },
+            "averagePrice": {
+              "type": "number"
+            },
+            "maxPrice": {
+              "type": "number"
+            },
+            "reasonForAnswer": {
+              "type": "string"
+            },
+          },
+          "required": [
+            "minPrice",
+            "averagePrice",
+            "maxPrice",
+            "reasonForAnswer"
+          ]
+        }
+        `,
+        },
+      ],
+    });
+
+    console.log(openAiResponse.choices[0].message?.content || '{}')
+
+    const productResponse: { minPrice: number, averagePrice: number, maxPrice: number, reasonForAnswer: string } = JSON.parse(openAiResponse.choices[0].message?.content || '{}');
+    return productResponse;
+  }
+
+
+
+
+
   crawlFromSitemap = async (
     sitemapUrls: string[],
     query: string,
