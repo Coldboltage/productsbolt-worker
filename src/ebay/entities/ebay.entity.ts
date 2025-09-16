@@ -9,7 +9,16 @@ export interface EbayTokenInterface {
 export interface EbayProductStrip {
   name: any;
   price: {
-    value: any;
-    currency: any;
+    value: number;
+    currency: string;
+  };
+}
+
+export interface EbaySoldProductStrip {
+  name: string;
+  price: {
+    value: number;
+    currency: string;
+    estimatedSoldQuantity: number
   };
 }

@@ -3,9 +3,10 @@ import { ProductInStockWithAnalysisStripped } from 'src/process/entities/process
 import { CreateEbayDto } from './dto/create-ebay.dto.js';
 import { UpdateEbayDto } from './dto/update-ebay.dto.js';
 import 'dotenv/config';
-import { EbayProductStrip, EbayTokenInterface } from './entities/ebay.entity.js';
+import { EbayProductStrip, EbaySoldProductStrip, EbayTokenInterface } from './entities/ebay.entity.js';
 import EbayAuthToken from 'ebay-oauth-nodejs-client';
 import { ProductDto } from '../process/dto/product.dto.js';
+import { EbayItem } from './entities/ebay-get-item.type.js';
 
 
 @Injectable()
@@ -114,7 +115,7 @@ export class EbayService implements OnModuleInit {
           'Authorization': `Bearer ${apiKey.access_token}`, // Use the API key from the environment variable
           'Content-Type': 'application/json',
           "X-EBAY-C-MARKETPLACE-ID": "EBAY_GB"
-  
+
         }
       })
     } catch (error) {
@@ -131,7 +132,7 @@ export class EbayService implements OnModuleInit {
         price: {
           value: product.price.value,
           currency: product.price.currency
-        }
+        },
       }
 
       stripedProducts.push(strippedItem)
@@ -140,6 +141,69 @@ export class EbayService implements OnModuleInit {
     console.log(stripedProducts)
     return stripedProducts
   }
+
+  async soldProductPrice(product: ProductDto): Promise<EbaySoldProductStrip[]> {
+    // const apiKey = await this.getApiKey(process.env.EBAY_APPID, process.env.EBAY_CERTID)
+    const apiKey = {
+      access_token: process.env.TEMP_EBAY_KEY
+    }
+
+    const now = new Date(); // current time
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const nowIso = now.toISOString();
+    const sevenDaysAgoIso = sevenDaysAgo.toISOString();
+
+    let searchResults
+    try {
+      searchResults = await fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(product.name)}&X-EBAY-C-MARKETPLACE-ID=EBAY_GB&filter=soldItems:true,itemEndDate:[${sevenDaysAgoIso}..${nowIso}]`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey.access_token}`, // Use the API key from the environment variable
+          'Content-Type': 'application/json',
+          "X-EBAY-C-MARKETPLACE-ID": "EBAY_GB"
+
+        }
+      })
+    } catch (error) {
+      console.error("Error fetching eBay data:", error)
+    }
+
+    const searchJson = await searchResults.json()
+    // console.log(searchJson)
+    const stripedProducts: EbaySoldProductStrip[] = []
+
+    for (const product of searchJson.itemSummaries) {
+      // console.log(product)
+
+      const itemListing = await fetch(`https://api.ebay.com/buy/browse/v1/item/${encodeURIComponent(product.itemId)}`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey.access_token}`, // Use the API key from the environment variable
+          'Content-Type': 'application/json',
+          "X-EBAY-C-MARKETPLACE-ID": "EBAY_GB"
+
+        }
+      })
+
+      const itemListingJson: EbayItem = await itemListing.json()
+
+      console.log(itemListingJson)
+
+      const strippedItem: EbaySoldProductStrip = {
+        name: product.title,
+        price: {
+          value: product.price.value,
+          currency: product.price.currency,
+          estimatedSoldQuantity: itemListingJson.estimatedAvailabilities[0].estimatedSoldQuantity,
+        },
+      }
+
+      stripedProducts.push(strippedItem)
+    }
+
+    console.log(stripedProducts)
+    return stripedProducts
+  }
+
 
   findOne(id: number) {
     return `This action returns a #${id} ebay`;

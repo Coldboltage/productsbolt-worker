@@ -15,7 +15,7 @@ import { ProductInStockWithAnalysisStripped, TestTwoInterface, UniqueShopType } 
 import { EbayService } from './../ebay/ebay.service.js';
 import crypto from 'node:crypto';
 import { ProductDto } from './dto/product.dto.js';
-import { EbayProductStrip } from '../ebay/entities/ebay.entity.js';
+import { EbayProductStrip, EbaySoldProductStrip } from '../ebay/entities/ebay.entity.js';
 
 
 @Injectable()
@@ -461,13 +461,27 @@ export class ProcessService {
 
   async ebayStatCalc(product: ProductDto) {
     const ebayProductPrices: EbayProductStrip[] = await this.ebayService.productPrices(product)
+    const soldEbayProductPrices: EbaySoldProductStrip[] = await this.ebayService.soldProductPrice(product)
+
     const pricePoints = await this.openaiService.ebayPricePoint(ebayProductPrices, product.name)
+    const soldPricePoints = await this.openaiService.ebaySoldPricePoint(soldEbayProductPrices, product.name)
+
+
+    const totalQuantity = soldPricePoints.reduce((sum, p) => sum + p.price.estimatedSoldQuantity, 0);
+    const weightedAvgPrice = soldPricePoints.reduce(
+      (sum, p) => sum + p.price.value * p.price.estimatedSoldQuantity,
+      0
+    ) / totalQuantity;
 
     const pricePointTest = {
       minPrice: pricePoints.minPrice,
       averagePrice: pricePoints.averagePrice,
-      maxPrice: pricePoints.maxPrice
+      maxPrice: pricePoints.maxPrice,
+      soldSevenDays: totalQuantity,
+      averageSoldPrice: weightedAvgPrice,
     }
+
+    console.log(pricePointTest)
 
     // Temp for test
     try {

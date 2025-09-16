@@ -4,7 +4,7 @@ import { zodTextFormat } from 'openai/helpers/zod';
 import z from 'zod';
 import { ProductType, BestSitesInterface } from '../app.type.js';
 import { ProductInStockWithAnalysis } from 'src/process/entities/process.entity.js';
-import { EbayProductStrip } from '../ebay/entities/ebay.entity.js';
+import { EbayProductStrip, EbaySoldProductStrip } from '../ebay/entities/ebay.entity.js';
 
 @Injectable()
 export class OpenaiService {
@@ -341,8 +341,8 @@ The product type should reflect the actual item sold to the customer, not merely
     // 'price',
     const openAiResponse = await openai.chat.completions.create({
       // model: process.env.EBAY_LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-mini`,
-      // model: process.env.EBAY_LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-mini`,
-      model: process.env.EBAY_LOCAL_LLM === "true" ? "nvidia-nemotron-nano-12b-v2" : `gpt-4.1-mini`,
+      model: process.env.EBAY_LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-mini`,
+      // model: process.env.EBAY_LOCAL_LLM === "true" ? "nvidia-nemotron-nano-12b-v2" : `gpt-4.1-mini`,
 
 
       temperature: 0,
@@ -412,6 +412,93 @@ The product type should reflect the actual item sold to the customer, not merely
     console.log(openAiResponse.choices[0].message?.content || '{}')
 
     const productResponse: { minPrice: number, averagePrice: number, maxPrice: number, reasonForAnswer: string } = JSON.parse(openAiResponse.choices[0].message?.content || '{}');
+    return productResponse;
+  }
+
+  async ebaySoldPricePoint(ebayProductPrices: EbaySoldProductStrip[], productName: string) {
+    console.log(productName)
+    const ebayProductPricesJson = JSON.stringify(ebayProductPrices)
+
+    const openai = new OpenAI();
+
+    if (process.env.EBAY_LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
+
+    // 'analysis',
+    // 'inStock',
+    // 'price',
+    const openAiResponse = await openai.chat.completions.create({
+      model: process.env.EBAY_LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-mini`,
+      // model: process.env.EBAY_LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-mini`,
+      // model: process.env.EBAY_LOCAL_LLM === "true" ? "nvidia-nemotron-nano-12b-v2" : `gpt-4.1-mini`,
+
+
+      temperature: 0,
+      top_p: 1,
+      presence_penalty: 0,
+      frequency_penalty: 0,
+      n: 1,
+      seed: 42,
+      // reasoning_effort: "low",
+      messages: [
+        {
+          role: 'system',
+          content:
+            `
+            Your job is to figure out what products should be included or not
+            
+            - Do not add \`\`\`json fences.
+            - Do not add explanations.
+            - Do not add extra text.
+            Just return valid JSON according to the schema.
+            `,
+        },
+        {
+          role: 'user',
+          content: `
+       From the array about to be provided, 
+        Product name: "${productName}" It should be as similar and the prices will be close enough but not significant so within reason, There will be products which won't match this and the prices should help indicate which is similar to others as this is a general search.
+        Ebay Listings : ${ebayProductPricesJson}
+
+        ---
+
+          Don't get stuck in recursive thinking
+
+          Output JSON object only
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "price": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number"
+                  },
+                  "currency": {
+                    "type": "string"
+                  },
+                  "estimatedSoldQuantity": {
+                    "type": "number"
+                  }
+                },
+                "required": ["value", "currency", "estimatedSoldQuantity"]
+              }
+            },
+            "required": ["name", "price"]
+          }
+        }
+        `,
+        },
+      ],
+    });
+
+    console.log(openAiResponse.choices[0].message?.content || '{}')
+
+    const productResponse: EbaySoldProductStrip[] = JSON.parse(openAiResponse.choices[0].message?.content || '{}');
     return productResponse;
   }
 
