@@ -64,7 +64,8 @@ export class BrowserService {
       try {
         await this.utilService.waitForCloudflareBypass(page);
       } catch (e) {
-        console.log('Error during Cloudflare bypass, continuing anyway');
+        console.log(`Error during Cloudflare bypass, continuing anyway`);
+        console.log(e)
       }
 
       const html = await page.content();

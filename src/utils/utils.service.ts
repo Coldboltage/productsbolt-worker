@@ -293,23 +293,37 @@ export class UtilsService {
 
   async waitForCloudflareBypass(page: any, timeout = 60000, waitingTimeout = 2000, resolveTimeout = 10000) {
     const start = Date.now();
+    try {
+      await page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 10 });
+
+    } catch (error) {
+
+    }
+
+    const test = await page.waitForFunction(() => document.readyState === "complete");
+    console.log(test)
+
 
     const title = await page.title();
-    if (title.includes('...') === false) return
+    console.log(title)
+    if (!title.includes("...") && !title.includes("pardon")) return
 
     while (Date.now() - start < timeout) {
       const title = await page.title();
-      if (title.includes('...') === false) {
-        // Challenge passed, page loaded
-        console.log('passed');
-        await new Promise((resolve) => setTimeout(resolve, resolveTimeout));
-        return;
-      }
-      // Wait a bit before checking again
-      console.log('waiting');
-      await new Promise((resolve) => setTimeout(resolve, waitingTimeout));
-    }
+      console.log(title)
+      if (title.includes('...') || title.includes('pardon')) {
 
+        // Wait a bit before checking again
+        console.log('waiting');
+        await new Promise((resolve) => setTimeout(resolve, waitingTimeout));
+      }
+
+      // Challenge passed, page loaded
+      console.log('passed');
+      await new Promise((resolve) => setTimeout(resolve, resolveTimeout));
+      return;
+    }
+    console.log("I got out?")
     throw new Error('Timed out waiting for Cloudflare challenge to complete');
   };
 

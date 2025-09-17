@@ -138,7 +138,7 @@ export class EbayService implements OnModuleInit {
       stripedProducts.push(strippedItem)
     }
 
-    console.log(stripedProducts)
+    // console.log(stripedProducts)
     return stripedProducts
   }
 
@@ -194,6 +194,7 @@ export class EbayService implements OnModuleInit {
           value: product.price.value,
           currency: product.price.currency,
           estimatedSoldQuantity: itemListingJson.estimatedAvailabilities[0].estimatedSoldQuantity === 0 ? 1 : itemListingJson.estimatedAvailabilities[0].estimatedSoldQuantity,
+          soldDate: product.price.soldDate
         },
       }
 

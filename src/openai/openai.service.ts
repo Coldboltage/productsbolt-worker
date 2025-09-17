@@ -410,7 +410,7 @@ The product type should reflect the actual item sold to the customer, not merely
       ],
     });
 
-    console.log(openAiResponse.choices[0].message?.content || '{}')
+    // console.log(openAiResponse.choices[0].message?.content || '{}')
 
     const productResponse: { minPrice: number, averagePrice: number, maxPrice: number, reasonForAnswer: string } = JSON.parse(openAiResponse.choices[0].message?.content || '{}');
     return productResponse;

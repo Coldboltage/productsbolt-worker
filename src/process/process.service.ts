@@ -472,16 +472,26 @@ export class ProcessService {
     const pricePoints = await this.openaiService.ebayPricePoint(ebayProductPrices, product.name)
     const soldPricePoints = await this.openaiService.ebaySoldPricePoint(soldEbayProductPrices.mainText, product)
 
+    const soldPricePointsLastSevenDays = soldPricePoints.filter(product => {
+      const todayDate = new Date()
+      const soldListingDate = new Date(product.price.soldDate)
 
-    const totalQuantity = soldPricePoints.reduce((sum, p) => sum + p.price.estimatedSoldQuantity, 0);
-    const weightedAvgPrice = soldPricePoints.reduce(
+      const differenceMs = todayDate.getTime() - soldListingDate.getTime()
+      const diffDays = differenceMs / (1000 * 60 * 60 * 24);
+
+      return diffDays <= 7
+    })
+
+
+    const totalQuantity = soldPricePointsLastSevenDays.reduce((sum, p) => sum + p.price.estimatedSoldQuantity, 0);
+    const weightedAvgPrice = soldPricePointsLastSevenDays.reduce(
       (sum, p) => sum + p.price.value * p.price.estimatedSoldQuantity,
       0
     ) / totalQuantity;
 
     // 2. Weighted spread (variance)
     const variance =
-      soldPricePoints.reduce(
+      soldPricePointsLastSevenDays.reduce(
         (sum, p) =>
           sum +
           p.price.estimatedSoldQuantity *
@@ -510,7 +520,7 @@ export class ProcessService {
       spreadScore: spreadScorePct
     }
 
-    console.log(soldPricePoints)
+    console.log(soldPricePointsLastSevenDays)
     console.log(pricePointTest)
 
     // Temp for test

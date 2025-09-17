@@ -20,5 +20,6 @@ export interface EbaySoldProductStrip {
     value: number;
     currency: string;
     estimatedSoldQuantity: number
+    soldDate: Date
   };
 }
