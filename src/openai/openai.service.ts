@@ -329,8 +329,8 @@ The product type should reflect the actual item sold to the customer, not merely
     return productResponse;
   };
 
-  async ebayPricePoint(ebayProductPrices: EbayProductStrip[], productName: string) {
-    console.log(productName)
+  async ebayPricePoint(ebayProductPrices: EbayProductStrip[], product: ProductDto) {
+    console.log(product.name)
     const ebayProductPricesJson = JSON.stringify(ebayProductPrices)
 
     const openai = new OpenAI();
@@ -370,7 +370,9 @@ The product type should reflect the actual item sold to the customer, not merely
           role: 'user',
           content: `
        From the array about to be provided, 
-        Product name: "${productName}" It should be as similar and the prices will be close enough but not significant so within reason, There will be products which won't match this and the prices should help indicate which is similar to others as this is a general search.
+        Product name: "${product.name}" It should be as similar and the prices will be close enough but not significant so within reason, There will be products which won't match this and the prices should help indicate which is similar to others as this is a general search.
+                To make sure you choose the right product, here is context of the product ${product.context}
+
         Ebay Listings : ${ebayProductPricesJson}
 
         ---
