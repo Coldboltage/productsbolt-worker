@@ -488,7 +488,7 @@ export class ProcessService {
       ) / totalQuantity
     }
 
-    const spreadScoreFunc = (soldPricePoints: EbaySoldProductStrip[], weightedAvgPrice: number) => {
+    const spreadScoreFunc = (soldPricePoints: EbaySoldProductStrip[], totalQuantity: number, weightedAvgPrice: number) => {
       // 2. Weighted spread (variance)
       const variance =
         soldPricePointsLastSevenDays.reduce(
@@ -544,7 +544,7 @@ export class ProcessService {
 
     const soldSevenDays = totalQuantityFunc(soldPricePointsLastSevenDays)
     const averageSevenDaysSoldPrice = weightAvgPriceFunc(soldPricePointsLastSevenDays, soldSevenDays)
-    const sevenDaySpreadScore = spreadScoreFunc(soldPricePointsLastSevenDays, averageSevenDaysSoldPrice)
+    const sevenDaySpreadScore = spreadScoreFunc(soldPricePointsLastSevenDays, soldSevenDays, averageSevenDaysSoldPrice)
 
     const sevenDays = {
       soldSevenDays: soldSevenDays,
@@ -556,7 +556,7 @@ export class ProcessService {
 
     const soldTwentyEightDays = totalQuantityFunc(soldPricePointsLast28Days)
     const averageTwentyEightDaysSoldPrice = weightAvgPriceFunc(soldPricePointsLast28Days, soldTwentyEightDays)
-    const twentyEightDaysSpreadScore = spreadScoreFunc(soldPricePointsLast28Days, averageTwentyEightDaysSoldPrice)
+    const twentyEightDaysSpreadScore = spreadScoreFunc(soldPricePointsLast28Days, soldSevenDays, averageTwentyEightDaysSoldPrice)
 
     const twentyEightDays = {
       soldTwentyEightDays: soldTwentyEightDays,
