@@ -467,6 +467,10 @@ export class ProcessService {
     const url = `https://www.ebay.co.uk/sch/i.html?_nkw=${encodeURIComponent(product.name)}&rt=nc&LH_Sold=1&LH_Complete=1`
     const soldEbayProductPrices = await this.browserService.getPageInfo(url)
 
+    console.log(soldEbayProductPrices.mainText)
+
+    await new Promise(r => setTimeout(() => r, 2000000))
+
     // const soldEbayProductPrices: EbaySoldProductStrip[] = await this.ebayService.soldProductPrice(product)
 
     const pricePoints = await this.openaiService.ebayPricePoint(ebayProductPrices, product.name)

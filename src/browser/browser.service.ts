@@ -59,13 +59,16 @@ export class BrowserService {
 
     // Promise that resolves with the page content and mainText
     const pageTask = (async () => {
-      await page.goto(url, { waitUntil: ['networkidle2'], timeout: 60000 });
+      const testPage = await page.goto(url, { waitUntil: ['networkidle2'], timeout: 60000 });
+      const status = testPage.status()
+      console.log(`Navigated to ${url} with status ${status}`);
 
       try {
         await this.utilService.waitForCloudflareBypass(page);
       } catch (e) {
         console.log(`Error during Cloudflare bypass, continuing anyway`);
         console.log(e)
+        await new Promise(r => setTimeout(r, 10000))
       }
 
       const html = await page.content();

@@ -293,20 +293,23 @@ export class UtilsService {
 
   async waitForCloudflareBypass(page: any, timeout = 60000, waitingTimeout = 2000, resolveTimeout = 10000) {
     const start = Date.now();
-    try {
-      await page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 10 });
 
-    } catch (error) {
+    console.log('hello')
+    // try {
+    //   await page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 15000 });
+    //   console.log('page loaded')
+    // } catch (error) {
 
-    }
+    // }
 
-    const test = await page.waitForFunction(() => document.readyState === "complete");
-    console.log(test)
 
 
     const title = await page.title();
     console.log(title)
-    if (!title.includes("...") && !title.includes("pardon")) return
+    if (!title.includes("...") && !title.includes("pardon")) {
+      console.log('no cloudflare')
+      return;
+    }
 
     while (Date.now() - start < timeout) {
       const title = await page.title();
