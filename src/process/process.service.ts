@@ -566,7 +566,6 @@ export class ProcessService {
 
     const pricePointTest = {
       minPrice: pricePoints.minPrice,
-      averagePrice: pricePoints.averagePrice,
       maxPrice: pricePoints.maxPrice,
       ...sevenDays,
       ...twentyEightDays
