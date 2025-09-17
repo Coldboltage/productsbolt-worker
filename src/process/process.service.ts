@@ -521,7 +521,7 @@ export class ProcessService {
     const sevenDays = {
       soldSevenDays: soldSevenDays,
       averageSevenDaysSoldPrice: !averageSevenDaysSoldPrice ? 0 : averageSevenDaysSoldPrice,
-      sevenDaySpreadScore: sevenDaySpreadScore ? 0 : sevenDaySpreadScore
+      sevenDaySpreadScore: !sevenDaySpreadScore ? 0 : sevenDaySpreadScore
     }
 
     // 
@@ -533,7 +533,7 @@ export class ProcessService {
     const twentyEightDays = {
       soldTwentyEightDays: soldTwentyEightDays,
       averageTwentyEightDaysSoldPrice: !averageTwentyEightDaysSoldPrice ? 0 : averageTwentyEightDaysSoldPrice,
-      twentyEightDaysSpreadScore: twentyEightDaysSpreadScore ? 0 : twentyEightDaysSpreadScore
+      twentyEightDaysSpreadScore: !twentyEightDaysSpreadScore ? 0 : twentyEightDaysSpreadScore
     }
 
     const pricePointTest = {
