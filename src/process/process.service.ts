@@ -504,6 +504,7 @@ export class ProcessService {
       spreadScore: spreadScorePct
     }
 
+    console.log(soldPricePoints)
     console.log(pricePointTest)
 
     // Temp for test
