@@ -193,7 +193,7 @@ export class EbayService implements OnModuleInit {
         price: {
           value: product.price.value,
           currency: product.price.currency,
-          estimatedSoldQuantity: itemListingJson.estimatedAvailabilities[0].estimatedSoldQuantity,
+          estimatedSoldQuantity: itemListingJson.estimatedAvailabilities[0].estimatedSoldQuantity === 0 ? 1 : itemListingJson.estimatedAvailabilities[0].estimatedSoldQuantity,
         },
       }
 

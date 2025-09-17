@@ -473,12 +473,35 @@ export class ProcessService {
       0
     ) / totalQuantity;
 
+    // 2. Weighted spread (variance)
+    const variance =
+      soldPricePoints.reduce(
+        (sum, p) =>
+          sum +
+          p.price.estimatedSoldQuantity *
+          Math.pow(p.price.value - weightedAvgPrice, 2),
+        0
+      ) / totalQuantity;
+
+    // 3. Standard deviation = spread
+    const spread = Math.sqrt(variance);
+
+    // 4. Spread score as a %
+    const spreadScorePct = (spread / weightedAvgPrice) * 100;
+
+    console.log({
+      weightedAvgPrice,
+      spread,
+      spreadScorePct: spreadScorePct.toFixed(2) + "%"
+    });
+
     const pricePointTest = {
       minPrice: pricePoints.minPrice,
       averagePrice: pricePoints.averagePrice,
       maxPrice: pricePoints.maxPrice,
       soldSevenDays: totalQuantity,
       averageSoldPrice: weightedAvgPrice,
+      spreadScore: spreadScorePct
     }
 
     console.log(pricePointTest)
