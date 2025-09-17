@@ -469,8 +469,6 @@ export class ProcessService {
 
     console.log(soldEbayProductPrices.mainText)
 
-    await new Promise(r => setTimeout(() => r, 2000000))
-
     // const soldEbayProductPrices: EbaySoldProductStrip[] = await this.ebayService.soldProductPrice(product)
 
     const pricePoints = await this.openaiService.ebayPricePoint(ebayProductPrices, product.name)
