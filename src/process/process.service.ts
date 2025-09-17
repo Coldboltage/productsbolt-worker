@@ -464,7 +464,7 @@ export class ProcessService {
     const soldEbayProductPrices: EbaySoldProductStrip[] = await this.ebayService.soldProductPrice(product)
 
     const pricePoints = await this.openaiService.ebayPricePoint(ebayProductPrices, product.name)
-    const soldPricePoints = await this.openaiService.ebaySoldPricePoint(soldEbayProductPrices, product.name)
+    const soldPricePoints = await this.openaiService.ebaySoldPricePoint(soldEbayProductPrices, product)
 
 
     const totalQuantity = soldPricePoints.reduce((sum, p) => sum + p.price.estimatedSoldQuantity, 0);
