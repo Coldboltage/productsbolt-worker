@@ -416,7 +416,7 @@ The product type should reflect the actual item sold to the customer, not merely
     return productResponse;
   }
 
-  async ebaySoldPricePoint(ebayProductPrices: EbaySoldProductStrip[], product: ProductDto) {
+  async ebaySoldPricePoint(ebayProductPrices: string, product: ProductDto) {
     console.log(product.name)
     const ebayProductPricesJson = JSON.stringify(ebayProductPrices)
 
@@ -485,6 +485,10 @@ The product type should reflect the actual item sold to the customer, not merely
                   },
                   "estimatedSoldQuantity": {
                     "type": "number"
+                    "description": "We will always set this to one"
+                  },
+                  "soldDate": {
+                    "type": "date"
                   }
                 },
                 "required": ["value", "currency", "estimatedSoldQuantity"]

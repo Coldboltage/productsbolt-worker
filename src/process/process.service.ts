@@ -461,10 +461,16 @@ export class ProcessService {
 
   async ebayStatCalc(product: ProductDto) {
     const ebayProductPrices: EbayProductStrip[] = await this.ebayService.productPrices(product)
-    const soldEbayProductPrices: EbaySoldProductStrip[] = await this.ebayService.soldProductPrice(product)
+
+    // https://www.ebay.co.uk/sch/i.html?_nkw=magic+the+gathering+innistrad+remastered+play+booster+box&rt=nc&LH_Sold=1&LH_Complete=1
+
+    const url = `https://www.ebay.co.uk/sch/i.html?_nkw=${encodeURIComponent(product.name)}&rt=nc&LH_Sold=1&LH_Complete=1`
+    const soldEbayProductPrices = await this.browserService.getPageInfo(url)
+
+    // const soldEbayProductPrices: EbaySoldProductStrip[] = await this.ebayService.soldProductPrice(product)
 
     const pricePoints = await this.openaiService.ebayPricePoint(ebayProductPrices, product.name)
-    const soldPricePoints = await this.openaiService.ebaySoldPricePoint(soldEbayProductPrices, product)
+    const soldPricePoints = await this.openaiService.ebaySoldPricePoint(soldEbayProductPrices.mainText, product)
 
 
     const totalQuantity = soldPricePoints.reduce((sum, p) => sum + p.price.estimatedSoldQuantity, 0);
