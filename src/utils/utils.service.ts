@@ -4,6 +4,7 @@ import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
 import fetch from 'node-fetch';
 import { ShopifyProduct, ShopifyProductCollections, ShopifyProductCollectionsFullCall } from './utils.type.js';
 import { stripHtml } from "string-strip-html";
+import { EbaySoldProductStrip } from '../ebay/entities/ebay.entity.js';
 
 
 
@@ -352,6 +353,20 @@ export class UtilsService {
         mainText: 'default'
       }
     }
+
+  }
+
+  datesBetween(soldPricePoints: EbaySoldProductStrip[], days: number): EbaySoldProductStrip[] {
+
+    return soldPricePoints.filter(product => {
+      const todayDate = new Date()
+      const soldListingDate = new Date(product.price.soldDate)
+
+      const differenceMs = todayDate.getTime() - soldListingDate.getTime()
+      const diffDays = differenceMs / (1000 * 60 * 60 * 24);
+
+      return diffDays <= days
+    })
 
   }
 } 

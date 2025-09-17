@@ -474,16 +474,45 @@ export class ProcessService {
     const pricePoints = await this.openaiService.ebayPricePoint(ebayProductPrices, product.name)
     const soldPricePoints = await this.openaiService.ebaySoldPricePoint(soldEbayProductPrices.mainText, product)
 
-    const soldPricePointsLastSevenDays = soldPricePoints.filter(product => {
-      const todayDate = new Date()
-      const soldListingDate = new Date(product.price.soldDate)
+    const soldPricePointsLastSevenDays = this.utilService.datesBetween(soldPricePoints, 7)
+    const soldPricePointsLast28Days = this.utilService.datesBetween(soldPricePoints, 28)
 
-      const differenceMs = todayDate.getTime() - soldListingDate.getTime()
-      const diffDays = differenceMs / (1000 * 60 * 60 * 24);
+    const totalQuantityFunc = (soldPricePoints: EbaySoldProductStrip[]) => {
+      return soldPricePoints.reduce((sum, p) => sum + p.price.estimatedSoldQuantity, 0)
+    }
 
-      return diffDays <= 7
-    })
+    const weightAvgPriceFunc = (soldPricePoints: EbaySoldProductStrip[], totalQuantity: number) => {
+      return soldPricePoints.reduce(
+        (sum, p) => sum + p.price.value * p.price.estimatedSoldQuantity,
+        0
+      ) / totalQuantity
+    }
 
+    const spreadScoreFunc = (soldPricePoints: EbaySoldProductStrip[]) => {
+      // 2. Weighted spread (variance)
+      const variance =
+        soldPricePointsLastSevenDays.reduce(
+          (sum, p) =>
+            sum +
+            p.price.estimatedSoldQuantity *
+            Math.pow(p.price.value - weightedAvgPrice, 2),
+          0
+        ) / totalQuantity;
+
+      // 3. Standard deviation = spread
+      const spread = Math.sqrt(variance);
+
+      // 4. Spread score as a %
+      const spreadScorePct = (spread / weightedAvgPrice) * 100;
+
+      console.log({
+        weightedAvgPrice,
+        spread,
+        spreadScorePct: spreadScorePct.toFixed(2) + "%"
+      });
+
+      return spreadScorePct
+    }
 
     const totalQuantity = soldPricePointsLastSevenDays.reduce((sum, p) => sum + p.price.estimatedSoldQuantity, 0);
     const weightedAvgPrice = soldPricePointsLastSevenDays.reduce(
@@ -513,13 +542,34 @@ export class ProcessService {
       spreadScorePct: spreadScorePct.toFixed(2) + "%"
     });
 
+    const soldSevenDays = totalQuantityFunc(soldPricePointsLastSevenDays)
+    const averageSevenDaysSoldPrice = weightAvgPriceFunc(soldPricePointsLastSevenDays, soldSevenDays)
+    const sevenDaySpreadScore = spreadScoreFunc(soldPricePointsLastSevenDays)
+
+    const sevenDays = {
+      soldSevenDays: soldSevenDays,
+      averageSoldPrice: !averageSevenDaysSoldPrice ? 0 : averageSevenDaysSoldPrice,
+      spreadScore: sevenDaySpreadScore ? 0 : sevenDaySpreadScore
+    }
+
+    // 
+
+    const soldTwentyEightDays = totalQuantityFunc(soldPricePointsLast28Days)
+    const averageTwentyEightDaysSoldPrice = weightAvgPriceFunc(soldPricePointsLast28Days, soldTwentyEightDays)
+    const twentyEightDaysSpreadScore = spreadScoreFunc(soldPricePointsLast28Days)
+
+    const twentyEightDays = {
+      soldTwentyEightDays: soldTwentyEightDays,
+      averageTwentyEightDaysSoldPrice: !averageTwentyEightDaysSoldPrice ? 0 : averageTwentyEightDaysSoldPrice,
+      twentyEightDaysSpreadScore: twentyEightDaysSpreadScore ? 0 : twentyEightDaysSpreadScore
+    }
+
     const pricePointTest = {
       minPrice: pricePoints.minPrice,
       averagePrice: pricePoints.averagePrice,
       maxPrice: pricePoints.maxPrice,
-      soldSevenDays: totalQuantity,
-      averageSoldPrice: !weightedAvgPrice ? 0 : weightedAvgPrice,
-      spreadScore: !spreadScorePct ? 0 : spreadScorePct
+      ...sevenDays,
+      ...twentyEightDays
     }
 
     console.log(soldPricePointsLastSevenDays)
