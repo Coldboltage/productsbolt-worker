@@ -520,8 +520,8 @@ export class ProcessService {
       averagePrice: pricePoints.averagePrice,
       maxPrice: pricePoints.maxPrice,
       soldSevenDays: totalQuantity,
-      averageSoldPrice: weightedAvgPrice,
-      spreadScore: spreadScorePct
+      averageSoldPrice: !weightedAvgPrice ? 0 : weightedAvgPrice,
+      spreadScore: !spreadScorePct ? 0 : spreadScorePct
     }
 
     console.log(soldPricePointsLastSevenDays)
