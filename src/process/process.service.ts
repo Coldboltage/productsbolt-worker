@@ -548,8 +548,8 @@ export class ProcessService {
 
     const sevenDays = {
       soldSevenDays: soldSevenDays,
-      averageSoldPrice: !averageSevenDaysSoldPrice ? 0 : averageSevenDaysSoldPrice,
-      spreadScore: sevenDaySpreadScore ? 0 : sevenDaySpreadScore
+      averageSevenDaysSoldPrice: !averageSevenDaysSoldPrice ? 0 : averageSevenDaysSoldPrice,
+      sevenDaySpreadScore: sevenDaySpreadScore ? 0 : sevenDaySpreadScore
     }
 
     // 
