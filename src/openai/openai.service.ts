@@ -291,7 +291,7 @@ The product type should reflect the actual item sold to the customer, not merely
         {
           role: 'user',
           content: `
-        From the page content, find if the product is in stock and its price.
+        From the page content, find if the product is in stock and its price. Products which are pre-order and have the ability to order now, is allowed. 
         Product title: "${title}"
         Page content: ${content}
 
@@ -304,10 +304,11 @@ The product type should reflect the actual item sold to the customer, not merely
           "properties": {
            "analysis": {
               "type": "string"
-              "description": "justification to why product either in stock or not tldr. Click here to be notified when it’s back in stock, request notification, should be considered out of stock"
+              "description": "justification to why product either in stock or not tldr. Click here to be notified when it’s back in stock, request notification, should be considered out of stock. Pre order are allowed as long as a button to allow the order is present"
             },
             "inStock": {
               "type": "boolean"
+               "description": "check to see if the product is orderable. While a product may be a preorder, if the page allows for the functionality to reserve and go into a checkout, it should be deemed in stock. If the page clearly states out of stock, then it's out of stock regardless of all other instructions.
             },
             "price": {
               "type": "number"
