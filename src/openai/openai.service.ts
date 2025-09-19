@@ -299,26 +299,33 @@ The product type should reflect the actual item sold to the customer, not merely
 
         Output JSON 
 
-        {
-          "type": "object",
-          "properties": {
-           "analysis": {
-              "type": "string"
-              "description": "justification to why product either in stock or not tldr. Click here to be notified when it’s back in stock, request notification, should be considered out of stock. Pre order are allowed as long as a button to allow the order is present"
-            },
-            "inStock": {
-              "type": "boolean"
-               "description": "check to see if the product is orderable. While a product may be a preorder, if the page allows for the functionality to reserve and go into a checkout, it should be deemed in stock. If the page clearly states out of stock, then it's out of stock regardless of all other instructions.
-            },
-            "price": {
-              "type": "number"
-            },
+            {
+        "type": "object",
+        "properties": {
+          "analysis": {
+            "type": "string",
+            "description": "Justification for why the product is in stock or not (tldr). Preorders are considered in stock if a checkout/ordering option is present. If the page contains phrases like 'Click here to be notified when it’s back in stock' or 'Request notification', then it's considered out of stock regardless.
+            
+            IMPORTANT:
+            - If the only option is "Request notification" or "Notify me when available", the product is OUT OF STOCK. 
+            - Do NOT treat "Request notification" as preorder. 
+            - A valid preorder must include an actual checkout option (e.g., "Add to cart", "Pre-order now").
+            "
           },
-          "required": [
-            "inStock",
-            "price"
-          ]
-        }
+          "inStock": {
+            "type": "boolean",
+            "description": "True if the product can be ordered or preordered (checkout/reserve available). False if clearly marked out of stock, or if only a 'request notification' option is available."
+          },
+          "price": {
+            "type": "number",
+            "description": "Product price as a number, without currency symbols."
+          }
+        },
+        "required": [
+          "inStock",
+          "price"
+        ]
+      }
         `,
         },
       ],
