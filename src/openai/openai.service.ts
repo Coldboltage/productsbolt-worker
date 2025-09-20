@@ -341,7 +341,8 @@ Output JSON:
             "description": "Justification for why the product is in stock or not (tldr). Preorders are considered in stock if a checkout/ordering option is present. If the page contains phrases like 'Click here to be notified when it’s back in stock' or 'Request notification', then it's considered out of stock regardless.
             
             IMPORTANT:
-            - If the only option is "Request notification" or "Notify me when available", the product is OUT OF STOCK. 
+            - If "Request notification" or "Notify me when available" appears anywhere in the main product section, the product is OUT OF STOCK. 
+            - This overrides any generic "Pre-order" wording elsewhere unless an actual actionable button ("Add to cart", "Pre-order now") is clearly present for this product.
             - Do NOT treat "Request notification" as preorder. 
             - A valid preorder must include an actual checkout option (e.g., "Add to cart", "Pre-order now").
             "
