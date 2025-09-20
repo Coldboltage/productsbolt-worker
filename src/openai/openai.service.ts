@@ -279,14 +279,48 @@ The product type should reflect the actual item sold to the customer, not merely
       messages: [
         {
           role: 'system',
-          content:
-            `Your task is to extract structured product page information. Always verify product name match and ensure the product type (e.g., box or pack) is strictly respected.
+          // content:
+          //   `Your task is to extract structured product page information. Always verify product name match and ensure the product type (e.g., box or pack) is strictly respected.
             
-            - Do not add \`\`\`json fences.
-            - Do not add explanations.
-            - Do not add extra text.
-            Just return valid JSON according to the schema.
-            `,
+          //   - Do not add \`\`\`json fences.
+          //   - Do not add explanations.
+          //   - Do not add extra text.
+          //   Just return valid JSON according to the schema.
+          //   `,
+          content: `
+From the page content, find if the product is in stock and its price. Products which are pre-order and have the ability to order now are considered in stock. 
+
+Rules (keep simple, priority order):
+- If the page contains phrases like "Out of Stock", "Sold Out", "Currently Unavailable", 
+  "Click here to be notified when it’s back in stock", "Request notification", 
+  "Notify me when available", "Email me when it's back in stock" → OUT OF STOCK.
+- A valid preorder must include an actionable checkout option such as 
+  "Add to cart", "Add to basket", "Buy now", "Pre-order now", "Reserve now". 
+  If these are present, treat as IN STOCK (preorder allowed).
+- If only "Request notification" or "Notify when available" is present without an actionable checkout, → OUT OF STOCK.
+- If nothing matches clearly, default to OUT OF STOCK.
+
+Output JSON:
+
+{
+  "type": "object",
+  "properties": {
+    "analysis": {
+      "type": "string",
+      "description": "Justification for why the product is in stock or not. Preorders are considered in stock if a checkout/ordering option is present. If only a notify/request notification is available, it is out of stock."
+    },
+    "inStock": {
+      "type": "boolean",
+      "description": "True if product can be ordered or preordered (checkout/reserve available). False if clearly out of stock or only notify options."
+    },
+    "price": {
+      "type": "number",
+      "description": "Product price as a number, without currency symbols."
+    }
+  },
+  "required": ["inStock","price"]
+}
+`
         },
         {
           role: 'user',
