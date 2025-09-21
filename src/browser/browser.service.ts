@@ -38,12 +38,24 @@ export class BrowserService {
   ): Promise<{ html: string; mainText: string }> => {
     const { browser, page } = await connect({
       headless: false,
-      args: [],
+      args: [
+        "--window-position=-99999,-99999",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-features=CalculateNativeWinOcclusion",
+        "--no-sandbox",
+        "--disable-dev-shm-usage"
+      ],
       customConfig: {},
       turnstile: true,
       connectOption: {},
       disableXvfb: false,
       ignoreAllFlags: false,
+    });
+
+    await page.setViewport({
+      width: 1366,
+      height: 768,
+      deviceScaleFactor: 1
     });
 
     await page.setRequestInterception(true);

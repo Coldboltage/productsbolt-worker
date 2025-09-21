@@ -281,7 +281,7 @@ The product type should reflect the actual item sold to the customer, not merely
           role: 'system',
           // content:
           //   `Your task is to extract structured product page information. Always verify product name match and ensure the product type (e.g., box or pack) is strictly respected.
-            
+
           //   - Do not add \`\`\`json fences.
           //   - Do not add explanations.
           //   - Do not add extra text.
