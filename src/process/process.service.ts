@@ -476,7 +476,7 @@ export class ProcessService {
 
     const soldPricePoints = await this.openaiService.ebaySoldPricePoint(soldEbayProductPrices.mainText, product)
     console.log(soldPricePoints)
-    
+
     const soldPricePointsLastSevenDays = this.utilService.datesBetween(soldPricePoints, 7)
     const soldPricePointsLast28Days = this.utilService.datesBetween(soldPricePoints, 28)
 

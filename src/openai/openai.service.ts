@@ -575,24 +575,84 @@ Output JSON:
 
     const openai = new OpenAI();
 
-    const openAiResponse = await openai.responses.parse({
-      model: `gpt-4.1-${version}`,
+    if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
+
+
+    const openAiResponse = await openai.chat.completions.create({
+      model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-${version}`,
       temperature: 0,
-      input: [
-        { role: 'system', content: 'Extract product page information' },
+      messages: [
+        {
+          role: 'system', content: `Extract product page information - Do not add \`\`\`json fences.
+            - Do not add explanations.
+            - Do not add extra text.
+            Just return valid JSON according to the schema.` },
         {
           role: 'user',
-          content: `Please use the sitemap URLs and figure the best links to use for ${query}. The URLs must include ${mainUrl} within the url. URLs: ${sitemapUrls.join(', ')}`,
+          content: `Please use the sitemap URLs and figure the best links to use for ${query}. The URLs must include ${mainUrl} within the url. URLs: ${sitemapUrls.join(', ')}
+          
+          JSON OUTPUT with object
+
+          {
+            {
+              "type": "object",
+              "properties": {
+                "bestSites": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string",
+                        "description": "Product page URL"
+                      },
+                      "score": {
+                        "type": "number",
+                        "description": "Relevance score"
+                      }
+                    },
+                    "required": ["url", "score"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["bestSites"],
+              "additionalProperties": false,
+              "examples": [
+                {
+                  "bestSites": [
+                    {
+                      "url": "https://example.com/product-1",
+                      "score": // Calculate
+                    },
+                    {
+                      "url": "https://example.com/product-2",
+                      "score": // Calculate
+                    },
+                    {
+                      "url": "https://example.com/product-3",
+                      "score": // Calculate
+                    }
+                  ]
+                }
+              ]
+            }
+
+          `,
         },
       ],
-      text: {
-        format: zodTextFormat(sitemapBestLinkSchema, 'links'),
-      },
+      // text: {
+      //   format: zodTextFormat(sitemapBestLinkSchema, 'links'),
+      // },
     });
 
-    if (!openAiResponse.output_parsed) throw new Error('crawlError');
+    // if (!openAiResponse.output_parsed) throw new Error('crawlError');
 
-    const linksResponse = openAiResponse.output_parsed as BestSitesInterface;
+    // const linksResponse = openAiResponse.output_parsed as BestSitesInterface;
+
+    if (!openAiResponse.choices[0].message?.content) throw new Error('crawlError');
+
+    const linksResponse = JSON.parse(openAiResponse.choices[0].message?.content) as BestSitesInterface;
     console.log(linksResponse);
     return linksResponse;
   };

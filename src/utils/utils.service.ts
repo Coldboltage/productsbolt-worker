@@ -58,7 +58,7 @@ export class UtilsService {
 
     const filterProducts = (urls: string[], query: string): string[] => {
       const products = urls.map(url => ({ url, keywords: extractKeywords(url) }));
-      const queryKeys = query.toLowerCase().split(' ').filter(Boolean);
+      const queryKeys = extractKeywords(query)
       const minMatches = requiredMatches(queryKeys.length);
       console.log(queryKeys)
       console.log(minMatches)
