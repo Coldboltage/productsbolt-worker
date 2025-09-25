@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
 import z from 'zod';
-import { ProductType, BestSitesInterface } from '../app.type.js';
+import { ProductType, BestSitesInterface, ParsedLinks } from '../app.type.js';
 import { ProductInStockWithAnalysis } from 'src/process/entities/process.entity.js';
 import { EbayProductStrip, EbaySoldProductStrip } from '../ebay/entities/ebay.entity.js';
 import { ProductDto } from '../process/dto/product.dto.js';
@@ -562,7 +562,7 @@ Output JSON:
     query: string,
     version: string,
     mainUrl: string,
-  ): Promise<BestSitesInterface> => {
+  ): Promise<ParsedLinks[]> => {
     console.log(sitemapUrls)
     const sitemapBestLinkSchema = z.object({
       bestSites: z.array(
@@ -594,50 +594,29 @@ Output JSON:
           JSON OUTPUT with object
 
           {
-            {
+
+        "type": "object",
+        "properties": {
+          "bestSites": {
+            "type": "array",
+            "items": {
               "type": "object",
               "properties": {
-                "bestSites": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "url": {
-                        "type": "string",
-                        "description": "Product page URL"
-                      },
-                      "score": {
-                        "type": "number",
-                        "description": "Relevance score"
-                      }
-                    },
-                    "required": ["url", "score"],
-                    "additionalProperties": false
-                  }
+                "url": {
+                  "type": "string"
+                },
+                "score": {
+                  "type": "number"
                 }
               },
-              "required": ["bestSites"],
-              "additionalProperties": false,
-              "examples": [
-                {
-                  "bestSites": [
-                    {
-                      "url": "https://example.com/product-1",
-                      "score": // Calculate
-                    },
-                    {
-                      "url": "https://example.com/product-2",
-                      "score": // Calculate
-                    },
-                    {
-                      "url": "https://example.com/product-3",
-                      "score": // Calculate
-                    }
-                  ]
-                }
-              ]
+              "required": ["url", "score"],
+              "additionalProperties": false
             }
-
+          }
+        },
+        "required": ["bestSites"],
+        "additionalProperties": false
+      }
           `,
         },
       ],
@@ -652,7 +631,7 @@ Output JSON:
 
     if (!openAiResponse.choices[0].message?.content) throw new Error('crawlError');
 
-    const linksResponse = JSON.parse(openAiResponse.choices[0].message?.content) as BestSitesInterface;
+    const linksResponse = JSON.parse(openAiResponse.choices[0].message?.content) as ParsedLinks[];
     console.log(linksResponse);
     return linksResponse;
   };

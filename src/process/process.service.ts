@@ -354,7 +354,7 @@ export class ProcessService {
 
     console.log(`ReducedUrls: ${reducedUrls.length}`)
 
-    const { bestSites } = await this.openaiService.crawlFromSitemap(
+    const bestSites = await this.openaiService.crawlFromSitemap(
       reducedUrls,
       query,
       mode,
@@ -411,7 +411,7 @@ export class ProcessService {
 
     if (uniqueBestSitesAllLinks.length === 0) throw new Error('No links found to process');
 
-    const { bestSites: finalBestSites } =
+    const finalBestSites =
       await this.openaiService.crawlFromSitemap(
         uniqueBestSitesAllLinks,
         query,
