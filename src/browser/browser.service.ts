@@ -61,7 +61,7 @@ export class BrowserService {
     await page.setRequestInterception(true);
 
     page.on("request", (req) => {
-      const block = ["image", "font", "media", "other"];
+      const block = ["image", "font", "media"];
       if (block.includes(req.resourceType())) {
         req.abort();
       } else {
@@ -102,7 +102,13 @@ export class BrowserService {
     // Timeout promise that closes browser after 10 seconds
     let timer: ReturnType<typeof setTimeout>;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error('Timeout: 60s')), 60_000);
+      timer = setTimeout(async () => {
+        console.log("⏱️ Timeout hit, closing page...");
+        try {
+          await page.close(); // 🔑 stop pageTask work first
+        } catch { }
+        reject(new Error("Timeout: 60s"));
+      }, 60000);
     });
 
     try {
@@ -111,11 +117,8 @@ export class BrowserService {
     } finally {
       // Always clean up: cancel the timer and kill the browser exactly once
       if (timer) clearTimeout(timer);
-      try {
-        await browser.close();
-      } catch (e) {
-        console.error('Error closing browser', e);
-      }
+      await browser.close().catch(() => { }); // now safe to close browser
+
     }
   };
 
@@ -152,7 +155,13 @@ export class BrowserService {
     // Timeout promise that closes browser after 10 seconds
     let timer: ReturnType<typeof setTimeout>;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error('Timeout: 60s')), 60_000);
+      timer = setTimeout(async () => {
+        console.log("⏱️ Timeout hit, closing page...");
+        try {
+          await page.close(); // 🔑 stop pageTask work first
+        } catch { }
+        reject(new Error("Timeout: 60s"));
+      }, 60000);
     });
 
     try {
@@ -161,11 +170,7 @@ export class BrowserService {
     } finally {
       // Always clean up: cancel the timer and kill the browser exactly once
       if (timer) clearTimeout(timer);
-      try {
-        await browser.close();
-      } catch (e) {
-        console.error('Error closing browser', e);
-      }
+      await browser.close().catch(() => { }); // now safe to close browser
     }
   };
 

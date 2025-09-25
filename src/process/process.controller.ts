@@ -149,8 +149,6 @@ export class ProcessController {
 
       // Optionally nack with requeue false to avoid infinite retry loops
       channel.nack(originalMsg, false, false);
-    } finally {
-      await new Promise(r => setTimeout(() => r, 1000))
     }
   }
 

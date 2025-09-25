@@ -295,41 +295,31 @@ export class UtilsService {
   async waitForCloudflareBypass(page: any, timeout = 60000, waitingTimeout = 2000, resolveTimeout = 10000) {
     const start = Date.now();
 
-    console.log('hello')
-    // try {
-    //   await page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 15000 });
-    //   console.log('page loaded')
-    // } catch (error) {
+    const firstTitle = await page.title();
+    console.log(firstTitle);
 
-    // }
-
-
-
-    const title = await page.title();
-    console.log(title)
-    if (!title.includes("...") && !title.includes("pardon")) {
-      console.log('no cloudflare')
+    if (!firstTitle.includes("...") && !firstTitle.includes("pardon")) {
+      console.log("no cloudflare");
       return;
     }
 
     while (Date.now() - start < timeout) {
       const title = await page.title();
-      console.log(title)
-      if (title.includes('...') || title.includes('pardon')) {
+      console.log(title);
 
-        // Wait a bit before checking again
-        console.log('waiting');
-        await new Promise((resolve) => setTimeout(resolve, waitingTimeout));
+      if (title.includes("...") || title.includes("pardon")) {
+        console.log("waiting");
+        await new Promise(r => setTimeout(r, waitingTimeout));
+      } else {
+        console.log("passed");
+        await new Promise(r => setTimeout(r, resolveTimeout));
+        return;
       }
-
-      // Challenge passed, page loaded
-      console.log('passed');
-      await new Promise((resolve) => setTimeout(resolve, resolveTimeout));
-      return;
     }
-    console.log("I got out?")
-    throw new Error('Timed out waiting for Cloudflare challenge to complete');
-  };
+
+    throw new Error("Timed out waiting for Cloudflare challenge");
+  }
+
 
   extractShopifyWebsite = async (url: string) => {
     console.log(url)

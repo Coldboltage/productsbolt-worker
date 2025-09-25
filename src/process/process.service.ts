@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { JSDOM } from 'jsdom';
 import { promises as fs } from 'fs';
 import { htmlToText } from 'html-to-text';
@@ -192,8 +192,17 @@ export class ProcessService {
       //   shopifySite
       // })
       // await new Promise(r => setTimeout(() => r, 10000000))
-      const textInformation = await this.browserService.getPageInfo(url)
-      html = textInformation.html
+      let textInformation: {
+        html: string;
+        mainText: string;
+      };
+      try {
+        textInformation = await this.browserService.getPageInfo(url)
+      } catch (error) {
+        throw new ServiceUnavailableException(`Browser session closed early for ${url}`);
+      }
+      const
+        html = textInformation.html
       mainText = textInformation.mainText
       const dom = new JSDOM(html);
       const document = dom.window.document;
@@ -266,7 +275,15 @@ export class ProcessService {
       }
     } else {
       console.log('getPageInfo activated')
-      const textInformation = await this.browserService.getPageInfo(url)
+      let textInformation: {
+        html: string;
+        mainText: string;
+      };
+      try {
+        textInformation = await this.browserService.getPageInfo(url)
+      } catch (error) {
+        throw new ServiceUnavailableException(`Browser session closed early for ${url}`);
+      }
       html = textInformation.html
       mainText = textInformation.mainText
       const dom = new JSDOM(html);
@@ -465,7 +482,16 @@ export class ProcessService {
     // https://www.ebay.co.uk/sch/i.html?_nkw=magic+the+gathering+innistrad+remastered+play+booster+box&rt=nc&LH_Sold=1&LH_Complete=1
 
     const url = `https://www.ebay.co.uk/sch/i.html?_nkw=${encodeURIComponent(product.name)}&rt=nc&LH_Sold=1&LH_Complete=1`
-    const soldEbayProductPrices = await this.browserService.getPageInfo(url)
+
+    let soldEbayProductPrices: {
+      html: string;
+      mainText: string;
+    };
+    try {
+      soldEbayProductPrices = await this.browserService.getPageInfo(url)
+    } catch (error) {
+      throw new ServiceUnavailableException(`Browser session closed early for ${url}`);
+    }
 
     console.log(soldEbayProductPrices.mainText)
 
