@@ -227,7 +227,6 @@ export class BrowserService {
             page: index,
             error: "429 Error"
           })
-          await new Promise(r => setTimeout(r, 1000000))
           await browser.close()
           return {
             websiteUrls: websiteUrls,
