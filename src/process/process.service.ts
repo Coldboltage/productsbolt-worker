@@ -379,7 +379,7 @@ export class ProcessService {
     );
 
     for (const [index, singleUrl] of bestSites.entries()) {
-      if (singleUrl.score <= 0.9 && index === 0) continue
+      if (singleUrl.score <= 0.9 && index < 2) continue
       console.log(`${singleUrl.url}`);
       const answer = await this.test(`${singleUrl.url}`, query, type, "mini", context, shopifySite);
       if (answer) {
