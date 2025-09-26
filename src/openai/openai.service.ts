@@ -22,6 +22,9 @@ export class OpenaiService {
   ): Promise<ProductInStockWithAnalysis> => {
     const openai = new OpenAI();
 
+    if (process.env.LOCAL_LLM === "true") openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`
+    // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
+
     //     const schema = {
     //       name: 'product_in_stock_with_analysis',
     //       strict: true,
@@ -122,7 +125,8 @@ export class OpenaiService {
 
     const response = await openai.chat.completions.create({
       // model: `gpt-4.1-${mode}`,
-      model: `gpt-4.1-mini`,
+      // model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
+      model: process.env.LOCAL_LLM === "true" ? "nvidia-nemotron-nano-12b-v2" : `gpt-4.1-mini`,
       temperature: 0,
       // model: `gpt-5-nano`,
       // reasoning_effort: "low",
@@ -690,9 +694,7 @@ Output JSON:
 
           {
 
-        "type": "object",
-        "properties": {
-          "bestSites": {
+
             "type": "array",
             "items": {
               "type": "object",
@@ -702,15 +704,15 @@ Output JSON:
                 },
                 "score": {
                   "type": "number"
+                  "description": "A relevance score between 0 and 1 (inclusive). 1 = perfect match, 0 = not relevant."
+
                 }
               },
               "required": ["url", "score"],
               "additionalProperties": false
-            }
-          }
-        },
-        "required": ["bestSites"],
-        "additionalProperties": false
+            },
+            "required": ["bestSites"],
+            "additionalProperties": false
       }
           `,
         },
