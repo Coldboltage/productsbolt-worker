@@ -261,7 +261,9 @@ The product type should reflect the actual item sold to the customer, not merely
   }> => {
     const openai = new OpenAI();
 
-    if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
+    if (process.env.LOCAL_LLM === "true") openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`
+    // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
+
 
     // 'analysis',
     // 'inStock',
@@ -575,8 +577,8 @@ Output JSON:
 
     const openai = new OpenAI();
 
-    if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
-
+    if (process.env.LOCAL_LLM === "true") openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`
+    // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
     const openAiResponse = await openai.chat.completions.create({
       model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-${version}`,
