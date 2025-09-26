@@ -126,7 +126,7 @@ export class OpenaiService {
     const response = await openai.chat.completions.create({
       // model: `gpt-4.1-${mode}`,
       // model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
-      model: process.env.LOCAL_LLM === "true" ? "nvidia-nemotron-nano-12b-v2" : `gpt-4.1-mini`,
+      model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-mini`,
       temperature: 0,
       // model: `gpt-5-nano`,
       // reasoning_effort: "low",
@@ -144,11 +144,11 @@ export class OpenaiService {
         },
         {
           role: 'user',
-          content: `Target product name: ${productName}
-                      Expected product type: ${type.toUpperCase()}
+          content: `Required Target product name: ${productName}
+                      Required Expected product type: ${type.toUpperCase()}
                       Context: ${context}
-                      Product Title: ${title}
-                      Page Content: ${content}
+                      Analysed Product Title: ${title}
+                      Analaysed Page Content: ${content}
                       
                       beneath is the structure of the JSON output you're to create with descriptions to help understand how to go about it.
 
