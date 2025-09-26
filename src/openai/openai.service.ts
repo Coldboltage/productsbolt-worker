@@ -22,103 +22,103 @@ export class OpenaiService {
   ): Promise<ProductInStockWithAnalysis> => {
     const openai = new OpenAI();
 
-    const schema = {
-      name: 'product_in_stock_with_analysis',
-      strict: true,
-      schema: {
-        type: 'object',
-        properties: {
-          analysis: {
-            type: 'string',
-            description:
-              'Very Concisely, use this field to reason about what the product fundamentally is, based on all available evidence. Analyze the product title, description, and any contextual information to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked "Add to Cart", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”) \n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching.'
-          },
-          justifications: {
-            type: 'object',
-            description:
-              'For every flag below, very concisely quote or paraphrase the page snippet that proves it.',
-            properties: {
-              inStock: { type: 'string' },
-              price: { type: 'string' },
-              currencyCode: { type: 'string' },
-              isMainProductPage: { type: 'string' },
-              isNamedProduct: { type: 'string' },
-              productTypeMatchStrict: { type: 'string' },
-              variantMatchStrict: { type: 'string' }
-            },
-            required: [
-              'inStock',
-              'price',
-              'currencyCode',
-              'isMainProductPage',
-              'isNamedProduct',
-              'productTypeMatchStrict',
-              'variantMatchStrict'
-            ],
-            additionalProperties: false
-          },
+    //     const schema = {
+    //       name: 'product_in_stock_with_analysis',
+    //       strict: true,
+    //       schema: {
+    //         type: 'object',
+    //         properties: {
+    //           analysis: {
+    //             type: 'string',
+    //             description:
+    //               'Very Concisely, use this field to reason about what the product fundamentally is, based on all available evidence. Analyze the product title, description, and any contextual information to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked "Add to Cart", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”) \n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching.'
+    //           },
+    //           justifications: {
+    //             type: 'object',
+    //             description:
+    //               'For every flag below, very concisely quote or paraphrase the page snippet that proves it.',
+    //             properties: {
+    //               inStock: { type: 'string' },
+    //               price: { type: 'string' },
+    //               currencyCode: { type: 'string' },
+    //               isMainProductPage: { type: 'string' },
+    //               isNamedProduct: { type: 'string' },
+    //               productTypeMatchStrict: { type: 'string' },
+    //               variantMatchStrict: { type: 'string' }
+    //             },
+    //             required: [
+    //               'inStock',
+    //               'price',
+    //               'currencyCode',
+    //               'isMainProductPage',
+    //               'isNamedProduct',
+    //               'productTypeMatchStrict',
+    //               'variantMatchStrict'
+    //             ],
+    //             additionalProperties: false
+    //           },
 
-          inStock: {
-            type: 'boolean',
-            description: 'True if the item is currently in stock and available for purchase.'
-          },
-          isMainProductPage: {
-            type: 'boolean',
-            description: `True only if the page is exclusively or primarily about the single target product, without listing multiple products, variants, bundles, or related items.
-    If the page shows a category, collection, or multiple different products—even if related—this must be false.`
-          },
-          isNamedProduct: {
-            type: 'boolean',
-            description: 'True if the exact product name appears in the page title or description.'
-          },
-          productTypeMatchStrict: {
-            type: 'boolean',
-            description:
-              `True only if the sales unit the customer receives matches the expected product type exactly, or qualifies as a close equivalent (e.g., a box containing multiple units of the expected type). 
-The product type should reflect the actual item sold to the customer, not merely its contents or components.`
-          },
-          price: {
-            type: 'number',
-            description: 'The numeric price of the product, without currency symbol.'
-          },
-          currencyCode: {
-            type: 'string',
-            description: 'The 3-letter ISO currency code (e.g., GBP, USD, EUR).'
-          },
-          conciseReason: {
-            type: 'string',
-            description: 'Short justification (≤ 160 chars) summarizing the match outcome.'
-          },
-          detectedVariant: {
-            type: 'string',
-            description: 'Short identifier for the detected product variant (e.g., Collector, English, 2025).'
-          },
-          detectedFullName: {
-            type: 'string',
-            description: 'The full product name as listed on the page.'
-          },
-          variantMatchStrict: {
-            type: 'boolean',
-            description: 'True if all variant tokens match and no conflicting variants are present.'
-          }
-        },
-        required: [
-          'analysis',
-          'inStock',
-          'isMainProductPage',
-          'isNamedProduct',
-          'productTypeMatchStrict',
-          'price',
-          'currencyCode',
-          'conciseReason',
-          'detectedVariant',
-          'detectedFullName',
-          'variantMatchStrict',
-          'justifications'
-        ],
-        additionalProperties: false
-      }
-    };
+    //           inStock: {
+    //             type: 'boolean',
+    //             description: 'True if the item is currently in stock and available for purchase.'
+    //           },
+    //           isMainProductPage: {
+    //             type: 'boolean',
+    //             description: `True only if the page is exclusively or primarily about the single target product, without listing multiple products, variants, bundles, or related items.
+    //     If the page shows a category, collection, or multiple different products—even if related—this must be false.`
+    //           },
+    //           isNamedProduct: {
+    //             type: 'boolean',
+    //             description: 'True if the exact product name appears in the page title or description.'
+    //           },
+    //           productTypeMatchStrict: {
+    //             type: 'boolean',
+    //             description:
+    //               `True only if the sales unit the customer receives matches the expected product type exactly, or qualifies as a close equivalent (e.g., a box containing multiple units of the expected type). 
+    // The product type should reflect the actual item sold to the customer, not merely its contents or components.`
+    //           },
+    //           price: {
+    //             type: 'number',
+    //             description: 'The numeric price of the product, without currency symbol.'
+    //           },
+    //           currencyCode: {
+    //             type: 'string',
+    //             description: 'The 3-letter ISO currency code (e.g., GBP, USD, EUR).'
+    //           },
+    //           conciseReason: {
+    //             type: 'string',
+    //             description: 'Short justification (≤ 160 chars) summarizing the match outcome.'
+    //           },
+    //           detectedVariant: {
+    //             type: 'string',
+    //             description: 'Short identifier for the detected product variant (e.g., Collector, English, 2025).'
+    //           },
+    //           detectedFullName: {
+    //             type: 'string',
+    //             description: 'The full product name as listed on the page.'
+    //           },
+    //           variantMatchStrict: {
+    //             type: 'boolean',
+    //             description: 'True if all variant tokens match and no conflicting variants are present.'
+    //           }
+    //         },
+    //         required: [
+    //           'analysis',
+    //           'inStock',
+    //           'isMainProductPage',
+    //           'isNamedProduct',
+    //           'productTypeMatchStrict',
+    //           'price',
+    //           'currencyCode',
+    //           'conciseReason',
+    //           'detectedVariant',
+    //           'detectedFullName',
+    //           'variantMatchStrict',
+    //           'justifications'
+    //         ],
+    //         additionalProperties: false
+    //       }
+    //     };
 
     const response = await openai.chat.completions.create({
       // model: `gpt-4.1-${mode}`,
@@ -144,13 +144,106 @@ The product type should reflect the actual item sold to the customer, not merely
                       Expected product type: ${type.toUpperCase()}
                       Context: ${context}
                       Product Title: ${title}
-                      Page Content: ${content}`
+                      Page Content: ${content}
+                      
+                      beneath is the structure of the JSON output you're to create with descriptions to help understand how to go about it.
+
+                      {
+                        "type": "object",
+                        "properties": {
+                          "analysis": {
+                            "type": "string",
+                            "description": "Very Concisely, use this field to reason about what the product fundamentally is, based on all available evidence. Analyze the product title, description, and any contextual information to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked \"Add to Cart\", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”)\n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching."
+                          },
+                          "justifications": {
+                            "type": "object",
+                            "description": "For every flag below, very concisely quote or paraphrase the page snippet that proves it.",
+                            "properties": {
+                              "inStock": { "type": "string" },
+                              "price": { "type": "string" },
+                              "currencyCode": { "type": "string" },
+                              "isMainProductPage": { "type": "string" },
+                              "isNamedProduct": { "type": "string" },
+                              "productTypeMatchStrict": { "type": "string" },
+                              "variantMatchStrict": { "type": "string" }
+                            },
+                            "required": [
+                              "inStock",
+                              "price",
+                              "currencyCode",
+                              "isMainProductPage",
+                              "isNamedProduct",
+                              "productTypeMatchStrict",
+                              "variantMatchStrict"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "inStock": {
+                            "type": "boolean",
+                            "description": "True if the item is currently in stock and available for purchase."
+                          },
+                          "isMainProductPage": {
+                            "type": "boolean",
+                            "description": "True only if the page is exclusively or primarily about the single target product, without listing multiple products, variants, bundles, or related items.\nIf the page shows a category, collection, or multiple different products—even if related—this must be false."
+                          },
+                          "isNamedProduct": {
+                            "type": "boolean",
+                            "description": "True if the exact product name appears in the page title or description."
+                          },
+                          "productTypeMatchStrict": {
+                            "type": "boolean",
+                            "description": "True only if the sales unit the customer receives matches the expected product type exactly, or qualifies as a close equivalent (e.g., a box containing multiple units of the expected type).\nThe product type should reflect the actual item sold to the customer, not merely its contents or components."
+                          },
+                          "price": {
+                            "type": "number",
+                            "description": "The numeric price of the product, without currency symbol."
+                          },
+                          "currencyCode": {
+                            "type": "string",
+                            "description": "The 3-letter ISO currency code (e.g., GBP, USD, EUR)."
+                          },
+                          "conciseReason": {
+                            "type": "string",
+                            "description": "Short justification (≤ 160 chars) summarizing the match outcome."
+                          },
+                          "detectedVariant": {
+                            "type": "string",
+                            "description": "Short identifier for the detected product variant (e.g., Collector, English, 2025)."
+                          },
+                          "detectedFullName": {
+                            "type": "string",
+                            "description": "The full product name as listed on the page."
+                          },
+                          "variantMatchStrict": {
+                            "type": "boolean",
+                            "description": "True if all variant tokens match and no conflicting variants are present."
+                          }
+                        },
+                        "required": [
+                          "analysis",
+                          "inStock",
+                          "isMainProductPage",
+                          "isNamedProduct",
+                          "productTypeMatchStrict",
+                          "price",
+                          "currencyCode",
+                          "conciseReason",
+                          "detectedVariant",
+                          "detectedFullName",
+                          "variantMatchStrict",
+                          "justifications"
+                        ],
+                        "additionalProperties": false
+                      }
+
+                      
+                      `
         }
       ],
-      response_format: {
-        type: 'json_schema',
-        json_schema: schema
-      }
+      // response_format: {
+      //   type: 'json_schema',
+      //   json_schema: schema
+      // }
     });
 
     const json = JSON.parse(response.choices[0].message?.content || '{}');
