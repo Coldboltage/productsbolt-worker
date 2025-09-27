@@ -268,7 +268,7 @@ export class ProcessService {
       console.log('extractShopifyWebsite activated')
       await new Promise(r => setTimeout(r, 50))
       const result = await this.utilService.extractShopifyWebsite(url)
-      await this.updateWebpageSend({
+      this.updateWebpageSend({
         url,
         inStock: result.available ? result.available : false,
         price: result.price / 100,
@@ -279,6 +279,7 @@ export class ProcessService {
         shopWebsite,
         webPageId
       })
+      return true
     } else {
       console.log('getPageInfo activated')
       let textInformation: {
