@@ -387,6 +387,11 @@ export class OpenaiService {
           //   Just return valid JSON according to the schema.
           //   `,
           content: `
+         - Do not add \`\`\`json fences.
+            - Do not add explanations.
+            - Do not add extra text.
+            Just return valid JSON according to the schema.
+
 From the page content, find if the product is in stock and its price. Products which are pre-order and have the ability to order now are considered in stock. 
 
 Rules (keep simple, priority order):
@@ -661,6 +666,7 @@ Output JSON:
     query: string,
     version: string,
     mainUrl: string,
+    context
   ): Promise<ParsedLinks[]> => {
     console.log(sitemapUrls)
     const sitemapBestLinkSchema = z.object({
@@ -688,7 +694,9 @@ Output JSON:
             Just return valid JSON according to the schema.` },
         {
           role: 'user',
-          content: `Please use the sitemap URLs and figure the best links to use for ${query}. The URLs must include ${mainUrl} within the url. URLs: ${sitemapUrls.join(', ')}
+          content: `Please use the sitemap URLs and figure the best links to use for ${query}. The URLs must include ${mainUrl} within the url. URLs: ${sitemapUrls.join(', ')}. Links that are below 0.9 score should not be included. Therefore only include links with scores which are 0.9 or above. Highest score first. Only give 2 links maximum.
+          
+          To find out more about the product, here is it's description to help you ${context}
           
           JSON OUTPUT with object
 

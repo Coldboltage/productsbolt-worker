@@ -70,18 +70,37 @@ export class BrowserService {
     });
 
     // Promise that resolves with the page content and mainText
+    
+    
     const pageTask = (async () => {
       const testPage = await page.goto(url, { waitUntil: ['networkidle2'], timeout: 60000 });
-      const status = testPage.status()
-      console.log(`Navigated to ${url} with status ${status}`);
+
+      let status = testPage.status()
 
       try {
         await this.utilService.waitForCloudflareBypass(page);
+        if (status === 404) throw new Error(`404 Not Found`);
+        if (status === 403 || status === 429) {
+          console.log('403 or 429 detected, reloading page')
+          const finalResponse = await page.reload({ waitUntil: 'networkidle2', timeout: 60000 });
+          status = finalResponse?.status()
+        } else {
+          console.log(`Passed: Status ${status} is OK`)
+        }
+    
+
       } catch (e) {
         console.log(`Error during Cloudflare bypass, continuing anyway`);
         console.log(e)
         await new Promise(r => setTimeout(r, 10000))
       }
+      
+
+      console.log(`Navigated to ${url} with status ${status}`);
+
+      if (status >= 400) throw new Error(`Failed to load page, status code: ${status}`);
+
+
 
       const html = await page.content();
       const mainText = await page.evaluate(() => {

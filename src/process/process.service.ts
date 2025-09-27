@@ -375,7 +375,8 @@ export class ProcessService {
       reducedUrls,
       query,
       mode,
-      `${base}${seed}`
+      `${base}${seed}`,
+      context
     );
 
     for (const [index, singleUrl] of bestSites.entries()) {
@@ -433,7 +434,8 @@ export class ProcessService {
         uniqueBestSitesAllLinks,
         query,
         mode,
-        `${base}${seed}`
+        `${base}${seed}`,
+        context
       );
 
     const mapFinalBestSites = finalBestSites.map((site) => {
