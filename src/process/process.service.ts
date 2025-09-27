@@ -144,11 +144,16 @@ export class ProcessService {
       shopId: createProcessDto.shopId
     };
     console.log(webPage);
-    await fetch('http://localhost:3000/webpage/', {
+    try {
+       await fetch('http://localhost:3000/webpage/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(webPage),
     });
+    } catch (error) {
+      console.log(error)
+    }
+
   }
 
   async webpageDiscovery(createProcessDto: CreateProcessDto, mode: string) {
