@@ -307,7 +307,8 @@ export class ProcessService {
       allText,
       query,
       type,
-      mode
+      mode,
+      url
     })
 
     // Create Hash from maintext. We shall assume this text must change if something has changed
