@@ -134,14 +134,7 @@ export class ProcessController {
     const originalMsg = context.getMessage();
 
     try {
-      const result = await this.processService.webpageDiscovery(createProcessDto, "nano");
-      console.log(result);
-      if (!result) {
-        channel.ack(originalMsg);
-        return false;
-      }
-
-
+      await this.processService.webpageDiscovery(createProcessDto, "nano");
       // ACK message on success
       channel.ack(originalMsg);
     } catch (error) {
@@ -162,32 +155,34 @@ export class ProcessController {
 
     try {
       const result = await this.processService.updatePage(checkPageDto);
-      const { query, shopWebsite } = checkPageDto;
-      console.log(result);
-      if (!result) {
-        channel.ack(originalMsg);
-        return false;
-      }
-      const webPage = {
-        url: result.specificUrl,
-        shopWebsite,
-        inStock: result.inStock,
-        price: result.price,
-        productName: query,
-        webPageId: checkPageDto.webPageId,
-        hash: result.hash,
-        count: result.count,
-        shopifySite: result.shopifySite
-      };
-      console.log(webPage);
-      await fetch(`http://localhost:3000/webpage-cache/update-single-page-and-cache/${webPage.webPageId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(webPage),
-      });
-      console.log("Ending");
+      // const { query, shopWebsite, webPageId } = checkPageDto;
+      // console.log(result);
+      // if (!result) {
+      //   channel.ack(originalMsg);
+      //   return false;
+      // }
+      // const webPage = {
+      //   url: result.specificUrl,
+      //   shopWebsite,
+      //   inStock: result.inStock,
+      //   price: result.price,
+      //   productName: query,
+      //   webPageId: webPageId,
+      //   hash: result.hash,
+      //   count: result.count,
+      //   shopifySite: result.shopifySite
+      // };
+      // console.log(webPage);
+      // await fetch(`http://localhost:3000/webpage-cache/update-single-page-and-cache/${webPage.webPageId}`, {
+      //   method: 'PATCH',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(webPage),
+      // });
+      // console.log("Ending");
 
       // ACK message on success
+      console.log("Acknowledging message")
+      console.log(result)
       channel.ack(originalMsg);
     } catch (error) {
       console.error(error);
