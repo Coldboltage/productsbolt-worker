@@ -42,11 +42,23 @@ export interface Justification {
 
 export interface TestTwoInterface {
   url: string;
-    inStock: boolean;
-    price: number;
-    productName: string;
-    specificUrl: string;
-    hash: string;
-    count: number;
-    shopifySite: boolean
+  inStock: boolean;
+  price: number;
+  productName: string;
+  specificUrl: string;
+  hash: string;
+  count: number;
+  shopifySite: boolean
+}
+
+export interface UpdatePagePayloadInterface {
+  url: string;
+  shopWebsite: string;
+  inStock: boolean;
+  price: number;
+  productName: string;
+  webPageId: string;
+  hash: string;
+  count: number;
+  shopifySite: boolean;
 }
