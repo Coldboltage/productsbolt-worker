@@ -866,7 +866,7 @@ export class ProcessService {
     const cloudflareStatusResult = await this.browserService.cloudflareTest(
       `${shopDto.protocol}${shopDto.website}`,
     );
-    await fetch(`http://localhost:3000/shop/cloudflare-test/${shopDto.id}`, {
+    await fetch(`http://localhost:3000/shop/${shopDto.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cloudflare: cloudflareStatusResult }),
