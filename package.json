@@ -46,7 +46,6 @@
     "puppeteer-real-browser": "^1.4.2",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
-    "sanitize-html": "^2.17.0",
     "simplecrawler": "^1.1.9",
     "sitemap-links-ts": "^1.0.4",
     "sitemap-parser": "^0.1.0",
