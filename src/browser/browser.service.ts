@@ -33,6 +33,15 @@ export class BrowserService {
     return result;
   }
 
+  async cloudflareTest(url: string): Promise<boolean> {
+    const res = await fetch(url);
+    const status = res.status;
+
+    if (status >= 400) return false;
+    // Was probably able to get to the webpage without issue
+    else true;
+  }
+
   async getPageHtml(url: string): Promise<{ html: string; mainText: string }> {
     const res = await fetch(url);
     const status = res.status;
