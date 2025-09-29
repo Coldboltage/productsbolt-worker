@@ -7,6 +7,12 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  if (process.env.NODE_ENV === 'production') {
+    console.debug = () => {};
+    console.log   = () => {};
+    console.info  = () => {};
+  }
+
   await app.init();
 
 
