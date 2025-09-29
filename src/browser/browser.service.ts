@@ -33,7 +33,7 @@ export class BrowserService {
     return result;
   }
 
-  async getPageHtml(url: string) {
+  async getPageHtml(url: string): Promise<{ html: string; mainText: string }> {
     const res = await fetch(url);
     const html = await res.text();
 
@@ -78,6 +78,10 @@ export class BrowserService {
 
     const tester = htmlToPlainText(html);
     console.log(tester);
+    return {
+      html,
+      mainText: tester,
+    };
   }
 
   getPageInfo = async (
