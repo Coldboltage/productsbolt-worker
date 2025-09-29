@@ -37,9 +37,9 @@ export class BrowserService {
     const res = await fetch(url);
     const status = res.status;
 
-    if (status >= 400) return false;
-    // Was probably able to get to the webpage without issue
-    else true;
+    if (status >= 400) return true; // Cloudflare Enabled
+    // Cloudflare or other fetch blocking thing doesn't exist
+    return false;
   }
 
   async getPageHtml(url: string): Promise<{ html: string; mainText: string }> {
@@ -53,7 +53,7 @@ export class BrowserService {
 
     const html = await res.text();
 
-    function htmlToPlainText(html) {
+    function htmlToPlainText(html: string) {
       // 1. Strip down to only basic text containers
       const clean = sanitizeHtml(html, {
         allowedTags: [

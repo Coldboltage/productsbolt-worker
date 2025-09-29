@@ -1,5 +1,15 @@
-import { ConflictException, Controller, NotFoundException } from '@nestjs/common';
-import { Ctx, EventPattern, MessagePattern, Payload, RmqContext } from '@nestjs/microservices';
+import {
+  ConflictException,
+  Controller,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  Ctx,
+  EventPattern,
+  MessagePattern,
+  Payload,
+  RmqContext,
+} from '@nestjs/microservices';
 import { CreateProcessDto } from './dto/create-process.dto.js';
 import { UpdateProcessDto } from './dto/update-process.dto.js';
 import { ProcessService } from './process.service.js';
@@ -7,36 +17,36 @@ import { CheckPageDto } from './dto/check-page.dto.js';
 import { ShopDto } from './dto/shop.dto.js';
 import { ProductDto } from './dto/product.dto.js';
 
-
 @Controller()
 export class ProcessController {
-  constructor(private readonly processService: ProcessService) { }
+  constructor(private readonly processService: ProcessService) {}
 
   @EventPattern('shopyifyCheck')
   async shopifySearch(@Payload() shopDto: ShopDto, @Ctx() context: RmqContext) {
-    const channel = context.getChannelRef()
-    const originalMsg = context.getMessage();
-
-    try {
-      await this.processService.shopifySearch(shopDto)
-      channel.ack(originalMsg);
-    } catch (error) {
-      console.error(error)
-      channel.nack(originalMsg, false, false);
-
-    }
-  }
-
-  @EventPattern('shopifyCollectionsTest')
-  async shopifyCollectionsTest(@Payload() shopDto: ShopDto,
-    @Ctx() context: RmqContext,) {
     const channel = context.getChannelRef();
     const originalMsg = context.getMessage();
 
     try {
-      await new Promise(r => setTimeout(r, 750))
-      const result = await this.processService.shopifyCollectionsTest(shopDto)
-      console.log(result)
+      await this.processService.shopifySearch(shopDto);
+      channel.ack(originalMsg);
+    } catch (error) {
+      console.error(error);
+      channel.nack(originalMsg, false, false);
+    }
+  }
+
+  @EventPattern('shopifyCollectionsTest')
+  async shopifyCollectionsTest(
+    @Payload() shopDto: ShopDto,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    try {
+      await new Promise((r) => setTimeout(r, 750));
+      const result = await this.processService.shopifyCollectionsTest(shopDto);
+      console.log(result);
       // if (result.length === 0) throw new NotFoundException(`No sitemap URLs found for shop ${shopDto.id}`);
       await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`, {
         method: 'PATCH',
@@ -54,18 +64,23 @@ export class ProcessController {
   }
 
   @EventPattern('shopifySitemapSearch')
-  async shopifySitemapSearch(@Payload() shopDto: ShopDto,
-    @Ctx() context: RmqContext,) {
+  async shopifySitemapSearch(
+    @Payload() shopDto: ShopDto,
+    @Ctx() context: RmqContext,
+  ) {
     const channel = context.getChannelRef();
     const originalMsg = context.getMessage();
 
     try {
-      const result = await this.processService.shopifySitemapSearch(shopDto)
+      const result = await this.processService.shopifySitemapSearch(shopDto);
       // if (result.length === 0) throw new NotFoundException(`No sitemap URLs found for shop ${shopDto.id}`);
       await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sitemapUrls: result.websiteUrls, error: result.error }),
+        body: JSON.stringify({
+          sitemapUrls: result.websiteUrls,
+          error: result.error,
+        }),
       });
       // ACK message on success
       channel.ack(originalMsg);
@@ -79,13 +94,16 @@ export class ProcessController {
 
   // Whenever a sitemap can not be found, we will use crawlee
   @EventPattern('manualSitemapSearch')
-  async manualSitemapSearch(@Payload() shopDto: ShopDto, @Ctx() context: RmqContext) {
-    console.log('manualSitemapSearch')
-    const channel = context.getChannelRef()
-    const originalMsg = context.getMessage()
+  async manualSitemapSearch(
+    @Payload() shopDto: ShopDto,
+    @Ctx() context: RmqContext,
+  ) {
+    console.log('manualSitemapSearch');
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
 
     try {
-      const result = await this.processService.manualSitemapSearch(shopDto)
+      const result = await this.processService.manualSitemapSearch(shopDto);
       // If successful and group of links found, send back
       await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`, {
         method: 'PATCH',
@@ -102,18 +120,23 @@ export class ProcessController {
   }
 
   @EventPattern('sitemapSearch')
-  async sitemapSearch(@Payload() shopDto: ShopDto,
-    @Ctx() context: RmqContext,) {
+  async sitemapSearch(@Payload() shopDto: ShopDto, @Ctx() context: RmqContext) {
     const channel = context.getChannelRef();
     const originalMsg = context.getMessage();
 
     try {
-      const result = await this.processService.sitemapSearch(shopDto)
-      if (result.websiteUrls.length === 0) throw new NotFoundException(`No sitemap URLs found for shop ${shopDto.id}`);
+      const result = await this.processService.sitemapSearch(shopDto);
+      if (result.websiteUrls.length === 0)
+        throw new NotFoundException(
+          `No sitemap URLs found for shop ${shopDto.id}`,
+        );
       await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sitemapUrls: result.websiteUrls, fast: result.fast }),
+        body: JSON.stringify({
+          sitemapUrls: result.websiteUrls,
+          fast: result.fast,
+        }),
       });
       // ACK message on success
       channel.ack(originalMsg);
@@ -134,7 +157,7 @@ export class ProcessController {
     const originalMsg = context.getMessage();
 
     try {
-      await this.processService.webpageDiscovery(createProcessDto, "nano");
+      await this.processService.webpageDiscovery(createProcessDto, 'nano');
       // ACK message on success
       channel.ack(originalMsg);
     } catch (error) {
@@ -181,8 +204,8 @@ export class ProcessController {
       // console.log("Ending");
 
       // ACK message on success
-      console.log("Acknowledging message")
-      console.log(result)
+      console.log('Acknowledging message');
+      console.log(result);
       channel.ack(originalMsg);
     } catch (error) {
       console.error(error);
@@ -202,14 +225,25 @@ export class ProcessController {
 
     try {
       // console.log(productDto)
-      const result = await this.processService.ebayStatCalc(productDto)
-      console.log(result)
+      const result = await this.processService.ebayStatCalc(productDto);
+      console.log(result);
       channel.ack(originalMsg);
-
     } catch (error) {
       channel.nack(originalMsg, false, false);
-
     }
+  }
+
+  @EventPattern('cloudflareTest')
+  async cloudflareTest(
+    @Payload() shopDto: ShopDto,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    try {
+      const result = await this.processService.cloudflareTest(shopDto);
+    } catch (error) {}
   }
 
   @EventPattern('createProcess')

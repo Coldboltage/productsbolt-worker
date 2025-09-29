@@ -862,6 +862,19 @@ export class ProcessService {
     return pricePoints;
   }
 
+  async cloudflareTest(shopDto: ShopDto) {
+    const result = await this.browserService.cloudflareTest(
+      `${shopDto.protocol}${shopDto.website}`,
+    );
+    await fetch(`http://localhost:3000/shop/cloudflare-test/${shopDto.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cloudflare: result }),
+    });
+    // Is the website able to load
+    return result;
+  }
+
   create(createProcessDto: CreateProcessDto) {}
 
   findAll() {
