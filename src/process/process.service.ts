@@ -872,6 +872,7 @@ export class ProcessService {
       body: JSON.stringify({ cloudflare: cloudflareStatusResult }),
     });
     // Is the website able to load
+    return cloudflareStatusResult;
   }
 
   create(createProcessDto: CreateProcessDto) {}

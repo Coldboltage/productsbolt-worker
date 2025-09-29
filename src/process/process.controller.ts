@@ -243,7 +243,11 @@ export class ProcessController {
 
     try {
       const result = await this.processService.cloudflareTest(shopDto);
-    } catch (error) {}
+      console.log(result);
+      channel.ack(originalMsg);
+    } catch (error) {
+      channel.nack(originalMsg, false, false);
+    }
   }
 
   @EventPattern('createProcess')
