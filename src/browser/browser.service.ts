@@ -35,6 +35,13 @@ export class BrowserService {
 
   async getPageHtml(url: string): Promise<{ html: string; mainText: string }> {
     const res = await fetch(url);
+    const status = res.status;
+
+    console.log(`Fetched ${url} with status ${status}`);
+
+    if (status >= 400)
+      throw new Error(`Failed to load page, status code: ${status}`);
+
     const html = await res.text();
 
     function htmlToPlainText(html) {
