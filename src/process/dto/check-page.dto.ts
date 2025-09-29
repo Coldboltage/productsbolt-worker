@@ -1,32 +1,43 @@
-import { IsBoolean, IsEnum, IsHash, IsNumber, IsString, IsUrl, IsUUID } from "class-validator";
-import { ProductType } from "../../app.type.js";
+import {
+  IsBoolean,
+  IsEnum,
+  IsHash,
+  IsNumber,
+  IsString,
+  IsUrl,
+  IsUUID,
+} from 'class-validator';
+import { ProductType } from '../../app.type.js';
 
 export class CheckPageDto {
   @IsUrl()
   url: string;
 
   @IsString()
-  query: string
+  query: string;
 
   @IsEnum(ProductType)
-  type: ProductType
+  type: ProductType;
 
   @IsString()
-  shopWebsite: string
+  shopWebsite: string;
 
   @IsUUID()
-  webPageId: string
+  webPageId: string;
 
   @IsBoolean()
-  shopifySite: boolean
+  shopifySite: boolean;
 
   @IsString()
-  @IsHash("sha256")
-  hash: string
+  @IsHash('sha256')
+  hash: string;
 
   @IsBoolean()
-  confirmed: boolean
+  confirmed: boolean;
 
   @IsNumber()
-  count: number
+  count: number;
+
+  @IsBoolean()
+  cloudflare: boolean;
 }

@@ -227,6 +227,7 @@ export class ProcessService {
       shopifySite,
       fast,
       createProcessDto,
+      createProcessDto.cloudflare,
     );
     if (result) {
       return true;
@@ -242,6 +243,7 @@ export class ProcessService {
     context: string,
     shopifySite: boolean,
     createProcessDto: CreateProcessDto,
+    cloudflare: boolean,
   ): Promise<boolean> {
     // Think the router has to be added here
     let html: string;
@@ -343,6 +345,7 @@ export class ProcessService {
     count: number,
     shopWebsite: string,
     webPageId: string,
+    cloudflare: boolean,
   ): Promise<boolean> {
     // Note, the html discovery part should be it's own function
     // This is for testing for now
@@ -377,7 +380,7 @@ export class ProcessService {
         mainText: string;
       };
       try {
-        if (shopifySite) {
+        if (cloudflare) {
           textInformation = await this.browserService.getPageInfo(url);
         } else {
           textInformation = await this.browserService.getPageHtml(url);
@@ -516,6 +519,7 @@ export class ProcessService {
     shopifySite: boolean,
     fast: boolean,
     createProcessDto: CreateProcessDto,
+    cloudflare: boolean,
   ): Promise<boolean> {
     console.log(`https://${base}${seed}`);
 
@@ -558,6 +562,7 @@ export class ProcessService {
         context,
         shopifySite,
         createProcessDto,
+        cloudflare,
       );
       return true;
       // if (answer) {
@@ -640,6 +645,7 @@ export class ProcessService {
       context,
       shopifySite,
       createProcessDto,
+      cloudflare,
     );
     if (answer) {
       console.log('Product Found');
@@ -712,6 +718,7 @@ export class ProcessService {
       checkPageDto.count,
       checkPageDto.shopWebsite,
       checkPageDto.webPageId,
+      checkPageDto.cloudflare,
     );
     return result;
   }

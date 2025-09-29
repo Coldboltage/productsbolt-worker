@@ -1,10 +1,19 @@
-import { IsArray, IsBoolean, IsEnum, IsNumber, IsOptional, IsString, IsUrl, IsUUID, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUrl,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 import { ProductType } from '../../app.type.js';
 import { UniqueShopType } from '../entities/process.entity.js';
 import { EbayProductDetailDto } from './ebay-product-detail.dto.js';
 import { Type } from 'class-transformer';
 import { SitemapDto } from './sitemap-dto.js';
-
 
 export class CreateProcessDto {
   @IsUrl()
@@ -20,7 +29,7 @@ export class CreateProcessDto {
   name: string;
 
   @IsUUID()
-  shopProductId: string
+  shopProductId: string;
 
   @IsString()
   shopWebsite: string;
@@ -41,10 +50,13 @@ export class CreateProcessDto {
   shopId: string;
 
   @IsBoolean()
-  shopifySite: boolean
+  shopifySite: boolean;
 
   @IsEnum(UniqueShopType)
-  shopType: UniqueShopType
+  shopType: UniqueShopType;
+
+  @IsBoolean()
+  cloudflare: boolean;
 
   @IsArray()
   @IsString({ each: true })
@@ -53,9 +65,9 @@ export class CreateProcessDto {
   @ValidateNested()
   @Type(() => EbayProductDetailDto)
   @IsOptional()
-  ebayProductDetail?: EbayProductDetailDto
+  ebayProductDetail?: EbayProductDetailDto;
 
   @ValidateNested()
   @Type(() => SitemapDto)
-  sitemapEntity: SitemapDto
+  sitemapEntity: SitemapDto;
 }
