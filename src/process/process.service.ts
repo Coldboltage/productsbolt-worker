@@ -270,7 +270,7 @@ export class ProcessService {
         mainText: string;
       };
       try {
-        if (shopifySite) {
+        if (cloudflare) {
           textInformation = await this.browserService.getPageInfo(url);
         } else {
           textInformation = await this.browserService.getPageHtml(url);
