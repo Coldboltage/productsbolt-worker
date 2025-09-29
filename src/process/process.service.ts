@@ -268,8 +268,11 @@ export class ProcessService {
         mainText: string;
       };
       try {
-        // textInformation = await this.browserService.getPageInfo(url)
-        textInformation = await this.browserService.getPageHtml(url);
+        if (shopifySite) {
+          textInformation = await this.browserService.getPageInfo(url);
+        } else {
+          textInformation = await this.browserService.getPageHtml(url);
+        }
       } catch (error) {
         throw new ServiceUnavailableException(
           `Browser session closed early for ${url}`,
@@ -374,8 +377,11 @@ export class ProcessService {
         mainText: string;
       };
       try {
-        // textInformation = await this.browserService.getPageInfo(url);
-        textInformation = await this.browserService.getPageHtml(url);
+        if (shopifySite) {
+          textInformation = await this.browserService.getPageInfo(url);
+        } else {
+          textInformation = await this.browserService.getPageHtml(url);
+        }
       } catch (error) {
         throw new ServiceUnavailableException(
           `Browser session closed early for ${url}`,

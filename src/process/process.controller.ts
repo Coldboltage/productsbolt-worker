@@ -233,7 +233,7 @@ export class ProcessController {
     }
   }
 
-  @EventPattern('cloudflareTest')
+  @EventPattern('cloudflare-test')
   async cloudflareTest(
     @Payload() shopDto: ShopDto,
     @Ctx() context: RmqContext,
@@ -243,7 +243,6 @@ export class ProcessController {
 
     try {
       const result = await this.processService.cloudflareTest(shopDto);
-      console.log(result);
       channel.ack(originalMsg);
     } catch (error) {
       channel.nack(originalMsg, false, false);

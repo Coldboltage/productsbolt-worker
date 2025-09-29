@@ -37,7 +37,11 @@ export class BrowserService {
     const res = await fetch(url);
     const status = res.status;
 
-    if (status >= 400) return true; // Cloudflare Enabled
+    if (status >= 400) {
+      console.error(`URL ${url} will be blocked by Cloudflare: ${status}`);
+      return true;
+    }
+    console.log(`URL ${url} is accessible with status code: ${status}`);
     // Cloudflare or other fetch blocking thing doesn't exist
     return false;
   }
