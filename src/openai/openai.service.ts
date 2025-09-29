@@ -4,25 +4,26 @@ import { zodTextFormat } from 'openai/helpers/zod';
 import z from 'zod';
 import { ProductType, BestSitesInterface, ParsedLinks } from '../app.type.js';
 import { ProductInStockWithAnalysis } from 'src/process/entities/process.entity.js';
-import { EbayProductStrip, EbaySoldProductStrip } from '../ebay/entities/ebay.entity.js';
+import {
+  EbayProductStrip,
+  EbaySoldProductStrip,
+} from '../ebay/entities/ebay.entity.js';
 import { ProductDto } from '../process/dto/product.dto.js';
 
 @Injectable()
 export class OpenaiService {
-
-
-
   productInStock = async (
     title: string,
     content: string,
     productName: string,
     type: ProductType,
     mode: string, // e.g., 'mini', 'pro'
-    context = ''
+    context = '',
   ): Promise<ProductInStockWithAnalysis> => {
     const openai = new OpenAI();
 
-    if (process.env.LOCAL_LLM === "true") openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`
+    if (process.env.LOCAL_LLM === 'true')
+      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
     //     const schema = {
@@ -77,7 +78,7 @@ export class OpenaiService {
     //           productTypeMatchStrict: {
     //             type: 'boolean',
     //             description:
-    //               `True only if the sales unit the customer receives matches the expected product type exactly, or qualifies as a close equivalent (e.g., a box containing multiple units of the expected type). 
+    //               `True only if the sales unit the customer receives matches the expected product type exactly, or qualifies as a close equivalent (e.g., a box containing multiple units of the expected type).
     // The product type should reflect the actual item sold to the customer, not merely its contents or components.`
     //           },
     //           price: {
@@ -126,7 +127,10 @@ export class OpenaiService {
     const response = await openai.chat.completions.create({
       // model: `gpt-4.1-${mode}`,
       // model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
-      model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-mini`,
+      model:
+        process.env.LOCAL_LLM === 'true'
+          ? 'qwen/qwen3-4b-2507'
+          : `gpt-4.1-mini`,
       temperature: 0,
       // model: `gpt-5-nano`,
       // reasoning_effort: "low",
@@ -140,7 +144,7 @@ export class OpenaiService {
         {
           role: 'system',
           content:
-            'You are a product-matching assistant. Start by analyzing the product page against the target context. Use this analysis to guide your output of structured product fields.'
+            'You are a product-matching assistant. Start by analyzing the product page against the target context. Use this analysis to guide your output of structured product fields.',
         },
         {
           role: 'user',
@@ -241,8 +245,8 @@ export class OpenaiService {
                       }
 
                       
-                      `
-        }
+                      `,
+        },
       ],
       // response_format: {
       //   type: 'json_schema',
@@ -253,7 +257,6 @@ export class OpenaiService {
     const json = JSON.parse(response.choices[0].message?.content || '{}');
     return json;
   };
-
 
   //   checkProduct = async (
   //     title: string,
@@ -349,26 +352,28 @@ export class OpenaiService {
     content: string,
     productName: string,
     type: ProductType,
-    mode: string
-
+    mode: string,
   ): Promise<{
-    analysis: string,
-    inStock: boolean,
-    price: number
+    analysis: string;
+    inStock: boolean;
+    price: number;
   }> => {
     const openai = new OpenAI();
 
-    if (process.env.LOCAL_LLM === "true") openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`
+    if (process.env.LOCAL_LLM === 'true')
+      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
-
 
     // 'analysis',
     // 'inStock',
     // 'price',
-    const openAiResponse = await openai.chat.completions.create({
-      // model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
-      model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-${mode}`,
 
+    // NEW VERSION TESTING
+    const openAiResponse = await openai.chat.completions.create({
+      model:
+        process.env.LOCAL_LLM === 'true'
+          ? 'qwen/qwen3-4b-2507'
+          : `gpt-4.1-${mode}`,
       temperature: 0.2,
       top_p: 0.9,
       frequency_penalty: 0.05,
@@ -377,120 +382,169 @@ export class OpenaiService {
       messages: [
         {
           role: 'system',
-          // content:
-          //   `Your task is to extract structured product page information. Always verify product name match and ensure the product type (e.g., box or pack) is strictly respected.
-
-          //   - Do not add \`\`\`json fences.
-          //   - Do not add explanations.
-          //   - Do not add extra text.
-          //   Just return valid JSON according to the schema.
-          //   `,
           content: `
-         - Do not add \`\`\`json fences.
-            - Do not add explanations.
-            - Do not add extra text.
-            Just return valid JSON according to the schema.
+Return only valid JSON. 
+No markdown, no explanations, no extra text.
 
-From the page content, find if the product is in stock and its price. Products which are pre-order and have the ability to order now are considered in stock. 
+Rules:
+- If the page has "Out of Stock", "Sold Out", "Currently Unavailable",
+  "Request notification", or "Notify me when available" → OUT OF STOCK.
+- Preorders are IN STOCK only if there is a clear checkout button ("Add to cart", "Pre-order now", "Reserve now").
+- If unclear, default to OUT OF STOCK.
 
-Rules (keep simple, priority order):
-- If the page contains phrases like "Out of Stock", "Sold Out", "Currently Unavailable", 
-  "Click here to be notified when it’s back in stock", "Request notification", 
-  "Notify me when available", "Email me when it's back in stock" → OUT OF STOCK.
-- A valid preorder must include an actionable checkout option such as 
-  "Add to cart", "Add to basket", "Buy now", "Pre-order now", "Reserve now". 
-  If these are present, treat as IN STOCK (preorder allowed).
-- If only "Request notification" or "Notify when available" is present without an actionable checkout, → OUT OF STOCK.
-- If nothing matches clearly, default to OUT OF STOCK.
-
-Output JSON:
-
+Output schema:
 {
-  "type": "object",
-  "properties": {
-    "analysis": {
-      "type": "string",
-      "description": "Extremely concise in as little words justification for why the product is in stock or not. Preorders are considered in stock if a checkout/ordering option is present. If only a notify/request notification is available, it is out of stock."
-    },
-    "inStock": {
-      "type": "boolean",
-      "description": "True if product can be ordered or preordered (checkout/reserve available). False if clearly out of stock or only notify options."
-    },
-    "price": {
-      "type": "number",
-      "description": "Product price as a number, without currency symbols."
-    }
-  },
-  "required": ["inStock","price"]
+  "analysis": "short reason",
+  "inStock": true/false,
+  "price": number
 }
-`
+      `,
         },
         {
           role: 'user',
           content: `
-        From the page content, find if the product is in stock and its price. Products which are pre-order and have the ability to order now, is allowed. 
-        Product title: "${title}"
-        Page content: ${content}
-
-        ---
-
-        Output JSON 
-
-            {
-        "type": "object",
-        "properties": {
-          "analysis": {
-            "type": "string",
-            "description": "Justification for why the product is in stock or not (tldr). Preorders are considered in stock if a checkout/ordering option is present. If the page contains phrases like 'Click here to be notified when it’s back in stock' or 'Request notification', then it's considered out of stock regardless.
-            
-            IMPORTANT:
-            - If "Request notification" or "Notify me when available" appears anywhere in the main product section, the product is OUT OF STOCK. 
-            - This overrides any generic "Pre-order" wording elsewhere unless an actual actionable button ("Add to cart", "Pre-order now") is clearly present for this product.
-            - Do NOT treat "Request notification" as preorder. 
-            - A valid preorder must include an actual checkout option (e.g., "Add to cart", "Pre-order now").
-            "
-          },
-          "inStock": {
-            "type": "boolean",
-            "description": "True if the product can be ordered or preordered (checkout/reserve available). False if clearly marked out of stock, or if only a 'request notification' option is available."
-          },
-          "price": {
-            "type": "number",
-            "description": "Product price as a number, without currency symbols."
-          }
-        },
-        "required": [
-          "inStock",
-          "price"
-        ]
-      }
-        `,
+Product title: "${title}"
+Page content: ${content}
+      `,
         },
       ],
     });
 
-    console.log(openAiResponse.choices[0].message?.content || '{}')
+    //  OLD VERSION - THIS WORKED WELL
+    //        const openAiResponse = await openai.chat.completions.create({
+    //       // model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
+    //       model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-${mode}`,
 
-    const productResponse = JSON.parse(openAiResponse.choices[0].message?.content || '{}');
+    //       temperature: 0.2,
+    //       top_p: 0.9,
+    //       frequency_penalty: 0.05,
+    //       n: 1,
+    //       seed: 42,
+    //       messages: [
+    //         {
+    //           role: 'system',
+    //           // content:
+    //           //   `Your task is to extract structured product page information. Always verify product name match and ensure the product type (e.g., box or pack) is strictly respected.
+
+    //           //   - Do not add \`\`\`json fences.
+    //           //   - Do not add explanations.
+    //           //   - Do not add extra text.
+    //           //   Just return valid JSON according to the schema.
+    //           //   `,
+    //           content: `
+    //          - Do not add \`\`\`json fences.
+    //             - Do not add explanations.
+    //             - Do not add extra text.
+    //             Just return valid JSON according to the schema.
+
+    // From the page content, find if the product is in stock and its price. Products which are pre-order and have the ability to order now are considered in stock.
+
+    // Rules (keep simple, priority order):
+    // - If the page contains phrases like "Out of Stock", "Sold Out", "Currently Unavailable",
+    //   "Click here to be notified when it’s back in stock", "Request notification",
+    //   "Notify me when available", "Email me when it's back in stock" → OUT OF STOCK.
+    // - A valid preorder must include an actionable checkout option such as
+    //   "Add to cart", "Add to basket", "Buy now", "Pre-order now", "Reserve now".
+    //   If these are present, treat as IN STOCK (preorder allowed).
+    // - If only "Request notification" or "Notify when available" is present without an actionable checkout, → OUT OF STOCK.
+    // - If nothing matches clearly, default to OUT OF STOCK.
+
+    // Output JSON:
+
+    // {
+    //   "type": "object",
+    //   "properties": {
+    //     "analysis": {
+    //       "type": "string",
+    //       "description": "Extremely concise in as little words justification for why the product is in stock or not. Preorders are considered in stock if a checkout/ordering option is present. If only a notify/request notification is available, it is out of stock."
+    //     },
+    //     "inStock": {
+    //       "type": "boolean",
+    //       "description": "True if product can be ordered or preordered (checkout/reserve available). False if clearly out of stock or only notify options."
+    //     },
+    //     "price": {
+    //       "type": "number",
+    //       "description": "Product price as a number, without currency symbols."
+    //     }
+    //   },
+    //   "required": ["inStock","price"]
+    // }
+    // `
+    //         },
+    //         {
+    //           role: 'user',
+    //           content: `
+    //         From the page content, find if the product is in stock and its price. Products which are pre-order and have the ability to order now, is allowed.
+    //         Product title: "${title}"
+    //         Page content: ${content}
+
+    //         ---
+
+    //         Output JSON
+
+    //             {
+    //         "type": "object",
+    //         "properties": {
+    //           "analysis": {
+    //             "type": "string",
+    //             "description": "Justification for why the product is in stock or not (tldr). Preorders are considered in stock if a checkout/ordering option is present. If the page contains phrases like 'Click here to be notified when it’s back in stock' or 'Request notification', then it's considered out of stock regardless.
+
+    //             IMPORTANT:
+    //             - If "Request notification" or "Notify me when available" appears anywhere in the main product section, the product is OUT OF STOCK.
+    //             - This overrides any generic "Pre-order" wording elsewhere unless an actual actionable button ("Add to cart", "Pre-order now") is clearly present for this product.
+    //             - Do NOT treat "Request notification" as preorder.
+    //             - A valid preorder must include an actual checkout option (e.g., "Add to cart", "Pre-order now").
+    //             "
+    //           },
+    //           "inStock": {
+    //             "type": "boolean",
+    //             "description": "True if the product can be ordered or preordered (checkout/reserve available). False if clearly marked out of stock, or if only a 'request notification' option is available."
+    //           },
+    //           "price": {
+    //             "type": "number",
+    //             "description": "Product price as a number, without currency symbols."
+    //           }
+    //         },
+    //         "required": [
+    //           "inStock",
+    //           "price"
+    //         ]
+    //       }
+    //         `,
+    //         },
+    //       ],
+    //     });
+
+    console.log(openAiResponse.choices[0].message?.content || '{}');
+
+    const productResponse = JSON.parse(
+      openAiResponse.choices[0].message?.content || '{}',
+    );
     return productResponse;
   };
 
-  async ebayPricePoint(ebayProductPrices: EbayProductStrip[], product: ProductDto) {
-    console.log(product.name)
-    const ebayProductPricesJson = JSON.stringify(ebayProductPrices)
+  async ebayPricePoint(
+    ebayProductPrices: EbayProductStrip[],
+    product: ProductDto,
+  ) {
+    console.log(product.name);
+    const ebayProductPricesJson = JSON.stringify(ebayProductPrices);
 
     const openai = new OpenAI();
 
-    if (process.env.EBAY_LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
+    if (process.env.EBAY_LOCAL_LLM === 'true')
+      openai.baseURL = 'http://192.168.1.204:1234/v1';
 
     // 'analysis',
     // 'inStock',
     // 'price',
     const openAiResponse = await openai.chat.completions.create({
       // model: process.env.EBAY_LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-mini`,
-      model: process.env.EBAY_LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-mini`,
+      model:
+        process.env.EBAY_LOCAL_LLM === 'true'
+          ? 'qwen/qwen3-4b-2507'
+          : `gpt-4.1-mini`,
       // model: process.env.EBAY_LOCAL_LLM === "true" ? "nvidia-nemotron-nano-12b-v2" : `gpt-4.1-mini`,
-
 
       temperature: 0,
       top_p: 1,
@@ -502,8 +556,7 @@ Output JSON:
       messages: [
         {
           role: 'system',
-          content:
-            `
+          content: `
             Your job is to figure out what products should be included or not, and find out the min, average and max price from a list of the same products and it's prices.
             
             - Do not add \`\`\`json fences.
@@ -560,26 +613,34 @@ Output JSON:
 
     // console.log(openAiResponse.choices[0].message?.content || '{}')
 
-    const productResponse: { minPrice: number, averagePrice: number, maxPrice: number, reasonForAnswer: string } = JSON.parse(openAiResponse.choices[0].message?.content || '{}');
+    const productResponse: {
+      minPrice: number;
+      averagePrice: number;
+      maxPrice: number;
+      reasonForAnswer: string;
+    } = JSON.parse(openAiResponse.choices[0].message?.content || '{}');
     return productResponse;
   }
 
   async ebaySoldPricePoint(ebayProductPrices: string, product: ProductDto) {
-    console.log(product.name)
-    const ebayProductPricesJson = JSON.stringify(ebayProductPrices)
+    console.log(product.name);
+    const ebayProductPricesJson = JSON.stringify(ebayProductPrices);
 
     const openai = new OpenAI();
 
-    if (process.env.EBAY_LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
+    if (process.env.EBAY_LOCAL_LLM === 'true')
+      openai.baseURL = 'http://192.168.1.204:1234/v1';
 
     // 'analysis',
     // 'inStock',
     // 'price',
     const openAiResponse = await openai.chat.completions.create({
-      model: process.env.EBAY_LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-mini`,
+      model:
+        process.env.EBAY_LOCAL_LLM === 'true'
+          ? 'openai/gpt-oss-20b'
+          : `gpt-4.1-mini`,
       // model: process.env.EBAY_LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-mini`,
       // model: process.env.EBAY_LOCAL_LLM === "true" ? "nvidia-nemotron-nano-12b-v2" : `gpt-4.1-mini`,
-
 
       temperature: 0,
       top_p: 1,
@@ -591,8 +652,7 @@ Output JSON:
       messages: [
         {
           role: 'system',
-          content:
-            `
+          content: `
             Your job is to figure out what products should be included or not
             
             - Do not add \`\`\`json fences.
@@ -650,24 +710,22 @@ Output JSON:
       ],
     });
 
-    console.log(openAiResponse.choices[0].message?.content || '{}')
+    console.log(openAiResponse.choices[0].message?.content || '{}');
 
-    const productResponse: EbaySoldProductStrip[] = JSON.parse(openAiResponse.choices[0].message?.content || '{}');
+    const productResponse: EbaySoldProductStrip[] = JSON.parse(
+      openAiResponse.choices[0].message?.content || '{}',
+    );
     return productResponse;
   }
-
-
-
-
 
   crawlFromSitemap = async (
     sitemapUrls: string[],
     query: string,
     version: string,
     mainUrl: string,
-    context
+    context,
   ): Promise<ParsedLinks[]> => {
-    console.log(sitemapUrls)
+    console.log(sitemapUrls);
     const sitemapBestLinkSchema = z.object({
       bestSites: z.array(
         z.object({
@@ -679,18 +737,24 @@ Output JSON:
 
     const openai = new OpenAI();
 
-    if (process.env.LOCAL_LLM === "true") openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`
+    if (process.env.LOCAL_LLM === 'true')
+      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
     const openAiResponse = await openai.chat.completions.create({
-      model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-${version}`,
+      model:
+        process.env.LOCAL_LLM === 'true'
+          ? 'qwen/qwen3-4b-2507'
+          : `gpt-4.1-${version}`,
       temperature: 0,
       messages: [
         {
-          role: 'system', content: `Extract product page information - Do not add \`\`\`json fences.
+          role: 'system',
+          content: `Extract product page information - Do not add \`\`\`json fences.
             - Do not add explanations.
             - Do not add extra text.
-            Just return valid JSON according to the schema.` },
+            Just return valid JSON according to the schema.`,
+        },
         {
           role: 'user',
           content: `Please use the sitemap URLs and figure the best links to use for ${query}. The URLs must include ${mainUrl} within the url. URLs: ${sitemapUrls.join(', ')}. Links that are below 0.9 score should not be included. Therefore only include links with scores which are 0.9 or above. Highest score first. Only give 2 links maximum.
@@ -733,9 +797,12 @@ Output JSON:
 
     // const linksResponse = openAiResponse.output_parsed as BestSitesInterface;
 
-    if (!openAiResponse.choices[0].message?.content) throw new Error('crawlError');
+    if (!openAiResponse.choices[0].message?.content)
+      throw new Error('crawlError');
 
-    const linksResponse = JSON.parse(openAiResponse.choices[0].message?.content) as ParsedLinks[];
+    const linksResponse = JSON.parse(
+      openAiResponse.choices[0].message?.content,
+    ) as ParsedLinks[];
     console.log(linksResponse);
     return linksResponse;
   };
