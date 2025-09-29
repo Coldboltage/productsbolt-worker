@@ -11,7 +11,7 @@ import { UpdateProcessDto } from './dto/update-process.dto.js';
 import { CheckPageDto } from './dto/check-page.dto.js';
 import { encoding_for_model } from '@dqbd/tiktoken';
 import { ShopDto } from './dto/shop.dto.js';
-import { ProductInStockWithAnalysisStripped, TestTwoInterface, UniqueShopType } from './entities/process.entity.js';
+import { ProductInStockWithAnalysisStripped, TestTwoInterface, UniqueShopType, UpdatePagePayloadInterface } from './entities/process.entity.js';
 import { EbayService } from './../ebay/ebay.service.js';
 import crypto from 'node:crypto';
 import { ProductDto } from './dto/product.dto.js';
@@ -144,11 +144,16 @@ export class ProcessService {
       shopId: createProcessDto.shopId
     };
     console.log(webPage);
-    await fetch('http://localhost:3000/webpage/', {
+    try {
+       await fetch('http://localhost:3000/webpage/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(webPage),
     });
+    } catch (error) {
+      console.log(error)
+    }
+
   }
 
   async webpageDiscovery(createProcessDto: CreateProcessDto, mode: string) {
@@ -163,15 +168,14 @@ export class ProcessService {
       }
     }
 
-    const result = await this.rotateTest(sitemap, url, category, name, type, context, crawlAmount, sitemapUrls, mode, shopifySite, fast);
+    const result = await this.rotateTest(sitemap, url, category, name, type, context, crawlAmount, sitemapUrls, mode, shopifySite, fast, createProcessDto);
     if (result) {
-      await this.webDiscoverySend(result, createProcessDto)
       return true
     }
     return false
   }
 
-  async test(url: string, query: string, type: ProductType, mode: string, context: string, shopifySite: boolean): Promise<ProductInStockWithAnalysisStripped> {
+  async test(url: string, query: string, type: ProductType, mode: string, context: string, shopifySite: boolean, createProcessDto: CreateProcessDto): Promise<boolean> {
     // Think the router has to be added here
     let html: string
     let mainText: string
@@ -223,32 +227,33 @@ export class ProcessService {
       context
     })
 
+    this.lmStudioWebDiscovery(title, allText, query, type, mode, context, createProcessDto)
+    return true
+    
 
-    // console.log(allText)
+    // const answer = await this.openaiService.productInStock(
+    //   title,
+    //   allText,
+    //   query,
+    //   type,
+    //   mode,
+    //   context
+    // );
 
-    const answer = await this.openaiService.productInStock(
-      title,
-      allText,
-      query,
-      type,
-      mode,
-      context
-    );
+    // if (
+    //   answer?.isNamedProduct === true &&
+    //   answer?.productTypeMatchStrict === true &&
+    //   answer?.isMainProductPage === true &&
+    //   answer?.variantMatchStrict === true
 
-    if (
-      answer?.isNamedProduct === true &&
-      answer?.productTypeMatchStrict === true &&
-      answer?.isMainProductPage === true &&
-      answer?.variantMatchStrict === true
-
-    ) {
-      console.log(answer)
-      return { ...answer, specificUrl: url };
-    }
-    console.error(answer)
+    // ) {
+    //   console.log(answer)
+    //   return { ...answer, specificUrl: url };
+    // }
+    // console.error(answer)
   }
 
-  async testTwo(url: string, query: string, type: ProductType, mode: string, shopifySite: boolean, hash: string, confirmed: boolean, count: number,): Promise<TestTwoInterface> {
+  async testTwo(url: string, query: string, type: ProductType, mode: string, shopifySite: boolean, hash: string, confirmed: boolean, count: number, shopWebsite: string, webPageId: string): Promise<boolean> {
     // Note, the html discovery part should be it's own function
     // This is for testing for now
     // Think the router has to be added here
@@ -263,16 +268,18 @@ export class ProcessService {
       console.log('extractShopifyWebsite activated')
       await new Promise(r => setTimeout(r, 50))
       const result = await this.utilService.extractShopifyWebsite(url)
-      return {
+      this.updateWebpageSend({
         url,
         inStock: result.available ? result.available : false,
         price: result.price / 100,
         productName: query,
-        specificUrl: url,
         hash: "shopify",
         count: 0,
-        shopifySite
-      }
+        shopifySite,
+        shopWebsite,
+        webPageId
+      })
+      return true
     } else {
       console.log('getPageInfo activated')
       let textInformation: {
@@ -301,7 +308,8 @@ export class ProcessService {
       allText,
       query,
       type,
-      mode
+      mode,
+      url
     })
 
     // Create Hash from maintext. We shall assume this text must change if something has changed
@@ -316,30 +324,68 @@ export class ProcessService {
     }
     hash = currentHash
 
+    this.lmStudioCheckProduct(title,
+      allText,
+      query,
+      type,
+      mode,
+      url, 
+      hash,
+      count,
+      shopifySite,
+      shopWebsite,
+      webPageId
+    )
+
+    return true
+
+    // const answer = await this.openaiService.checkProduct(
+    //   title,
+    //   allText,
+    //   query,
+    //   type,
+    //   mode,
+    // );
+
+    // console.log(answer)
+
+    // if (url.includes('games-island')) answer.price = Math.round(answer.price * 0.81)
+
+    // return { ...answer, productName: query, specificUrl: url, url, hash, count: count, shopifySite };
+  }
+
+  async lmStudioCheckProduct(title: string, allText: string, query: string, type: ProductType, mode: string, url: string, hash: string, count: number, shopifySite: boolean, shopWebsite: string, webPageId: string): Promise<void> {
     const answer = await this.openaiService.checkProduct(
       title,
       allText,
       query,
       type,
-      mode
+      mode,
     );
-
-    console.log(answer)
-
-    const enc = encoding_for_model(`gpt-4.1-nano`); // or 'gpt-4', 'gpt-3.5-turbo', etc.
-
-    const text = "Your prompt or content here";
-    const tokens = enc.encode(allText);
-
-    console.log(`Token count: ${tokens.length}`);
-
     if (url.includes('games-island')) answer.price = Math.round(answer.price * 0.81)
-
-    return { ...answer, productName: query, specificUrl: url, url, hash, count: count, shopifySite };
-
+    const updatePackage: UpdatePagePayloadInterface = {
+      url,
+      shopWebsite,
+      inStock: answer.inStock,
+      price: answer.price,
+      productName: query,
+      webPageId: webPageId,
+      hash: hash,
+      count,
+      shopifySite
+    }
+    await this.updateWebpageSend(updatePackage)
   }
 
-  async rotateTest(
+    async updateWebpageSend(updatePackage: UpdatePagePayloadInterface): Promise<void> {
+        await fetch(`http://localhost:3000/webpage-cache/update-single-page-and-cache/${updatePackage.webPageId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatePackage),
+    });
+    }
+
+    async rotateTest(
     sitemap: string,
     base: string,
     seed: string,
@@ -350,8 +396,9 @@ export class ProcessService {
     sitemapUrls: string[],
     mode: string,
     shopifySite: boolean,
-    fast: boolean
-  ): Promise<ProductInStockWithAnalysisStripped> {
+    fast: boolean,
+    createProcessDto: CreateProcessDto
+  ): Promise<boolean> {
     console.log(`https://${base}${seed}`)
 
     let foundSitemapUrls: {
@@ -380,15 +427,16 @@ export class ProcessService {
     );
 
     for (const [index, singleUrl] of bestSites.entries()) {
-      if (singleUrl.score <= 0.9 && index < 2) continue
+      if (singleUrl.score <= 0.9 && index < 1) continue
       console.log(`${singleUrl.url}`);
-      const answer = await this.test(`${singleUrl.url}`, query, type, "mini", context, shopifySite);
-      if (answer) {
-        console.log('Product Found');
-        // foundProducts.push({ ...answer, website: `${singleUrl.url}` });
-        // console.log(foundProducts);
-        return answer;
-      }
+      await this.test(`${singleUrl.url}`, query, type, "mini", context, shopifySite, createProcessDto);
+      return true
+      // if (answer) {
+      //   console.log('Product Found');
+      //   // foundProducts.push({ ...answer, website: `${singleUrl.url}` });
+      //   // console.log(foundProducts);
+      //   return answer;
+      // }
     }
 
     // Temp change to see if odd websites do not get added
@@ -450,11 +498,11 @@ export class ProcessService {
     if (allUrls[0]) throw new Error('no link found')
 
     console.log(`https://${base}${allUrls[0]}`);
-    const answer = await this.test(`https://${base}${allUrls[0]}`, query, type, "mini", context, shopifySite);
+    const answer = await this.test(`https://${base}${allUrls[0]}`, query, type, "mini", context, shopifySite, createProcessDto);
     if (answer) {
       console.log('Product Found');
       // foundProducts.push({ ...answer, website: `${base}${singleUrl}` });
-      return answer;
+      return true;
     }
 
 
@@ -473,8 +521,46 @@ export class ProcessService {
     // console.log(foundProducts);
   }
 
-  async updatePage(checkPageDto: CheckPageDto) {
-    const result = await this.testTwo(checkPageDto.url, checkPageDto.query, checkPageDto.type, "mini", checkPageDto.shopifySite, checkPageDto.hash, checkPageDto.confirmed, checkPageDto.count)
+  async lmStudioWebDiscovery(
+    title: string,
+    allText: string,
+    query: string,
+    type: ProductType,
+    mode: string,
+    context: string,
+    createProcessDto: CreateProcessDto
+  ): Promise<void> {
+      let openaiAnswer: boolean
+      const answer = await this.openaiService.productInStock(
+      title,
+      allText,
+      query,
+      type,
+      mode,
+      context
+    );
+
+    if (
+      answer?.isNamedProduct === true &&
+      answer?.productTypeMatchStrict === true &&
+      answer?.isMainProductPage === true &&
+      answer?.variantMatchStrict === true
+      ) {
+      console.log(answer)
+      openaiAnswer = true
+    } else {
+       console.error(answer)
+      openaiAnswer = false
+    }
+     
+
+    if (openaiAnswer === true) {
+      await this.webDiscoverySend({ ...answer, specificUrl: createProcessDto.url }, createProcessDto);
+    }
+  }
+
+  async updatePage(checkPageDto: CheckPageDto): Promise<boolean> {
+    const result = await this.testTwo(checkPageDto.url, checkPageDto.query, checkPageDto.type, "mini", checkPageDto.shopifySite, checkPageDto.hash, checkPageDto.confirmed, checkPageDto.count, checkPageDto.shopWebsite, checkPageDto.webPageId);
     return result
   }
 

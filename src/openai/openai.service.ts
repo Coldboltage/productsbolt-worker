@@ -157,11 +157,11 @@ export class OpenaiService {
                         "properties": {
                           "analysis": {
                             "type": "string",
-                            "description": "Very Concisely, use this field to reason about what the product fundamentally is, based on all available evidence. Analyze the product title, description, and any contextual information to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked \"Add to Cart\", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”)\n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching."
+                            "description": "Very Concisely in as little words as possible, use this field to reason about what the product fundamentally is, based on all available evidence. Analyze the product title, description, and any contextual information to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked \"Add to Cart\", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”)\n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching."
                           },
                           "justifications": {
                             "type": "object",
-                            "description": "For every flag below, very concisely quote or paraphrase the page snippet that proves it.",
+                            "description": "For every flag below, very concisely in the least words possible, quote or paraphrase the page snippet that proves it.",
                             "properties": {
                               "inStock": { "type": "string" },
                               "price": { "type": "string" },
@@ -369,10 +369,9 @@ export class OpenaiService {
       // model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
       model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-${mode}`,
 
-      temperature: 0,
-      top_p: 1,
-      presence_penalty: 0,
-      frequency_penalty: 0,
+      temperature: 0.2,
+      top_p: 0.9,
+      frequency_penalty: 0.05,
       n: 1,
       seed: 42,
       messages: [
@@ -411,7 +410,7 @@ Output JSON:
   "properties": {
     "analysis": {
       "type": "string",
-      "description": "Justification for why the product is in stock or not. Preorders are considered in stock if a checkout/ordering option is present. If only a notify/request notification is available, it is out of stock."
+      "description": "Extremely concise in as little words justification for why the product is in stock or not. Preorders are considered in stock if a checkout/ordering option is present. If only a notify/request notification is available, it is out of stock."
     },
     "inStock": {
       "type": "boolean",
