@@ -154,7 +154,7 @@ export class OpenaiService {
                       Analysed Product Title: ${title}
                       Analaysed Page Content: ${content}
                       
-                      beneath is the structure of the JSON output you're to create with descriptions to help understand how to go about it.
+                      beneath is the structure of the JSON output you're to create with descriptions to help understand how to go about it. It is very important you follow the schema exactly and do not add any extra text, markdown or explanation. Just return valid JSON.
 
                       {
                         "type": "object",
