@@ -2,15 +2,17 @@ import { Injectable } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
 import fetch from 'node-fetch';
-import { ShopifyProduct, ShopifyProductCollections, ShopifyProductCollectionsFullCall } from './utils.type.js';
-import { stripHtml } from "string-strip-html";
+import {
+  ShopifyProduct,
+  ShopifyProductCollections,
+  ShopifyProductCollectionsFullCall,
+} from './utils.type.js';
+import { stripHtml } from 'string-strip-html';
 import { EbaySoldProductStrip } from '../ebay/entities/ebay.entity.js';
-
-
 
 @Injectable()
 export class UtilsService {
-  constructor() { }
+  constructor() {}
   gatherLinks = (urls: string[]): string[] => {
     // Remove duplicates
     return [...new Set(urls)];
@@ -37,37 +39,57 @@ export class UtilsService {
   reduceSitemap(urls: string[], query: string) {
     type Product = { url: string; keywords: string[] };
 
-    const extractKeywords = (rawUrl: string) => {
-      const noQuery = rawUrl.split('?')[0].replace(/\/+$/, '');
-      const name = decodeURIComponent(noQuery.split('/').pop() || '');
+    const extractKeywords = (rawUrl: string): string[] => {
+      const noQuery = rawUrl.split(/[?#]/)[0].replace(/\/+$/, '');
+      const parts = noQuery.split('/').filter(Boolean);
+
+      // grab last non-ID segment (slug)
+      let name = decodeURIComponent(parts.pop() || '');
+      const looksLikeId = (s: string) =>
+        /^[0-9]+$/.test(s) || // numeric
+        /^[a-f0-9]{24}$/i.test(s) || // Mongo ObjectId
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          s,
+        ) || // UUID
+        (!s.includes('-') && /^[A-Za-z0-9_]{6,64}$/.test(s)); // opaque hash-like
+
+      while (name && looksLikeId(name) && parts.length) {
+        name = decodeURIComponent(parts.pop() || '');
+      }
+
+      if (!name) return [];
 
       const cleaned = name
         .toLowerCase()
-        .normalize('NFKD')                    // normalize accents
-        .replace(/[\u0300-\u036f]/g, '')      // strip accent marks
-        .replace(/[’'`]/g, '')                // drop apostrophes (smart + straight)
-        .replace(/[^a-z0-9]+/g, ' ')          // everything non-alnum -> space
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[’'`]/g, '')
+        .replace(/[^a-z0-9]+/g, ' ')
         .trim();
 
-      return cleaned.split(/\s+/);            // ['magic','the','gathering','assassins','creed','collector','booster','box']
+      return cleaned ? cleaned.split(/\s+/) : [];
     };
+
     const requiredMatches = (n: number) => Math.max(1, Math.floor((4 / 5) * n));
 
     const countMatches = (productKeys: string[], queryKeys: string[]) =>
-      queryKeys.filter(k => productKeys.includes(k)).length;
+      queryKeys.filter((k) => productKeys.includes(k)).length;
 
     const filterProducts = (urls: string[], query: string): string[] => {
-      const products = urls.map(url => ({ url, keywords: extractKeywords(url) }));
-      const queryKeys = extractKeywords(query)
+      const products = urls.map((url) => ({
+        url,
+        keywords: extractKeywords(url),
+      }));
+      const queryKeys = extractKeywords(query);
       const minMatches = requiredMatches(queryKeys.length);
-      console.log(queryKeys)
-      console.log(minMatches)
+      console.log(queryKeys);
+      console.log(minMatches);
       return products
-        .filter(p => countMatches(p.keywords, queryKeys) >= minMatches)
-        .map(p => p.url);
+        .filter((p) => countMatches(p.keywords, queryKeys) >= minMatches)
+        .map((p) => p.url);
     };
     const result = filterProducts(urls, query);
-    return result
+    return result;
   }
 
   filterObviousNonPages = (urls: string[], prefix: string): string[] => {
@@ -115,17 +137,13 @@ export class UtilsService {
 
     console.log(`Amount of URLs before vetted: ${urls.length}`);
 
-
-
     // Step 1: Filter URLs that start with the prefix
-    console.log(`Before startsWith: ${urls.length}`)
+    console.log(`Before startsWith: ${urls.length}`);
     const filteredByPrefix = urls.filter((url) => {
-
       // return url.startsWith(prefix)
-      return url.startsWith(prefix)
-
+      return url.startsWith(prefix);
     });
-    console.log(`prefix is: ${prefix}`)
+    console.log(`prefix is: ${prefix}`);
     console.log('After prefix filter:', filteredByPrefix.length);
 
     // Step 2: Filter out URLs ending with excluded extensions
@@ -140,36 +158,36 @@ export class UtilsService {
   };
 
   async testProxyFetch() {
-    const proxyUrl =
-      `http://c9c43b907848ee719c48:${process.env.PROXY_PASSWORD}@gw.dataimpulse.com:823`;
+    const proxyUrl = `http://c9c43b907848ee719c48:${process.env.PROXY_PASSWORD}@gw.dataimpulse.com:823`;
 
     // Pick agent based on **target** URL, not the proxy URL
-    // const agent = 
+    // const agent =
     //   new URL(target).protocol === 'https:'
     //     ? new HttpsProxyAgent({ proxy: proxyUrl, keepAlive: true })
     //     : new HttpProxyAgent({ proxy: proxyUrl, keepAlive: true });
 
-    const agent = new HttpsProxyAgent({ proxy: proxyUrl, keepAlive: true })
-
+    const agent = new HttpsProxyAgent({ proxy: proxyUrl, keepAlive: true });
 
     // const res = await fetch(target, { agent });
     // if (!res.ok) throw new Error(`HTTP ${res.status}`);
     // console.log(res.statusText)
     // console.log('response via proxy:', await res.text());
-    return agent
+    return agent;
   }
 
   async collectionsTest(websiteUrl: string) {
-    const response = await fetch(`${websiteUrl}collections/all/products.json?limit=250`)
-    const status = response.status
+    const response = await fetch(
+      `${websiteUrl}collections/all/products.json?limit=250`,
+    );
+    const status = response.status;
     console.log({
       status,
-      websiteUrl
-    })
+      websiteUrl,
+    });
     if (status === 200) {
-      return true
+      return true;
     } else {
-      return false
+      return false;
     }
   }
 
@@ -178,27 +196,32 @@ export class UtilsService {
     // Rotate until we can't
     // We just need the URL but I think we need to test if this works or not for all sites so we'll do that first
     // We can do that via checking if we can even get collections and go from there
-    let pageLength: number
-    const websiteUrls: string[] = []
+    let pageLength: number;
+    const websiteUrls: string[] = [];
     for (let index = 1; pageLength !== 0; index++) {
-      let response
+      let response;
       try {
-        response = await fetch(`${websiteUrl}/collections/all/products.json?limit=250&page=${index}`)
+        response = await fetch(
+          `${websiteUrl}/collections/all/products.json?limit=250&page=${index}`,
+        );
         console.log({
           status: response.status,
           website: websiteUrl,
-          page: index
-        })
+          page: index,
+        });
       } catch (error) {
-        console.error(response.status)
+        console.error(response.status);
       }
-      const json: ShopifyProductCollectionsFullCall = await response.json() as ShopifyProductCollectionsFullCall
-      pageLength = json.products.length
-      json.products.forEach(product => websiteUrls.push(`${websiteUrl}${category}/${product.handle}`))
-      await new Promise(r => setTimeout(r, 350))
+      const json: ShopifyProductCollectionsFullCall =
+        (await response.json()) as ShopifyProductCollectionsFullCall;
+      pageLength = json.products.length;
+      json.products.forEach((product) =>
+        websiteUrls.push(`${websiteUrl}${category}/${product.handle}`),
+      );
+      await new Promise((r) => setTimeout(r, 350));
     }
     // console.log(websiteUrls)
-    return websiteUrls
+    return websiteUrls;
   }
 
   async getUrlsFromSitemap(
@@ -206,31 +229,40 @@ export class UtilsService {
     seed: string,
     crawlAmount: number,
     fast: boolean,
-    importSites?: string[]
-  ): Promise<{ websiteUrls: string[], fast: boolean }> {
-
+    importSites?: string[],
+  ): Promise<{ websiteUrls: string[]; fast: boolean }> {
     if (importSites && importSites.length > 1) {
       const filtered = this.filterObviousNonPages(importSites, seed);
       // console.log(filtered)
       return {
         websiteUrls: filtered,
-        fast
+        fast,
       };
     }
 
-    const agent = await this.testProxyFetch()
+    console.log(
+      `Crawling sitemap: ${sitemapUrl} for the last ${crawlAmount} days`,
+      console.log({
+        importSites,
+        importSitesLength: importSites?.length,
+      }),
+    );
+
+    throw new Error('Sitemap crawling disabled for now');
+
+    const agent = await this.testProxyFetch();
 
     let sites: string[] = [];
     let days = crawlAmount;
     let siteMapAmount = 0;
-    let response
-    let pauseTimer = fast ? 1 : 60000
+    let response;
+    let pauseTimer = fast ? 1 : 60000;
     do {
       const now = new Date();
       const crawlAmountDaysAgo = new Date();
       crawlAmountDaysAgo.setDate(now.getDate() - days);
 
-      console.log(crawlAmountDaysAgo)
+      console.log(crawlAmountDaysAgo);
 
       const { default: Sitemapper } = await import('sitemapper');
 
@@ -244,47 +276,46 @@ export class UtilsService {
         // proxyAgent: { https: agent } as unknown as any
       });
 
-      if (fast) sitemap.proxyAgent = { https: agent } as unknown as any
+      if (fast) sitemap.proxyAgent = { https: agent } as unknown as any;
 
-      let scannedSites: string[] = []
-
+      let scannedSites: string[] = [];
 
       try {
-        response = (await sitemap.fetch())
-        console.log(response.errors.length === 0 ? "No Errors" : response.errors)
-        if (response.errors.length > 0) await new Promise(r => setTimeout(r, pauseTimer));
-        scannedSites = response.sites
+        response = await sitemap.fetch();
+        console.log(
+          response.errors.length === 0 ? 'No Errors' : response.errors,
+        );
+        if (response.errors.length > 0)
+          await new Promise((r) => setTimeout(r, pauseTimer));
+        scannedSites = response.sites;
       } catch (error) {
-        console.dir(error, { depth: 5 });   // should show a Z_DATA_ERROR or BrotliDecodeError
+        console.dir(error, { depth: 5 }); // should show a Z_DATA_ERROR or BrotliDecodeError
         throw error;
       }
 
       // console.log(scannedSites)
       console.log(scannedSites.length);
 
-
       sites = scannedSites;
       siteMapAmount = scannedSites.length;
       days--;
-
     } while (siteMapAmount > 100000000000);
 
     const filtered = this.filterObviousNonPages(sites, seed);
-    await new Promise(r => setTimeout(r, pauseTimer))
+    await new Promise((r) => setTimeout(r, pauseTimer));
     // console.log(filtered)
     if (response.errors.length === 0) {
       return {
         websiteUrls: filtered,
         fast: fast === true ? true : false,
-      }
+      };
     } else {
       return {
         websiteUrls: filtered,
         fast: true,
-      }
+      };
     }
-
-  };
+  }
 
   getUrlsList = (sites: string[], seed: string): string[] => {
     const filtered = this.filterObviousNonPages(sites, seed);
@@ -292,14 +323,19 @@ export class UtilsService {
     return filtered;
   };
 
-  async waitForCloudflareBypass(page: any, timeout = 60000, waitingTimeout = 2000, resolveTimeout = 10000) {
+  async waitForCloudflareBypass(
+    page: any,
+    timeout = 60000,
+    waitingTimeout = 2000,
+    resolveTimeout = 10000,
+  ) {
     const start = Date.now();
 
     const firstTitle = await page.title();
     console.log(firstTitle);
 
-    if (!firstTitle.includes("...") && !firstTitle.includes("pardon")) {
-      console.log("no cloudflare");
+    if (!firstTitle.includes('...') && !firstTitle.includes('pardon')) {
+      console.log('no cloudflare');
       return;
     }
 
@@ -307,56 +343,55 @@ export class UtilsService {
       const title = await page.title();
       console.log(title);
 
-      if (title.includes("...") || title.includes("pardon")) {
-        console.log("waiting");
-        await new Promise(r => setTimeout(r, waitingTimeout));
+      if (title.includes('...') || title.includes('pardon')) {
+        console.log('waiting');
+        await new Promise((r) => setTimeout(r, waitingTimeout));
       } else {
-        console.log("passed");
-        await new Promise(r => setTimeout(r, resolveTimeout));
+        console.log('passed');
+        await new Promise((r) => setTimeout(r, resolveTimeout));
         return;
       }
     }
 
-    throw new Error("Timed out waiting for Cloudflare challenge");
+    throw new Error('Timed out waiting for Cloudflare challenge');
   }
 
-
   extractShopifyWebsite = async (url: string) => {
-    console.log(url)
+    console.log(url);
     try {
-      const response = await fetch(`${url}.js`)
-      console.log(response.status)
-      const json: ShopifyProduct = await response.json() as ShopifyProduct
-      const title = json.title
-      let mainText = stripHtml(json.description).result
-      mainText = `${mainText}. Price is ${json.price / 100}, InStock Status: ${json.available}`
-      console.log({ title, mainText })
-      return { title, mainText, ...json }
+      const response = await fetch(`${url}.js`);
+      console.log(response.status);
+      const json: ShopifyProduct = (await response.json()) as ShopifyProduct;
+      const title = json.title;
+      let mainText = stripHtml(json.description).result;
+      mainText = `${mainText}. Price is ${json.price / 100}, InStock Status: ${json.available}`;
+      console.log({ title, mainText });
+      return { title, mainText, ...json };
     } catch (error) {
-      console.log(error)
+      console.log(error);
       return {
         url,
         inStock: false,
         price: 0,
         available: false,
         title: 'default',
-        mainText: 'default'
-      }
+        mainText: 'default',
+      };
     }
+  };
 
-  }
+  datesBetween(
+    soldPricePoints: EbaySoldProductStrip[],
+    days: number,
+  ): EbaySoldProductStrip[] {
+    return soldPricePoints.filter((product) => {
+      const todayDate = new Date();
+      const soldListingDate = new Date(product.price.soldDate);
 
-  datesBetween(soldPricePoints: EbaySoldProductStrip[], days: number): EbaySoldProductStrip[] {
-
-    return soldPricePoints.filter(product => {
-      const todayDate = new Date()
-      const soldListingDate = new Date(product.price.soldDate)
-
-      const differenceMs = todayDate.getTime() - soldListingDate.getTime()
+      const differenceMs = todayDate.getTime() - soldListingDate.getTime();
       const diffDays = differenceMs / (1000 * 60 * 60 * 24);
 
-      return diffDays <= days
-    })
-
+      return diffDays <= days;
+    });
   }
-} 
+}
