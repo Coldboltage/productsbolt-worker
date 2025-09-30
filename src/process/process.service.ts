@@ -259,6 +259,7 @@ export class ProcessService {
       mainText: string;
     };
     let info: { title: string; mainText: string };
+    let specificUrl: string;
 
     if (shopifySite) {
       console.log('extractShopifyWebsite activated');
@@ -266,6 +267,8 @@ export class ProcessService {
         try {
           info = await this.utilService.extractShopifyWebsite(url[index]);
           textInformation = { html: info.title, mainText: info.mainText };
+          specificUrl = url[index];
+          success = true;
           break;
         } catch (error) {
           console.error(`Skipping ${url[index]}: ${error.message}`);
@@ -279,8 +282,10 @@ export class ProcessService {
         try {
           if (cloudflare) {
             textInformation = await this.browserService.getPageInfo(url[index]);
+            specificUrl = url[index];
           } else {
             textInformation = await this.browserService.getPageHtml(url[index]);
+            specificUrl = url[index];
           }
           success = true;
           break;
@@ -325,6 +330,7 @@ export class ProcessService {
       mode,
       context,
       createProcessDto,
+      specificUrl,
     );
     return true;
 
@@ -689,6 +695,7 @@ export class ProcessService {
     mode: string,
     context: string,
     createProcessDto: CreateProcessDto,
+    specificUrl: string,
   ): Promise<void> {
     let openaiAnswer: boolean;
     const answer = await this.openaiService.productInStock(
@@ -714,10 +721,7 @@ export class ProcessService {
     }
 
     if (openaiAnswer === true) {
-      await this.webDiscoverySend(
-        { ...answer, specificUrl: createProcessDto.url },
-        createProcessDto,
-      );
+      await this.webDiscoverySend({ ...answer, specificUrl }, createProcessDto);
     }
   }
 
