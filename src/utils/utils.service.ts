@@ -248,8 +248,6 @@ export class UtilsService {
       }),
     );
 
-    throw new Error('Sitemap crawling disabled for now');
-
     const agent = await this.testProxyFetch();
 
     let sites: string[] = [];
