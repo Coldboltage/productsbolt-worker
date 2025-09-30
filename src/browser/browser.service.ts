@@ -47,7 +47,14 @@ export class BrowserService {
   }
 
   async getPageHtml(url: string): Promise<{ html: string; mainText: string }> {
-    const res = await fetch(url);
+    let res;
+    try {
+      res = await fetch(url);
+    } catch (error) {
+      console.log(
+        `Fetch error, possibly blocked by Cloudflare or invalid URL: ${error}`,
+      );
+    }
     const status = res.status;
 
     console.log(`Fetched ${url} with status ${status}`);
@@ -58,7 +65,6 @@ export class BrowserService {
     const html = await res.text();
 
     function htmlToPlainText(html: string) {
-      // 1. Strip down to only basic text containers
       const clean = sanitizeHtml(html, {
         allowedTags: [
           'p',
@@ -78,6 +84,8 @@ export class BrowserService {
           'br',
         ],
         allowedAttributes: false,
+
+        // Completely remove these tags *and their contents*
         nonTextTags: [
           'script',
           'style',
@@ -85,11 +93,15 @@ export class BrowserService {
           'iframe',
           'textarea',
           'option',
-        ], // dump contents
+          'header',
+          'footer',
+          'nav',
+          'aside',
+        ],
+
         disallowedTagsMode: 'discard',
       });
 
-      // 2. Flatten into plain text
       return clean
         .replace(/<[^>]+>/g, ' ')
         .replace(/\s+/g, ' ')
