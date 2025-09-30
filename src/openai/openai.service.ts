@@ -131,13 +131,12 @@ export class OpenaiService {
         process.env.LOCAL_LLM === 'true'
           ? 'qwen/qwen3-4b-2507'
           : `gpt-4.1-mini`,
-      temperature: 0,
       // model: `gpt-5-nano`,
       // reasoning_effort: "low",
       // temperature: 0,
-      top_p: 1,
-      presence_penalty: 0,
-      frequency_penalty: 0,
+      temperature: 0.2,
+      top_p: 0.9,
+      frequency_penalty: 0.05,
       n: 1,
       seed: 42,
       messages: [
