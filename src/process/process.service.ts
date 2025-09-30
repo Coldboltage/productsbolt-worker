@@ -252,21 +252,29 @@ export class ProcessService {
     console.log(`shopifySite: ${shopifySite}`);
     let title: string;
     let allText: string;
+    let success = false;
+    let index = 0;
+    let textInformation: {
+      html: string;
+      mainText: string;
+    };
+    let info: { title: string; mainText: string };
 
     if (shopifySite) {
       console.log('extractShopifyWebsite activated');
-      const textInformation = await this.utilService.extractShopifyWebsite(url);
-      title = textInformation.title;
+      while (index < url.length) {
+        try {
+          info = await this.utilService.extractShopifyWebsite(url[index]);
+          textInformation = { html: info.title, mainText: info.mainText };
+          break;
+        } catch (error) {
+          console.error(`Skipping ${url[index]}: ${error.message}`);
+          index++;
+        }
+      }
+      title = info.title;
       allText = textInformation.mainText;
     } else {
-      let textInformation: {
-        html: string;
-        mainText: string;
-      };
-
-      let success = false;
-      let index = 0;
-
       while (index < url.length) {
         try {
           if (cloudflare) {
@@ -561,7 +569,7 @@ export class ProcessService {
 
     const urls = bestSites.map((site) => site.url);
 
-    console.log(`${singleUrl.url}`);
+    console.log(urls);
     await this.test(
       urls,
       query,
@@ -645,7 +653,7 @@ export class ProcessService {
 
     console.log(`https://${base}${allUrls[0]}`);
     const answer = await this.test(
-      `https://${base}${allUrls[0]}`,
+      allUrls,
       query,
       type,
       'mini',
