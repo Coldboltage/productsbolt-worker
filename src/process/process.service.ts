@@ -236,7 +236,7 @@ export class ProcessService {
   }
 
   async test(
-    url: string,
+    url: string[],
     query: string,
     type: ProductType,
     mode: string,
@@ -259,27 +259,35 @@ export class ProcessService {
       title = textInformation.title;
       allText = textInformation.mainText;
     } else {
-      // console.log('getPageInfo activated')
-      // console.log({
-      //   url,
-      //   shopifySite
-      // })
-      // await new Promise(r => setTimeout(() => r, 10000000))
       let textInformation: {
         html: string;
         mainText: string;
       };
-      try {
-        if (cloudflare) {
-          textInformation = await this.browserService.getPageInfo(url);
-        } else {
-          textInformation = await this.browserService.getPageHtml(url);
+
+      let success = false;
+      let index = 0;
+
+      while (index < url.length) {
+        try {
+          if (cloudflare) {
+            textInformation = await this.browserService.getPageInfo(url[index]);
+          } else {
+            textInformation = await this.browserService.getPageHtml(url[index]);
+          }
+          success = true;
+          break;
+        } catch (error) {
+          console.error(`Skipping ${url[index]}: ${error.message}`);
+          index++;
         }
-      } catch (error) {
+      }
+
+      if (!success) {
         throw new ServiceUnavailableException(
-          `Browser session closed early for ${url}`,
+          `Browser session closed early for all URLs: ${url}`,
         );
       }
+
       const html = textInformation.html;
       mainText = textInformation.mainText;
       const dom = new JSDOM(html);
@@ -551,27 +559,26 @@ export class ProcessService {
       context,
     );
 
-    for (const [index, singleUrl] of bestSites.entries()) {
-      if (singleUrl.score <= 0.9 && index < 1) continue;
-      console.log(`${singleUrl.url}`);
-      await this.test(
-        `${singleUrl.url}`,
-        query,
-        type,
-        'mini',
-        context,
-        shopifySite,
-        createProcessDto,
-        cloudflare,
-      );
-      return true;
-      // if (answer) {
-      //   console.log('Product Found');
-      //   // foundProducts.push({ ...answer, website: `${singleUrl.url}` });
-      //   // console.log(foundProducts);
-      //   return answer;
-      // }
-    }
+    const urls = bestSites.map((site) => site.url);
+
+    console.log(`${singleUrl.url}`);
+    await this.test(
+      urls,
+      query,
+      type,
+      'mini',
+      context,
+      shopifySite,
+      createProcessDto,
+      cloudflare,
+    );
+    return true;
+    // if (answer) {
+    //   console.log('Product Found');
+    //   // foundProducts.push({ ...answer, website: `${singleUrl.url}` });
+    //   // console.log(foundProducts);
+    //   return answer;
+    // }
 
     // Temp change to see if odd websites do not get added
     throw new Error('no_site_found');

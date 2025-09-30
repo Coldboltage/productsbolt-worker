@@ -758,7 +758,7 @@ current date: ${new Date().toISOString()}
         },
         {
           role: 'user',
-          content: `Please use the sitemap URLs and figure the best links to use for ${query}. The URLs must include ${mainUrl} within the url. URLs: ${sitemapUrls.join(', ')}. Links that are below 0.9 score should not be included. Therefore only include links with scores which are 0.9 or above. Highest score first. Only give 2 links maximum.
+          content: `Please use the sitemap URLs and figure the best links to use for ${query}. The URLs must include ${mainUrl} within the url. URLs: ${sitemapUrls.join(', ')}. Links that are below 0.9 score should not be included. Therefore only include links with scores which are 0.9 or above. Highest score first. Only give 4 links maximum.
           
           To find out more about the product, here is it's description to help you ${context}
           
