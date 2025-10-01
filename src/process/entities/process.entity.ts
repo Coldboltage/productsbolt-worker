@@ -61,4 +61,7 @@ export interface UpdatePagePayloadInterface {
   hash: string;
   count: number;
   shopifySite: boolean;
+  pageAllText: string;
+  pageTitle: string;
+  lastScanned: Date;
 }
