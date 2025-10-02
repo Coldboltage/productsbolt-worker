@@ -80,6 +80,7 @@ export class ProcessController {
         body: JSON.stringify({
           sitemapUrls: result.websiteUrls,
           error: result.error,
+          scannedAt: new Date(),
         }),
       });
       // ACK message on success
@@ -108,7 +109,7 @@ export class ProcessController {
       await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sitemapUrls: result }),
+        body: JSON.stringify({ sitemapUrls: result, scannedAt: new Date() }),
       });
 
       channel.ack(originalMsg);
@@ -136,6 +137,7 @@ export class ProcessController {
         body: JSON.stringify({
           sitemapUrls: result.websiteUrls,
           fast: result.fast,
+          scannedAt: new Date(),
         }),
       });
       // ACK message on success

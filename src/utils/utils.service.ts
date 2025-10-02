@@ -359,6 +359,7 @@ export class UtilsService {
     try {
       const response = await fetch(`${url}.js`);
       console.log(response.status);
+      if (response.status >= 400) throw new Error('Above 400 status');
       const json: ShopifyProduct = (await response.json()) as ShopifyProduct;
       const title = json.title;
       let mainText = stripHtml(json.description).result;
@@ -367,6 +368,7 @@ export class UtilsService {
       return { title, mainText, ...json };
     } catch (error) {
       console.log(error);
+      throw new Error('Could not fetch Shopify product');
       return {
         url,
         inStock: false,

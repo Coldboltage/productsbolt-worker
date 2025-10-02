@@ -45,6 +45,7 @@ export class ProcessService {
     const result = await this.browserService.isShopifySite(
       `${shopDto.protocol}${shopDto.website}`,
     );
+    console.log(`shopifySearch Result: ${result}`);
     const setup = await fetch(
       `http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`,
       {
@@ -325,9 +326,11 @@ export class ProcessService {
       while (index < url.length) {
         try {
           if (cloudflare) {
+            console.log('getPageInfo activated');
             textInformation = await this.browserService.getPageInfo(url[index]);
             specificUrl = url[index];
           } else {
+            console.log('getPageInfo activated');
             textInformation = await this.browserService.getPageHtml(url[index]);
             specificUrl = url[index];
           }
@@ -439,7 +442,7 @@ export class ProcessService {
         webPageId,
         pageAllText: result.mainText,
         pageTitle: result.title,
-        lastScanned: new Date()
+        lastScanned: new Date(),
       });
       return true;
     } else {
@@ -560,7 +563,7 @@ export class ProcessService {
       shopifySite,
       pageAllText: allText,
       pageTitle: title,
-      lastScanned: new Date()
+      lastScanned: new Date(),
     };
     await this.updateWebpageSend(updatePackage);
   }
