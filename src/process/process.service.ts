@@ -437,6 +437,9 @@ export class ProcessService {
         shopifySite,
         shopWebsite,
         webPageId,
+        pageAllText: result.mainText,
+        pageTitle: result.title,
+        lastScanned: new Date()
       });
       return true;
     } else {
@@ -555,6 +558,9 @@ export class ProcessService {
       hash: hash,
       count,
       shopifySite,
+      pageAllText: allText,
+      pageTitle: title,
+      lastScanned: new Date()
     };
     await this.updateWebpageSend(updatePackage);
   }
@@ -562,6 +568,7 @@ export class ProcessService {
   async updateWebpageSend(
     updatePackage: UpdatePagePayloadInterface,
   ): Promise<void> {
+    console.log(updatePackage);
     await fetch(
       `http://localhost:3000/webpage-cache/update-single-page-and-cache/${updatePackage.webPageId}`,
       {
