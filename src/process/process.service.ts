@@ -654,11 +654,14 @@ export class ProcessService {
     console.log(preStrippedResult);
     const strippedResult = preStrippedResult.map((site) => site.url);
 
-    await fetch(`http://localhost:3000/shop-product/${shopProductId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ links: strippedResult }),
-    });
+    await fetch(
+      `http://localhost:3000/shop-product/shop-product-links/${shopProductId}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ links: strippedResult }),
+      },
+    );
   }
 
   async rotateTest(
