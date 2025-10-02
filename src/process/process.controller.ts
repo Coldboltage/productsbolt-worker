@@ -148,6 +148,26 @@ export class ProcessController {
     }
   }
 
+  @EventPattern('findLinks')
+  async findLinks(
+    @Payload() createProcessDto: CreateProcessDto,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    try {
+      await this.processService.findLinks(createProcessDto, 'nano');
+      // ACK message on success
+      channel.ack(originalMsg);
+    } catch (error) {
+      console.error(error);
+
+      // Optionally nack with requeue false to avoid infinite retry loops
+      channel.nack(originalMsg, false, false);
+    }
+  }
+
   @EventPattern('webpageDiscovery')
   async webpageDiscovery(
     @Payload() createProcessDto: CreateProcessDto,

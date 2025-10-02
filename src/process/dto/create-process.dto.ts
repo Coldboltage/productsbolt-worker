@@ -62,6 +62,10 @@ export class CreateProcessDto {
   @IsString({ each: true })
   sitemapUrls: string[];
 
+  @IsArray()
+  @IsString()
+  links: string[];
+
   @ValidateNested()
   @Type(() => EbayProductDetailDto)
   @IsOptional()

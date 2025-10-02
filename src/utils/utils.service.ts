@@ -231,7 +231,7 @@ export class UtilsService {
     fast: boolean,
     importSites?: string[],
   ): Promise<{ websiteUrls: string[]; fast: boolean }> {
-    if (importSites && importSites.length > 1) {
+    if (importSites && importSites.length > 0) {
       const filtered = this.filterObviousNonPages(importSites, seed);
       // console.log(filtered)
       return {

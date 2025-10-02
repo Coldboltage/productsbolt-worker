@@ -2,7 +2,7 @@ import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { JSDOM } from 'jsdom';
 import { promises as fs } from 'fs';
 import { htmlToText } from 'html-to-text';
-import { ProductType } from '../app.type.js';
+import { ParsedLinks, ProductType } from '../app.type.js';
 import { BrowserService } from '../browser/browser.service.js';
 import { OpenaiService } from '../openai/openai.service.js';
 import { UtilsService } from '../utils/utils.service.js';
@@ -192,6 +192,49 @@ export class ProcessService {
     }
   }
 
+  async findLinks(createProcessDto: CreateProcessDto, mode: string) {
+    const { url, category, name, type, context, crawlAmount, shopType } =
+      createProcessDto;
+    const {
+      sitemap,
+      isShopifySite: shopifySite,
+      sitemapUrls,
+      fast,
+    } = createProcessDto.sitemapEntity;
+
+    // if (shopType === UniqueShopType.EBAY) {
+    //   const result = await this.ebayService.getUrlsFromApiCall(
+    //     name,
+    //     context,
+    //     type,
+    //   );
+    //   for (const webpage of result) {
+    //     await this.webDiscoverySend(webpage, createProcessDto);
+    //     return true;
+    //   }
+    // }
+
+    const result = await this.reduceLinks(
+      sitemap,
+      url,
+      category,
+      name,
+      type,
+      context,
+      crawlAmount,
+      sitemapUrls,
+      mode,
+      shopifySite,
+      fast,
+      createProcessDto,
+      createProcessDto.cloudflare,
+    );
+    if (result) {
+      return true;
+    }
+    return false;
+  }
+
   async webpageDiscovery(createProcessDto: CreateProcessDto, mode: string) {
     const { url, category, name, type, context, crawlAmount, shopType } =
       createProcessDto;
@@ -228,6 +271,7 @@ export class ProcessService {
       fast,
       createProcessDto,
       createProcessDto.cloudflare,
+      createProcessDto.links,
     );
     if (result) {
       return true;
@@ -528,7 +572,7 @@ export class ProcessService {
     );
   }
 
-  async rotateTest(
+  async reduceLinks(
     sitemap: string,
     base: string,
     seed: string,
@@ -565,15 +609,101 @@ export class ProcessService {
 
     console.log(`ReducedUrls: ${reducedUrls.length}`);
 
-    const bestSites = await this.openaiService.crawlFromSitemap(
+    this.lmStudioReduceLinks(
       reducedUrls,
       query,
       mode,
       `${base}${seed}`,
       context,
+      createProcessDto.shopProductId,
+    );
+    return true;
+  }
+
+  async lmStudioReduceLinks(
+    sitemapUrls: string[],
+    query: string,
+    version: string,
+    mainUrl: string,
+    context: string,
+    shopProductId: string,
+  ) {
+    const result = await this.openaiService.crawlFromSitemap(
+      sitemapUrls,
+      query,
+      version,
+      mainUrl,
+      context,
     );
 
-    const urls = bestSites.map((site) => site.url);
+    if (result.length === 0) throw new Error('no_site_found');
+
+    const preStrippedResult = result
+      .filter((site) => site.score >= 0.9)
+      .sort((a, b) => b.score - a.score);
+    console.log(preStrippedResult);
+    const strippedResult = preStrippedResult.map((site) => site.url);
+
+    await fetch(`http://localhost:3000/shop-product/${shopProductId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ links: strippedResult }),
+    });
+  }
+
+  async rotateTest(
+    sitemap: string,
+    base: string,
+    seed: string,
+    query: string,
+    type: ProductType,
+    context: string,
+    crawlAmount: number,
+    sitemapUrls: string[],
+    mode: string,
+    shopifySite: boolean,
+    fast: boolean,
+    createProcessDto: CreateProcessDto,
+    cloudflare: boolean,
+    links: string[],
+  ): Promise<boolean> {
+    console.log(`https://${base}${seed}`);
+
+    let urls = links;
+    let bestSites: ParsedLinks[];
+
+    if (links.length === 0) {
+      throw new Error(`No Link Provided: ${query} - ${base}${seed}`);
+      let foundSitemapUrls: {
+        websiteUrls: string[];
+        fast: boolean;
+      } = { websiteUrls: [], fast: false };
+
+      foundSitemapUrls = await this.utilService.getUrlsFromSitemap(
+        sitemap,
+        `https://${base}${seed}`,
+        crawlAmount,
+        fast,
+        sitemapUrls,
+      );
+
+      const reducedUrls = this.utilService.reduceSitemap(
+        foundSitemapUrls.websiteUrls,
+        query,
+      );
+
+      console.log(`ReducedUrls: ${reducedUrls.length}`);
+
+      bestSites = await this.openaiService.crawlFromSitemap(
+        reducedUrls,
+        query,
+        mode,
+        `${base}${seed}`,
+        context,
+      );
+
+      urls = bestSites.map((site) => site.url);
+    }
 
     console.log(urls);
     await this.test(
