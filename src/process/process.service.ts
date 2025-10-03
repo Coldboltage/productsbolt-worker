@@ -865,6 +865,8 @@ export class ProcessService {
 
     if (openaiAnswer === true) {
       await this.webDiscoverySend({ ...answer, specificUrl }, createProcessDto);
+    } else {
+      // Create a fetch call to webpage service to create a webpage assiocated to the scrappedProduct
     }
   }
 
