@@ -20,7 +20,10 @@ export class OpenaiService {
     mode: string, // e.g., 'mini', 'pro'
     context = '',
   ): Promise<ProductInStockWithAnalysis> => {
-    const openai = new OpenAI();
+    const openai = new OpenAI({
+      timeout: 3600000,
+      maxRetries: 2,
+    });
 
     if (process.env.LOCAL_LLM === 'true')
       openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
@@ -325,7 +328,10 @@ export class OpenaiService {
     inStock: boolean;
     price: number;
   }> => {
-    const openai = new OpenAI();
+    const openai = new OpenAI({
+      timeout: 3600000,
+      maxRetries: 2,
+    });
 
     if (process.env.LOCAL_LLM === 'true')
       openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
@@ -498,7 +504,10 @@ current date: ${new Date().toISOString()}
     console.log(product.name);
     const ebayProductPricesJson = JSON.stringify(ebayProductPrices);
 
-    const openai = new OpenAI();
+    const openai = new OpenAI({
+      timeout: 3600000,
+      maxRetries: 2,
+    });
 
     if (process.env.EBAY_LOCAL_LLM === 'true')
       openai.baseURL = 'http://192.168.1.204:1234/v1';
@@ -594,7 +603,10 @@ current date: ${new Date().toISOString()}
     console.log(product.name);
     const ebayProductPricesJson = JSON.stringify(ebayProductPrices);
 
-    const openai = new OpenAI();
+    const openai = new OpenAI({
+      timeout: 3600000,
+      maxRetries: 2,
+    });
 
     if (process.env.EBAY_LOCAL_LLM === 'true')
       openai.baseURL = 'http://192.168.1.204:1234/v1';
@@ -703,7 +715,10 @@ current date: ${new Date().toISOString()}
       ),
     });
 
-    const openai = new OpenAI();
+    const openai = new OpenAI({
+      timeout: 3600000,
+      maxRetries: 2,
+    });
 
     if (process.env.LOCAL_LLM === 'true')
       openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
