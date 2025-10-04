@@ -157,7 +157,7 @@ export class OpenaiService {
               Analysed Product Title: ${title}
               Analaysed Page Content: ${content}
 
-              --- JSON Schema to follow strictly ---
+              --- JSON Schema to follow strictly and exactly as shown ---
               {
                 "type": "object",
                 "properties": {

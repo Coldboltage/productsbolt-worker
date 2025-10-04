@@ -58,6 +58,15 @@ export class CreateProcessDto {
   @IsBoolean()
   cloudflare: boolean;
 
+  @IsString()
+  hash: string;
+
+  @IsBoolean()
+  confirmed: boolean;
+
+  @IsNumber()
+  count: number;
+
   @IsArray()
   @IsString({ each: true })
   sitemapUrls: string[];

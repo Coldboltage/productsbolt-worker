@@ -1,9 +1,9 @@
-export class Process { }
+export class Process {}
 
 export enum UniqueShopType {
-  TIKTOK = "TIKTOK",
-  EBAY = "EBAY",
-  AMAZON = "AMAZON"
+  TIKTOK = 'TIKTOK',
+  EBAY = 'EBAY',
+  AMAZON = 'AMAZON',
 }
 
 export interface ProductInStockWithAnalysis {
@@ -18,7 +18,7 @@ export interface ProductInStockWithAnalysis {
   detectedVariant: string;
   detectedFullName: string;
   variantMatchStrict: boolean;
-  justifications: Justification
+  justifications: Justification;
 }
 
 export interface ProductInStockWithAnalysisStripped {
@@ -28,6 +28,11 @@ export interface ProductInStockWithAnalysisStripped {
   currencyCode: string;
   conciseReason: string;
   specificUrl: string;
+  pageAllText: string;
+  pageTitle: string;
+  count: number;
+  hash: string;
+  shopifySite: boolean;
 }
 
 export interface Justification {
@@ -48,7 +53,7 @@ export interface TestTwoInterface {
   specificUrl: string;
   hash: string;
   count: number;
-  shopifySite: boolean
+  shopifySite: boolean;
 }
 
 export interface UpdatePagePayloadInterface {

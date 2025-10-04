@@ -25,6 +25,7 @@ import {
   EbaySoldProductStrip,
 } from '../ebay/entities/ebay.entity.js';
 import { text } from 'node:stream/consumers';
+import { CreateCandidatePageDto } from './dto/create-candidate-page.dto.js';
 
 @Injectable()
 export class ProcessService {
@@ -170,7 +171,7 @@ export class ProcessService {
     webpage: ProductInStockWithAnalysisStripped,
     createProcessDto: CreateProcessDto,
   ) {
-    const webPage = {
+    const webPage: CreateCandidatePageDto = {
       url: webpage.specificUrl,
       shopWebsite: createProcessDto.shopWebsite,
       inStock: webpage.inStock,
@@ -180,10 +181,50 @@ export class ProcessService {
       reason: webpage.analysis,
       productId: createProcessDto.productId,
       shopId: createProcessDto.shopId,
+      shopProductId: createProcessDto.shopProductId,
+      pageAllText: webpage.pageAllText,
+      pageTitle: webpage.pageTitle,
+      hash: webpage.hash,
+      count: webpage.count,
+      shopifySite: webpage.shopifySite,
+    };
+    console.log(webPage);
+    console.log('webDiscoverySend called');
+    try {
+      await fetch('http://localhost:3000/webpage/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(webPage),
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async candidatePageDiscoverySend(
+    webpage: ProductInStockWithAnalysisStripped,
+    createProcessDto: CreateProcessDto,
+  ) {
+    const webPage: CreateCandidatePageDto = {
+      url: webpage.specificUrl,
+      shopWebsite: createProcessDto.shopWebsite,
+      inStock: webpage.inStock,
+      price: webpage.price,
+      currencyCode: webpage.currencyCode,
+      productName: createProcessDto.name,
+      reason: webpage.analysis,
+      productId: createProcessDto.productId,
+      shopId: createProcessDto.shopId,
+      shopProductId: createProcessDto.shopProductId,
+      pageAllText: webpage.pageAllText,
+      pageTitle: webpage.pageTitle,
+      hash: webpage.hash,
+      count: webpage.count,
+      shopifySite: webpage.shopifySite,
     };
     console.log(webPage);
     try {
-      await fetch('http://localhost:3000/webpage/', {
+      await fetch('http://localhost:3000/candidate-page/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(webPage),
@@ -273,6 +314,9 @@ export class ProcessService {
       createProcessDto,
       createProcessDto.cloudflare,
       createProcessDto.links,
+      createProcessDto.hash,
+      createProcessDto.confirmed,
+      createProcessDto.count,
     );
     if (result) {
       return true;
@@ -289,6 +333,9 @@ export class ProcessService {
     shopifySite: boolean,
     createProcessDto: CreateProcessDto,
     cloudflare: boolean,
+    hash: string,
+    confirmed: boolean,
+    count: number,
   ): Promise<boolean> {
     // Think the router has to be added here
     let html: string;
@@ -369,6 +416,21 @@ export class ProcessService {
       context,
     });
 
+    // Create Hash from maintext. We shall assume this text must change if something has changed
+    const currentHash = crypto
+      .createHash('sha256')
+      .update(allText)
+      .digest('hex');
+
+    if (currentHash === hash && confirmed === true) {
+      console.log({
+        message: 'no-need-to-continue',
+        webpage: url,
+      });
+      throw new Error('no-need-to-continue');
+    }
+    hash = currentHash;
+
     this.lmStudioWebDiscovery(
       title,
       allText,
@@ -378,6 +440,9 @@ export class ProcessService {
       context,
       createProcessDto,
       specificUrl,
+      hash,
+      count,
+      shopifySite,
     );
     return true;
 
@@ -679,6 +744,9 @@ export class ProcessService {
     createProcessDto: CreateProcessDto,
     cloudflare: boolean,
     links: string[],
+    hash: string,
+    confirmed: boolean,
+    count: number,
   ): Promise<boolean> {
     console.log(`https://${base}${seed}`);
 
@@ -728,6 +796,9 @@ export class ProcessService {
       shopifySite,
       createProcessDto,
       cloudflare,
+      hash,
+      confirmed,
+      count,
     );
     return true;
     // if (answer) {
@@ -810,6 +881,9 @@ export class ProcessService {
       shopifySite,
       createProcessDto,
       cloudflare,
+      createProcessDto.hash,
+      createProcessDto.confirmed,
+      createProcessDto.count,
     );
     if (answer) {
       console.log('Product Found');
@@ -839,6 +913,9 @@ export class ProcessService {
     context: string,
     createProcessDto: CreateProcessDto,
     specificUrl: string,
+    hash: string,
+    count: number,
+    shopifySite: boolean,
   ): Promise<void> {
     let openaiAnswer: boolean;
     const answer = await this.openaiService.productInStock(
@@ -863,10 +940,34 @@ export class ProcessService {
       openaiAnswer = false;
     }
 
+    console.log(hash, count);
+
     if (openaiAnswer === true) {
-      await this.webDiscoverySend({ ...answer, specificUrl }, createProcessDto);
+      await this.webDiscoverySend(
+        {
+          ...answer,
+          specificUrl,
+          pageAllText: allText,
+          pageTitle: title,
+          hash,
+          count,
+          shopifySite,
+        },
+        createProcessDto,
+      );
     } else {
-      // Create a fetch call to webpage service to create a webpage assiocated to the scrappedProduct
+      await this.candidatePageDiscoverySend(
+        {
+          ...answer,
+          specificUrl,
+          pageAllText: allText,
+          pageTitle: title,
+          count,
+          hash,
+          shopifySite,
+        },
+        createProcessDto,
+      );
     }
   }
 
