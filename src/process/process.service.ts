@@ -943,6 +943,7 @@ export class ProcessService {
     console.log(hash, count);
 
     if (openaiAnswer === true) {
+      console.log('Sending to webDiscoverySend');
       await this.webDiscoverySend(
         {
           ...answer,
@@ -956,6 +957,7 @@ export class ProcessService {
         createProcessDto,
       );
     } else {
+      console.log('Sending to candidatePageDiscoverySend');
       await this.candidatePageDiscoverySend(
         {
           ...answer,
