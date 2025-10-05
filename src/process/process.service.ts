@@ -644,6 +644,10 @@ export class ProcessService {
       shopProductId: createProcessDto.shopProductId,
     };
 
+    console.log(
+      `Sending to LM Studio Reduce Links: ${lmStudioReduceLinksPayload.shopProductId}}`,
+    );
+
     this.lmStudioClient.emit('lmStudioReduceLinks', lmStudioReduceLinksPayload);
 
     return true;

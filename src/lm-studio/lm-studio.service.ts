@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { CreateLmStudioDto } from './dto/create-lm-studio.dto.js';
-import { UpdateLmStudioDto } from './dto/update-lm-studio.dto.js';
-import { ProductType } from 'src/app.type.js';
-import { CreateProcessDto } from 'src/process/dto/create-process.dto.js';
-import { OpenaiService } from 'src/openai/openai.service.js';
-import { UtilsService } from 'src/utils/utils.service.js';
+import { CreateLmStudioDto } from './dto/create-lm-studio.dto';
+import { UpdateLmStudioDto } from './dto/update-lm-studio.dto';
+import { ProductType } from 'src/app.type';
+import { CreateProcessDto } from 'src/process/dto/create-process.dto';
+import { OpenaiService } from 'src/openai/openai.service';
+import { UtilsService } from 'src/utils/utils.service';
 
 @Injectable()
 export class LmStudioService {
@@ -97,7 +97,10 @@ export class LmStudioService {
       context,
     );
 
-    if (result.length === 0) throw new Error('no_site_found');
+    if (result.length === 0) {
+      console.log('No suitable links found by LM Studio');
+      throw new Error('no_site_found');
+    }
 
     const preStrippedResult = result
       .filter((site) => site.score >= 0.9)

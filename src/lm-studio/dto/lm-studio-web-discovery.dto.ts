@@ -5,9 +5,9 @@ import {
   IsNumber,
   IsBoolean,
 } from 'class-validator';
-import { ProductType } from 'src/app.type.js';
-import { CreateProcessDto } from 'src/process/dto/create-process.dto.js';
-import { lmStudioWebDiscoveryPayload } from '../entities/lm-studio.entity.js';
+import { ProductType } from 'src/app.type';
+import { CreateProcessDto } from 'src/process/dto/create-process.dto';
+import { lmStudioWebDiscoveryPayload } from '../entities/lm-studio.entity';
 
 export class LmStudioWebDiscoveryDto implements lmStudioWebDiscoveryPayload {
   @IsString()

@@ -1,13 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import * as fs from 'fs/promises';
-import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
-import fetch from 'node-fetch';
+import { HttpsProxyAgent } from 'hpagent';
 import {
   ShopifyProduct,
   ShopifyProductCollections,
   ShopifyProductCollectionsFullCall,
 } from './utils.type.js';
-import { stripHtml } from 'string-strip-html';
+// import { stripHtml } from 'string-strip-html';
 import { EbaySoldProductStrip } from '../ebay/entities/ebay.entity.js';
 import { CreateCandidatePageDto } from 'src/process/dto/create-candidate-page.dto.js';
 import { CreateProcessDto } from 'src/process/dto/create-process.dto.js';
@@ -365,6 +363,8 @@ export class UtilsService {
       if (response.status >= 400) throw new Error('Above 400 status');
       const json: ShopifyProduct = (await response.json()) as ShopifyProduct;
       const title = json.title;
+      const { stripHtml } = await import('string-strip-html');
+
       let mainText = stripHtml(json.description).result;
       mainText = `${mainText}. Price is ${json.price / 100}, InStock Status: ${json.available}`;
       console.log({ title, mainText });

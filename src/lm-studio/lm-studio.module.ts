@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { LmStudioService } from './lm-studio.service.js';
-import { LmStudioController } from './lm-studio.controller.js';
-import { OpenaiModule } from '../openai/openai.module.js';
+import { LmStudioService } from './lm-studio.service';
+import { LmStudioController } from './lm-studio.controller';
+import { OpenaiModule } from '../openai/openai.module';
+import { UtilsModule } from 'src/utils/utils.module';
 
 @Module({
-  imports: [OpenaiModule],
+  imports: [OpenaiModule, UtilsModule],
   controllers: [LmStudioController],
   providers: [LmStudioService],
   exports: [LmStudioService],
