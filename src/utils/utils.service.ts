@@ -9,6 +9,9 @@ import {
 } from './utils.type.js';
 import { stripHtml } from 'string-strip-html';
 import { EbaySoldProductStrip } from '../ebay/entities/ebay.entity.js';
+import { CreateCandidatePageDto } from 'src/process/dto/create-candidate-page.dto.js';
+import { CreateProcessDto } from 'src/process/dto/create-process.dto.js';
+import { ProductInStockWithAnalysisStripped } from 'src/process/entities/process.entity.js';
 
 @Injectable()
 export class UtilsService {
@@ -393,5 +396,72 @@ export class UtilsService {
 
       return diffDays <= days;
     });
+  }
+
+  async webDiscoverySend(
+    webpage: ProductInStockWithAnalysisStripped,
+    createProcessDto: CreateProcessDto,
+  ) {
+    const webPage: CreateCandidatePageDto = {
+      url: webpage.specificUrl,
+      shopWebsite: createProcessDto.shopWebsite,
+      inStock: webpage.inStock,
+      price: webpage.price,
+      currencyCode: webpage.currencyCode,
+      productName: createProcessDto.name,
+      reason: webpage.analysis,
+      productId: createProcessDto.productId,
+      shopId: createProcessDto.shopId,
+      shopProductId: createProcessDto.shopProductId,
+      pageAllText: webpage.pageAllText,
+      pageTitle: webpage.pageTitle,
+      hash: webpage.hash,
+      count: webpage.count,
+      shopifySite: webpage.shopifySite,
+    };
+    console.log(webPage);
+    console.log('webDiscoverySend called');
+    try {
+      await fetch('http://localhost:3000/webpage/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(webPage),
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async candidatePageDiscoverySend(
+    webpage: ProductInStockWithAnalysisStripped,
+    createProcessDto: CreateProcessDto,
+  ) {
+    const webPage: CreateCandidatePageDto = {
+      url: webpage.specificUrl,
+      shopWebsite: createProcessDto.shopWebsite,
+      inStock: webpage.inStock,
+      price: webpage.price,
+      currencyCode: webpage.currencyCode,
+      productName: createProcessDto.name,
+      reason: webpage.analysis,
+      productId: createProcessDto.productId,
+      shopId: createProcessDto.shopId,
+      shopProductId: createProcessDto.shopProductId,
+      pageAllText: webpage.pageAllText,
+      pageTitle: webpage.pageTitle,
+      hash: webpage.hash,
+      count: webpage.count,
+      shopifySite: webpage.shopifySite,
+    };
+    console.log(webPage);
+    try {
+      await fetch('http://localhost:3000/candidate-page/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(webPage),
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 }

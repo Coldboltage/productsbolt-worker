@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
-import { zodTextFormat } from 'openai/helpers/zod';
 import z from 'zod';
 import { ProductType, BestSitesInterface, ParsedLinks } from '../app.type.js';
-import { ProductInStockWithAnalysis } from 'src/process/entities/process.entity.js';
+import { ProductInStockWithAnalysis } from '../process/entities/process.entity.js';
 import {
   EbayProductStrip,
   EbaySoldProductStrip,

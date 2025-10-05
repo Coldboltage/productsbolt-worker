@@ -3,7 +3,6 @@ import { connect } from 'puppeteer-real-browser';
 import { JSDOM } from 'jsdom';
 import { UtilsService } from '../utils/utils.service.js';
 import { ShopifyProductCollectionsFullCall } from '../utils/utils.type.js';
-import { Dataset, PlaywrightCrawler } from 'crawlee';
 import fetch from 'node-fetch';
 import sanitizeHtml from 'sanitize-html';
 
