@@ -74,15 +74,18 @@ export class ProcessController {
     try {
       const result = await this.processService.shopifySitemapSearch(shopDto);
       // if (result.length === 0) throw new NotFoundException(`No sitemap URLs found for shop ${shopDto.id}`);
-      await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sitemapUrls: result.websiteUrls,
-          error: result.error,
-          scannedAt: new Date(),
-        }),
-      });
+      await fetch(
+        `http://localhost:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sitemapUrls: result.websiteUrls,
+            error: result.error,
+            scannedAt: new Date(),
+          }),
+        },
+      );
       // ACK message on success
       channel.ack(originalMsg);
     } catch (error) {
@@ -106,11 +109,14 @@ export class ProcessController {
     try {
       const result = await this.processService.manualSitemapSearch(shopDto);
       // If successful and group of links found, send back
-      await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sitemapUrls: result, scannedAt: new Date() }),
-      });
+      await fetch(
+        `http://localhost:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sitemapUrls: result, scannedAt: new Date() }),
+        },
+      );
 
       channel.ack(originalMsg);
     } catch (error) {
@@ -131,15 +137,18 @@ export class ProcessController {
         throw new NotFoundException(
           `No sitemap URLs found for shop ${shopDto.id}`,
         );
-      await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sitemapUrls: result.websiteUrls,
-          fast: result.fast,
-          scannedAt: new Date(),
-        }),
-      });
+      await fetch(
+        `http://localhost:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sitemapUrls: result.websiteUrls,
+            fast: result.fast,
+            scannedAt: new Date(),
+          }),
+        },
+      );
       // ACK message on success
       channel.ack(originalMsg);
     } catch (error) {
