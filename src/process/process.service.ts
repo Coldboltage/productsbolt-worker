@@ -1,4 +1,5 @@
 import {
+  HttpException,
   Inject,
   Injectable,
   ServiceUnavailableException,
@@ -7,7 +8,6 @@ import { JSDOM } from 'jsdom';
 import { htmlToText } from 'html-to-text';
 import { ParsedLinks, ProductType } from '../app.type.js';
 import { BrowserService } from '../browser/browser.service.js';
-import { OpenaiService } from '../openai/openai.service.js';
 import { UtilsService } from '../utils/utils.service.js';
 import { CreateProcessDto } from './dto/create-process.dto.js';
 import { UpdateProcessDto } from './dto/update-process.dto.js';
@@ -29,6 +29,7 @@ import {
   LmStudioReduceLinksPayload,
   lmStudioWebDiscoveryPayload,
 } from 'src/lm-studio/entities/lm-studio.entity.js';
+import { OpenaiService } from '../openai/openai.service.js';
 
 @Injectable()
 export class ProcessService {
@@ -321,6 +322,9 @@ export class ProcessService {
           success = true;
           break;
         } catch (error) {
+          if (error instanceof HttpException) {
+            if (error.getStatus() === 403) throw new Error('cloudflare block');
+          }
           console.error(`Skipping ${url[index]}: ${error.message}`);
           index++;
         }
@@ -382,19 +386,10 @@ export class ProcessService {
       shopifySite,
     };
 
-    this.lmStudioClient.emit('lmStudioWebDiscovery', {
-      title,
-      allText,
-      query,
-      type,
-      mode,
-      context,
-      createProcessDto,
-      specificUrl,
-      hash,
-      count,
-      shopifySite,
-    });
+    this.lmStudioClient.emit(
+      'lmStudioWebDiscovery',
+      lmStudioWebDiscoveryPayload,
+    );
     return true;
 
     // const answer = await this.openaiService.productInStock(

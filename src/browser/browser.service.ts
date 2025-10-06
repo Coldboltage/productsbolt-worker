@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { connect } from 'puppeteer-real-browser';
 import { JSDOM } from 'jsdom';
 import { UtilsService } from '../utils/utils.service.js';
@@ -162,7 +167,7 @@ export class BrowserService {
 
       try {
         await this.utilService.waitForCloudflareBypass(page);
-        if (status === 404) throw new Error(`404 Not Found`);
+        if (status === 404) throw new NotFoundException(`404 Not Found`);
         if (status === 403 || status === 429) {
           console.log('403 or 429 detected, reloading page');
           const finalResponse = await page.reload({
@@ -181,8 +186,13 @@ export class BrowserService {
 
       console.log(`Navigated to ${url} with status ${status}`);
 
-      if (status >= 400)
-        throw new Error(`Failed to load page, status code: ${status}`);
+      if (status === 404) {
+        throw new NotFoundException(`404 Not Found: ${url}`);
+      } else if (status === 403) {
+        throw new ForbiddenException(`403 Forbidden: ${url}`);
+      } else if (status > 404) {
+        throw new ConflictException(`Error: ${status} on ${url}`);
+      }
 
       const html = await page.content();
       const mainText = await page.evaluate(() => {
