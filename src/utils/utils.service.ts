@@ -286,7 +286,7 @@ export class UtilsService {
         );
         if (response.errors.length > 0)
           await new Promise((r) => setTimeout(r, pauseTimer));
-        scannedSites = response.sites;
+        scannedSites = response.sites.filter((site) => site.includes(seed));
       } catch (error) {
         console.dir(error, { depth: 5 }); // should show a Z_DATA_ERROR or BrotliDecodeError
         throw error;
@@ -324,7 +324,7 @@ export class UtilsService {
 
   async waitForCloudflareBypass(
     page: any,
-    timeout = 60000,
+    timeout = 16000,
     waitingTimeout = 2000,
     resolveTimeout = 10000,
   ) {
