@@ -137,7 +137,7 @@ export class ProcessController {
         throw new NotFoundException(
           `No sitemap URLs found for shop ${shopDto.id}`,
         );
-      await fetch(
+      fetch(
         `http://localhost:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
         {
           method: 'PATCH',
