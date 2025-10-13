@@ -1,19 +1,19 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  HttpException,
+  Inject,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { JSDOM } from 'jsdom';
-import { promises as fs } from 'fs';
 import { htmlToText } from 'html-to-text';
 import { ParsedLinks, ProductType } from '../app.type.js';
 import { BrowserService } from '../browser/browser.service.js';
-import { OpenaiService } from '../openai/openai.service.js';
 import { UtilsService } from '../utils/utils.service.js';
 import { CreateProcessDto } from './dto/create-process.dto.js';
 import { UpdateProcessDto } from './dto/update-process.dto.js';
 import { CheckPageDto } from './dto/check-page.dto.js';
-import { encoding_for_model } from '@dqbd/tiktoken';
 import { ShopDto } from './dto/shop.dto.js';
 import {
-  ProductInStockWithAnalysisStripped,
-  TestTwoInterface,
   UniqueShopType,
   UpdatePagePayloadInterface,
 } from './entities/process.entity.js';
@@ -24,12 +24,17 @@ import {
   EbayProductStrip,
   EbaySoldProductStrip,
 } from '../ebay/entities/ebay.entity.js';
-import { text } from 'node:stream/consumers';
-import { CreateCandidatePageDto } from './dto/create-candidate-page.dto.js';
+import { ClientProxy } from '@nestjs/microservices';
+import {
+  LmStudioReduceLinksPayload,
+  lmStudioWebDiscoveryPayload,
+} from 'src/lm-studio/entities/lm-studio.entity.js';
+import { OpenaiService } from '../openai/openai.service.js';
 
 @Injectable()
 export class ProcessService {
   constructor(
+    @Inject('LM_STUDIO_CLIENT') private lmStudioClient: ClientProxy,
     private utilService: UtilsService,
     private browserService: BrowserService,
     private openaiService: OpenaiService,
@@ -167,73 +172,6 @@ export class ProcessService {
     return sitemapUrls;
   }
 
-  async webDiscoverySend(
-    webpage: ProductInStockWithAnalysisStripped,
-    createProcessDto: CreateProcessDto,
-  ) {
-    const webPage: CreateCandidatePageDto = {
-      url: webpage.specificUrl,
-      shopWebsite: createProcessDto.shopWebsite,
-      inStock: webpage.inStock,
-      price: webpage.price,
-      currencyCode: webpage.currencyCode,
-      productName: createProcessDto.name,
-      reason: webpage.analysis,
-      productId: createProcessDto.productId,
-      shopId: createProcessDto.shopId,
-      shopProductId: createProcessDto.shopProductId,
-      pageAllText: webpage.pageAllText,
-      pageTitle: webpage.pageTitle,
-      hash: webpage.hash,
-      count: webpage.count,
-      shopifySite: webpage.shopifySite,
-    };
-    console.log(webPage);
-    console.log('webDiscoverySend called');
-    try {
-      await fetch('http://localhost:3000/webpage/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(webPage),
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async candidatePageDiscoverySend(
-    webpage: ProductInStockWithAnalysisStripped,
-    createProcessDto: CreateProcessDto,
-  ) {
-    const webPage: CreateCandidatePageDto = {
-      url: webpage.specificUrl,
-      shopWebsite: createProcessDto.shopWebsite,
-      inStock: webpage.inStock,
-      price: webpage.price,
-      currencyCode: webpage.currencyCode,
-      productName: createProcessDto.name,
-      reason: webpage.analysis,
-      productId: createProcessDto.productId,
-      shopId: createProcessDto.shopId,
-      shopProductId: createProcessDto.shopProductId,
-      pageAllText: webpage.pageAllText,
-      pageTitle: webpage.pageTitle,
-      hash: webpage.hash,
-      count: webpage.count,
-      shopifySite: webpage.shopifySite,
-    };
-    console.log(webPage);
-    try {
-      await fetch('http://localhost:3000/candidate-page/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(webPage),
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
   async findLinks(createProcessDto: CreateProcessDto, mode: string) {
     const { url, category, name, type, context, crawlAmount, shopType } =
       createProcessDto;
@@ -294,7 +232,7 @@ export class ProcessService {
         type,
       );
       for (const webpage of result) {
-        await this.webDiscoverySend(webpage, createProcessDto);
+        await this.utilService.webDiscoverySend(webpage, createProcessDto);
         return true;
       }
     }
@@ -384,6 +322,9 @@ export class ProcessService {
           success = true;
           break;
         } catch (error) {
+          if (error instanceof HttpException) {
+            if (error.getStatus() === 403) throw new Error('cloudflare block');
+          }
           console.error(`Skipping ${url[index]}: ${error.message}`);
           index++;
         }
@@ -431,7 +372,7 @@ export class ProcessService {
     }
     hash = currentHash;
 
-    this.lmStudioWebDiscovery(
+    const lmStudioWebDiscoveryPayload: lmStudioWebDiscoveryPayload = {
       title,
       allText,
       query,
@@ -443,6 +384,11 @@ export class ProcessService {
       hash,
       count,
       shopifySite,
+    };
+
+    this.lmStudioClient.emit(
+      'lmStudioWebDiscovery',
+      lmStudioWebDiscoveryPayload,
     );
     return true;
 
@@ -684,49 +630,22 @@ export class ProcessService {
 
     console.log(`ReducedUrls: ${reducedUrls.length}`);
 
-    this.lmStudioReduceLinks(
-      reducedUrls,
-      query,
-      mode,
-      `${base}${seed}`,
-      context,
-      createProcessDto.shopProductId,
+    const lmStudioReduceLinksPayload: LmStudioReduceLinksPayload = {
+      reducedUrls: reducedUrls,
+      query: query,
+      mode: mode,
+      url: `${base}${seed}`,
+      context: context,
+      shopProductId: createProcessDto.shopProductId,
+    };
+
+    console.log(
+      `Sending to LM Studio Reduce Links: ${lmStudioReduceLinksPayload.shopProductId}}`,
     );
+
+    this.lmStudioClient.emit('lmStudioReduceLinks', lmStudioReduceLinksPayload);
+
     return true;
-  }
-
-  async lmStudioReduceLinks(
-    sitemapUrls: string[],
-    query: string,
-    version: string,
-    mainUrl: string,
-    context: string,
-    shopProductId: string,
-  ) {
-    const result = await this.openaiService.crawlFromSitemap(
-      sitemapUrls,
-      query,
-      version,
-      mainUrl,
-      context,
-    );
-
-    if (result.length === 0) throw new Error('no_site_found');
-
-    const preStrippedResult = result
-      .filter((site) => site.score >= 0.9)
-      .sort((a, b) => b.score - a.score);
-    console.log(preStrippedResult);
-    const strippedResult = preStrippedResult.map((site) => site.url);
-
-    await fetch(
-      `http://localhost:3000/shop-product/shop-product-links/${shopProductId}`,
-      {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ links: strippedResult }),
-      },
-    );
   }
 
   async rotateTest(
@@ -902,75 +821,6 @@ export class ProcessService {
     // }
 
     // console.log(foundProducts);
-  }
-
-  async lmStudioWebDiscovery(
-    title: string,
-    allText: string,
-    query: string,
-    type: ProductType,
-    mode: string,
-    context: string,
-    createProcessDto: CreateProcessDto,
-    specificUrl: string,
-    hash: string,
-    count: number,
-    shopifySite: boolean,
-  ): Promise<void> {
-    let openaiAnswer: boolean;
-    const answer = await this.openaiService.productInStock(
-      title,
-      allText,
-      query,
-      type,
-      mode,
-      context,
-    );
-
-    if (
-      answer?.isNamedProduct === true &&
-      answer?.productTypeMatchStrict === true &&
-      answer?.isMainProductPage === true &&
-      answer?.variantMatchStrict === true
-    ) {
-      console.log(answer);
-      openaiAnswer = true;
-    } else {
-      console.error(answer);
-      openaiAnswer = false;
-    }
-
-    console.log(hash, count);
-
-    if (openaiAnswer === true) {
-      console.log('Sending to webDiscoverySend');
-      await this.webDiscoverySend(
-        {
-          ...answer,
-          specificUrl,
-          pageAllText: allText,
-          pageTitle: title,
-          hash,
-          count,
-          shopifySite,
-        },
-        createProcessDto,
-      );
-    } else {
-      console.log('Sending to candidatePageDiscoverySend');
-      await this.candidatePageDiscoverySend(
-        {
-          ...answer,
-          specificUrl,
-          pageAllText: allText,
-          pageTitle: title,
-          count,
-          hash,
-          shopifySite,
-        },
-        createProcessDto,
-      );
-    }
   }
 
   async updatePage(checkPageDto: CheckPageDto): Promise<boolean> {

@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import * as fs from 'fs/promises';
-import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
-import fetch from 'node-fetch';
+import { HttpsProxyAgent } from 'hpagent';
 import {
   ShopifyProduct,
   ShopifyProductCollections,
   ShopifyProductCollectionsFullCall,
 } from './utils.type.js';
-import { stripHtml } from 'string-strip-html';
+// import { stripHtml } from 'string-strip-html';
 import { EbaySoldProductStrip } from '../ebay/entities/ebay.entity.js';
+import { CreateCandidatePageDto } from 'src/process/dto/create-candidate-page.dto.js';
+import { CreateProcessDto } from 'src/process/dto/create-process.dto.js';
+import { ProductInStockWithAnalysisStripped } from 'src/process/entities/process.entity.js';
 
 @Injectable()
 export class UtilsService {
@@ -285,7 +286,7 @@ export class UtilsService {
         );
         if (response.errors.length > 0)
           await new Promise((r) => setTimeout(r, pauseTimer));
-        scannedSites = response.sites;
+        scannedSites = response.sites.filter((site) => site.includes(seed));
       } catch (error) {
         console.dir(error, { depth: 5 }); // should show a Z_DATA_ERROR or BrotliDecodeError
         throw error;
@@ -323,7 +324,7 @@ export class UtilsService {
 
   async waitForCloudflareBypass(
     page: any,
-    timeout = 60000,
+    timeout = 16000,
     waitingTimeout = 2000,
     resolveTimeout = 10000,
   ) {
@@ -362,6 +363,8 @@ export class UtilsService {
       if (response.status >= 400) throw new Error('Above 400 status');
       const json: ShopifyProduct = (await response.json()) as ShopifyProduct;
       const title = json.title;
+      const { stripHtml } = await import('string-strip-html');
+
       let mainText = stripHtml(json.description).result;
       mainText = `${mainText}. Price is ${json.price / 100}, InStock Status: ${json.available}`;
       console.log({ title, mainText });
@@ -393,5 +396,72 @@ export class UtilsService {
 
       return diffDays <= days;
     });
+  }
+
+  async webDiscoverySend(
+    webpage: ProductInStockWithAnalysisStripped,
+    createProcessDto: CreateProcessDto,
+  ) {
+    const webPage: CreateCandidatePageDto = {
+      url: webpage.specificUrl,
+      shopWebsite: createProcessDto.shopWebsite,
+      inStock: webpage.inStock,
+      price: webpage.price,
+      currencyCode: webpage.currencyCode,
+      productName: createProcessDto.name,
+      reason: webpage.analysis,
+      productId: createProcessDto.productId,
+      shopId: createProcessDto.shopId,
+      shopProductId: createProcessDto.shopProductId,
+      pageAllText: webpage.pageAllText,
+      pageTitle: webpage.pageTitle,
+      hash: webpage.hash,
+      count: webpage.count,
+      shopifySite: webpage.shopifySite,
+    };
+    console.log(webPage);
+    console.log('webDiscoverySend called');
+    try {
+      await fetch('http://localhost:3000/webpage/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(webPage),
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async candidatePageDiscoverySend(
+    webpage: ProductInStockWithAnalysisStripped,
+    createProcessDto: CreateProcessDto,
+  ) {
+    const webPage: CreateCandidatePageDto = {
+      url: webpage.specificUrl,
+      shopWebsite: createProcessDto.shopWebsite,
+      inStock: webpage.inStock,
+      price: webpage.price,
+      currencyCode: webpage.currencyCode,
+      productName: createProcessDto.name,
+      reason: webpage.analysis,
+      productId: createProcessDto.productId,
+      shopId: createProcessDto.shopId,
+      shopProductId: createProcessDto.shopProductId,
+      pageAllText: webpage.pageAllText,
+      pageTitle: webpage.pageTitle,
+      hash: webpage.hash,
+      count: webpage.count,
+      shopifySite: webpage.shopifySite,
+    };
+    console.log(webPage);
+    try {
+      await fetch('http://localhost:3000/candidate-page/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(webPage),
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
