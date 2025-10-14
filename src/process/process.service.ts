@@ -1049,6 +1049,8 @@ export class ProcessService implements OnModuleInit {
       listingPrice: string;
       linkListing: string;
     }[] = [];
+
+    console.log(urls);
     for (const url of urls) {
       const response = await fetch(url);
 
@@ -1088,11 +1090,14 @@ export class ProcessService implements OnModuleInit {
     console.log(newListing);
 
     if (newListing.length > 0) {
-      await fetch(`http://localhost:3000/shop/add-product-listing/${shopId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newListing }),
-      });
+      await fetch(
+        `http://localhost:3000/shop-listing/add-product-listing/${shopId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newListing }),
+        },
+      );
     }
   }
 

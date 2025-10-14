@@ -289,6 +289,8 @@ export class ProcessController {
     const channel = context.getChannelRef();
     const originalMsg = context.getMessage();
 
+    console.log('Received product-listings-check event:', shopDto);
+
     try {
       await this.processService.checkShopProductListings(shopDto);
       channel.ack(originalMsg);
