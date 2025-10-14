@@ -1,9 +1,5 @@
 import { IsArray, IsJSON, IsString, IsUUID } from 'class-validator';
 
-// Need Selectors
-// Shop Info
-// Urls to check
-// Existing Urls to compare against
 export class ProductListingsCheckDto {
   @IsArray()
   @IsString({ each: true })
