@@ -16,6 +16,7 @@ import { ProcessService } from './process.service.js';
 import { CheckPageDto } from './dto/check-page.dto.js';
 import { ShopDto } from './dto/shop.dto.js';
 import { ProductDto } from './dto/product.dto.js';
+import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
 
 @Controller()
 export class ProcessController {
@@ -273,7 +274,23 @@ export class ProcessController {
     const originalMsg = context.getMessage();
 
     try {
-      const result = await this.processService.cloudflareTest(shopDto);
+      await this.processService.cloudflareTest(shopDto);
+      channel.ack(originalMsg);
+    } catch (error) {
+      channel.nack(originalMsg, false, false);
+    }
+  }
+
+  @EventPattern('product-listings-check')
+  async checkShopProductListings(
+    @Payload() shopDto: ProductListingsCheckDto,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    try {
+      await this.processService.checkShopProductListings(shopDto);
       channel.ack(originalMsg);
     } catch (error) {
       channel.nack(originalMsg, false, false);
