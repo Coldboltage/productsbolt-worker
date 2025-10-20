@@ -1052,7 +1052,13 @@ export class ProcessService implements OnModuleInit {
 
     console.log(urls);
     for (const url of urls) {
-      const response = await fetch(url);
+      let response: Response;
+
+      try {
+        response = await fetch(url);
+      } catch (error) {
+        throw new Error('fetch_failed');
+      }
 
       const html = await response.text();
 
