@@ -2,6 +2,7 @@ import {
   HttpException,
   Inject,
   Injectable,
+  OnModuleInit,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { JSDOM } from 'jsdom';
@@ -30,9 +31,11 @@ import {
   lmStudioWebDiscoveryPayload,
 } from 'src/lm-studio/entities/lm-studio.entity.js';
 import { OpenaiService } from '../openai/openai.service.js';
+import * as cheerio from 'cheerio';
+import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
 
 @Injectable()
-export class ProcessService {
+export class ProcessService implements OnModuleInit {
   constructor(
     @Inject('LM_STUDIO_CLIENT') private lmStudioClient: ClientProxy,
     private utilService: UtilsService,
@@ -1003,6 +1006,105 @@ export class ProcessService {
     });
     // Is the website able to load
     return cloudflareStatusResult;
+  }
+
+  onModuleInit() {
+    const selectors: {
+      listSelector: string;
+      listItemNameSelector: string;
+      listItemHrefSelector: string;
+      priceSelector: string;
+    } = {
+      listSelector: '#p-l > .col-12',
+      listItemNameSelector: '.title ',
+      listItemHrefSelector: '.title',
+      priceSelector: '.price-row',
+    };
+
+    const productListingsCheckDto: ProductListingsCheckDto = {
+      urls: [
+        'https://games-island.eu/en/c/Magic-The-Gathering/MtG-Booster-Boxes-English',
+      ],
+      existingUrls: [],
+      selectors,
+      shopId: '84b97a74-2303-4004-8721-f5680ad03d32',
+      urlStructure: 'https://games-island.eu/',
+    };
+
+    // this.checkShopProductListings(productListingsCheckDto);
+  }
+
+  async checkShopProductListings(
+    productListingsCheckDto: ProductListingsCheckDto,
+  ): Promise<void> {
+    // Setup
+    const { urls, selectors, existingUrls, shopId, urlStructure } =
+      productListingsCheckDto;
+
+    // We need to identify what type of shop it is. We will do this later
+
+    // Non Cloudflare protected, let's use a normal get request.
+    const shopListings: {
+      listingName: string;
+      listingPrice: string;
+      linkListing: string;
+    }[] = [];
+
+    console.log(urls);
+    for (const url of urls) {
+      let response: Response;
+
+      try {
+        response = await fetch(url);
+      } catch (error) {
+        throw new Error('fetch_failed');
+      }
+
+      const html = await response.text();
+
+      console.log('Fetched HTML length:', html.length);
+
+      const $ = cheerio.load(html);
+      const items = $(selectors.listSelector);
+      console.log(selectors.listSelector);
+      console.log(`Found ${items.length} items`);
+      for (const el of items) {
+        const listingName = $(el).find(selectors.listItemNameSelector).text();
+        const listingPrice = $(el)
+          .find(selectors.priceSelector)
+          .text()
+          .replace(/\s+/g, ' ') // collapse all whitespace to single spaces
+          .trim();
+        let linkListing = $(el)
+          .find(selectors.listItemHrefSelector)
+          .attr('href');
+
+        try {
+          new URL(linkListing);
+        } catch {
+          linkListing = urlStructure + linkListing;
+        }
+
+        shopListings.push({ listingName, listingPrice, linkListing });
+      }
+    }
+
+    const newListing = shopListings.filter((listing) => {
+      return !existingUrls.includes(listing.linkListing);
+    });
+
+    console.log(newListing);
+
+    if (newListing.length > 0) {
+      await fetch(
+        `http://localhost:3000/shop-listing/add-product-listing/${shopId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newListing }),
+        },
+      );
+    }
   }
 
   create(createProcessDto: CreateProcessDto) {}
