@@ -6,9 +6,9 @@ export interface Product {
 export enum ProductType {
   PACK = 'PACK',
   BOX = 'BOX',
-  BUNDLE = "BUNDLE",
-  ETB = "ETB",
-  COLLECTION = "COLLECTION"
+  BUNDLE = 'BUNDLE',
+  ETB = 'ETB',
+  COLLECTOR_BOX = 'COLLECTION BOX',
 }
 
 export interface ParsedLinks {
@@ -30,7 +30,7 @@ export interface AnswerInterface {
   inStock: boolean;
   isMainProductPage: boolean;
   isNamedProduct: boolean;
-  productTypeMatchStrict: boolean;
+  packagingTypeMatch: boolean;
   price: number;
   currencyCode: string;
 }
@@ -40,7 +40,7 @@ export interface FoundProduct {
   inStock: boolean;
   isMainProductPage: boolean;
   isNamedProduct: boolean;
-  productTypeMatchStrict: boolean;
+  packagingTypeMatch: boolean;
   price: number;
   currencyCode: string;
 }

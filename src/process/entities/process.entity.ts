@@ -11,13 +11,13 @@ export interface ProductInStockWithAnalysis {
   inStock: boolean;
   isMainProductPage: boolean;
   isNamedProduct: boolean;
-  productTypeMatchStrict: boolean;
+  packagingTypeMatch: boolean;
   price: number;
   currencyCode: string;
   conciseReason: string;
   detectedVariant: string;
   detectedFullName: string;
-  variantMatchStrict: boolean;
+  editionMatch: boolean;
   justifications: Justification;
 }
 
@@ -41,8 +41,8 @@ export interface Justification {
   currencyCode: string;
   isMainProductPage: string;
   isNamedProduct: string;
-  productTypeMatchStrict: string;
-  variantMatchStrict: string;
+  packagingTypeMatch: string;
+  editionMatch: string;
 }
 
 export interface TestTwoInterface {

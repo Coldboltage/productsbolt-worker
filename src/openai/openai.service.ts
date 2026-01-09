@@ -49,8 +49,8 @@ export class OpenaiService {
     //               currencyCode: { type: 'string' },
     //               isMainProductPage: { type: 'string' },
     //               isNamedProduct: { type: 'string' },
-    //               productTypeMatchStrict: { type: 'string' },
-    //               variantMatchStrict: { type: 'string' }
+    //               packagingTypeMatch: { type: 'string' },
+    //               editionMatch: { type: 'string' }
     //             },
     //             required: [
     //               'inStock',
@@ -58,8 +58,8 @@ export class OpenaiService {
     //               'currencyCode',
     //               'isMainProductPage',
     //               'isNamedProduct',
-    //               'productTypeMatchStrict',
-    //               'variantMatchStrict'
+    //               'packagingTypeMatch',
+    //               'editionMatch'
     //             ],
     //             additionalProperties: false
     //           },
@@ -77,7 +77,7 @@ export class OpenaiService {
     //             type: 'boolean',
     //             description: 'True if the exact product name appears in the page title or description.'
     //           },
-    //           productTypeMatchStrict: {
+    //           packagingTypeMatch: {
     //             type: 'boolean',
     //             description:
     //               `True only if the sales unit the customer receives matches the expected product type exactly, or qualifies as a close equivalent (e.g., a box containing multiple units of the expected type).
@@ -103,7 +103,7 @@ export class OpenaiService {
     //             type: 'string',
     //             description: 'The full product name as listed on the page.'
     //           },
-    //           variantMatchStrict: {
+    //           editionMatch: {
     //             type: 'boolean',
     //             description: 'True if all variant tokens match and no conflicting variants are present.'
     //           }
@@ -113,13 +113,13 @@ export class OpenaiService {
     //           'inStock',
     //           'isMainProductPage',
     //           'isNamedProduct',
-    //           'productTypeMatchStrict',
+    //           'packagingTypeMatch',
     //           'price',
     //           'currencyCode',
     //           'conciseReason',
     //           'detectedVariant',
     //           'detectedFullName',
-    //           'variantMatchStrict',
+    //           'editionMatch',
     //           'justifications'
     //         ],
     //         additionalProperties: false
@@ -133,6 +133,9 @@ export class OpenaiService {
         process.env.LOCAL_LLM === 'true'
           ? 'qwen/qwen3-4b-2507'
           : `gpt-4.1-mini`,
+      // process.env.LOCAL_LLM === 'true'
+      //   ? 'liquid/lfm2.5-1.2b'
+      //   : `gpt-4.1-mini`,
       // model: `gpt-5-nano`,
       // reasoning_effort: "low",
       // temperature: 0,
@@ -149,6 +152,71 @@ export class OpenaiService {
         },
         {
           role: 'user',
+          // content: `Required Target product name: ${productName}
+          //     Required Expected product type: ${type.toUpperCase()}
+          //     Context: ${context}
+
+          //     Analysed Product Title: ${title}
+          //     Analaysed Page Content: ${content}
+
+          //     --- JSON Schema to follow strictly and exactly as shown ---
+          //     {
+          //       "type": "object",
+          //       "properties": {
+          //         "analysis": {
+          //           "type": "string",
+          //           "description": "Very Concisely in as little words as possible, use this field to reason about what the product fundamentally is, based on all available evidence. Analyze the product title, description, and any contextual information to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked \"Add to Cart\", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”)\n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching."
+          //         },
+          //         "justifications": {
+          //           "type": "object",
+          //           "description": "For every flag below, very concisely in the least words possible, quote or paraphrase the page snippet that proves it.",
+          //           "properties": {
+          //             "inStock": { "type": "string" },
+          //             "price": { "type": "string" },
+          //             "currencyCode": { "type": "string" },
+          //             "isMainProductPage": { "type": "string" },
+          //             "isNamedProduct": { "type": "string", description: Explain if product title is the same as product name },
+          //             "packagingTypeMatch": { "type": "string" },
+          //             "editionMatchReasoning": { "type": "string" }
+          //           },
+          //           "required": [
+          //             "inStock",
+          //             "price",
+          //             "currencyCode",
+          //             "isMainProductPage",
+          //             "isNamedProduct",
+          //             "packagingTypeMatch",
+          //             "editionMatchReasoning"
+          //           ],
+          //           "additionalProperties": false
+          //         },
+          //         "inStock": { "type": "boolean" },
+          //         "isMainProductPage": { "type": "boolean" },
+          //         "isNamedProduct": { "type": "boolean" , description: Explain if product title is the same as product name},
+          //         "packagingTypeMatch": { "type": "boolean" },
+          //         "price": { "type": "number" },
+          //         "currencyCode": { "type": "string" },
+          //         "conciseReason": { "type": "string" },
+          //         "detectedVariant": { "type": "string" },
+          //         "detectedFullName": { "type": "string" },
+          //         "editionMatch": { "type": "boolean" }
+          //       },
+          //       "required": [
+          //         "analysis",
+          //         "inStock",
+          //         "isMainProductPage",
+          //         "isNamedProduct",
+          //         "packagingTypeMatch",
+          //         "price",
+          //         "currencyCode",
+          //         "conciseReason",
+          //         "detectedVariant",
+          //         "detectedFullName",
+          //         "editionMatch",
+          //         "justifications"
+          //       ],
+          //       "additionalProperties": false
+          //     }`,
           content: `Required Target product name: ${productName}
               Required Expected product type: ${type.toUpperCase()}
               Context: ${context}
@@ -162,54 +230,49 @@ export class OpenaiService {
                 "properties": {
                   "analysis": {
                     "type": "string",
-                    "description": "Very Concisely in as little words as possible, use this field to reason about what the product fundamentally is, based on all available evidence. Analyze the product title, description, and any contextual information to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked \"Add to Cart\", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”)\n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching."
+                    "description": "Very Concisely in as little words as possible, use this field to reason about what the product fundamentally is, based on all available evidence. Analyze the product title, description, and any contextual information to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked \"Add to Cart\", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”)\n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching. To note, a booster display is usually indicitive of a Box. The description usually gives light to this. Products that state a quantity of booster packs (e.g. “X packs”) and are purchased as one item represent a sealed box containing packs, even though the description references packs."
                   },
                   "justifications": {
                     "type": "object",
                     "description": "For every flag below, very concisely in the least words possible, quote or paraphrase the page snippet that proves it.",
                     "properties": {
-                      "inStock": { "type": "string" },
-                      "price": { "type": "string" },
-                      "currencyCode": { "type": "string" },
-                      "isMainProductPage": { "type": "string" },
-                      "isNamedProduct": { "type": "string" },
-                      "productTypeMatchStrict": { "type": "string" },
-                      "variantMatchStrict": { "type": "string" }
+                      "packagingTypeMatchExplain": { "type": "string" },
+                      "editionMatchReasoning": { "type": "string", "description": "True only if the main product on the page belongs to the same named edition/release as the Required Target product. 'Edition' here means the named product line identifier (the set/series/theme/brand name that distinguishes one release from another). Do not use packaging or sale-unit terms (e.g., box/pack/bundle/display/booster/deck) to determine edition—those belong to packagingTypeMatch. Judge the main product only, not related or recommended items." }
                     },
                     "required": [
-                      "inStock",
-                      "price",
-                      "currencyCode",
-                      "isMainProductPage",
-                      "isNamedProduct",
-                      "productTypeMatchStrict",
-                      "variantMatchStrict"
+                      "packagingTypeMatchExplain",
+                      "editionMatchReasoning"
                     ],
                     "additionalProperties": false
                   },
                   "inStock": { "type": "boolean" },
                   "isMainProductPage": { "type": "boolean" },
-                  "isNamedProduct": { "type": "boolean" },
-                  "productTypeMatchStrict": { "type": "boolean" },
+                  "isNamedProduct": {
+                    "type": "boolean",
+                    "description": "True if the productName provided as the target refers to the same logical product as the main product listed on the page. The comparison must be made against the page’s primary product only (not related or recommended items) and should allow for naming variations while requiring the same product identity."
+                  },
+                  "packagingTypeMatch": { "type": "boolean", "description": "If packaging type matches. BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, BOX ≠ DISPLAY unless your BOX definition explicitly includes DISPLAY. Evaluate only the main page product."
+                  },
                   "price": { "type": "number" },
                   "currencyCode": { "type": "string" },
-                  "conciseReason": { "type": "string" },
                   "detectedVariant": { "type": "string" },
                   "detectedFullName": { "type": "string" },
-                  "variantMatchStrict": { "type": "boolean" }
+                  "editionMatch": { "type": "boolean", "description": "main product on the page belongs to the same named edition/release as the Required Target product. 'Edition' here means the named product line identifier (the set/series/theme/brand name that distinguishes one release from another). Do not use packaging or sale-unit terms (e.g., box/pack/bundle/display/booster/deck) to determine edition—those belong to packagingTypeMatch. Judge the main product only, not related or recommended items." },
+                  "conciseReason": { "type": "string", "description": Explain what is true and false, why you've given them the designation as concise as possible. },
+
                 },
                 "required": [
                   "analysis",
                   "inStock",
                   "isMainProductPage",
                   "isNamedProduct",
-                  "productTypeMatchStrict",
+                  "packagingTypeMatch",
                   "price",
                   "currencyCode",
                   "conciseReason",
                   "detectedVariant",
                   "detectedFullName",
-                  "variantMatchStrict",
+                  "editionMatch",
                   "justifications"
                 ],
                 "additionalProperties": false
@@ -346,6 +409,9 @@ export class OpenaiService {
         process.env.LOCAL_LLM === 'true'
           ? 'qwen/qwen3-4b-2507'
           : `gpt-4.1-${mode}`,
+      // process.env.LOCAL_LLM === 'true'
+      //   ? 'liquid/lfm2.5-1.2b'
+      //   : `gpt-4.1-mini`,
       temperature: 0.2,
       top_p: 0.9,
       frequency_penalty: 0.05,
@@ -366,7 +432,7 @@ Rules:
 
 Output schema:
 {
-  "analysis": "short reason",
+  "analysis": "tiny reason",
   "inStock": true/false,
   "price": number
 }

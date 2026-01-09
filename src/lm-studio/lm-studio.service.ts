@@ -37,9 +37,9 @@ export class LmStudioService {
 
     if (
       answer?.isNamedProduct === true &&
-      answer?.productTypeMatchStrict === true &&
+      answer?.packagingTypeMatch === true &&
       answer?.isMainProductPage === true &&
-      answer?.variantMatchStrict === true
+      answer?.editionMatch === true
     ) {
       console.log(answer);
       openaiAnswer = true;
