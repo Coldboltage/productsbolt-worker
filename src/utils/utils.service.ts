@@ -324,10 +324,41 @@ export class UtilsService {
 
   async waitForCloudflareBypass(
     page: any,
+    url: string,
     timeout = 16000,
     waitingTimeout = 2000,
     resolveTimeout = 10000,
   ) {
+    console.log('cloudflare protection waitForCloudflareBypass fired');
+
+    if (url.includes('games-island')) {
+      console.log('passed');
+      let finishedLoading = false;
+      while (finishedLoading === false) {
+        try {
+          console.log(`waiting for ${url} to load`);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          const bodyText = await page.evaluate(
+            () => document.body?.innerText ?? '',
+          );
+          if (
+            !bodyText.includes('Validating') &&
+            !bodyText.includes('please wait')
+          ) {
+            finishedLoading = true;
+          }
+        } catch (error) {
+          console.log(error);
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+
+          console.log('retrying');
+        }
+      }
+
+      console.log('all good');
+      return;
+    }
+
     const start = Date.now();
 
     const firstTitle = await page.title();
