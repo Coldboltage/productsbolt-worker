@@ -13,7 +13,7 @@ describe('AppController (e2e)', () => {
   let app: INestApplication;
   let openaiService: OpenaiService;
   const testPrompts = prompts;
-  const RUNS = 3;
+  const RUNS = 1;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -71,11 +71,11 @@ describe('AppController (e2e)', () => {
   });
 
   describe.only('test each page versus specific context/query', () => {
-    const RUNS = 1;
+    const RUNS = 3;
     // Arrange
     for (let run = 1; run <= RUNS; run++) {
       for (const [index, webpage] of unscannedArrayOfWebpages.entries()) {
-        if (index > 10) continue; // 2nd item (0-based)
+        if (index > 6) continue; // 2nd item (0-based)
         it.each(webpage.examples)(
           'should get each classification correct',
           async (example) => {
