@@ -25,7 +25,9 @@ export class OpenaiService {
     });
 
     if (process.env.LOCAL_LLM === 'true')
-      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
+      // openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
+      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:8000/v1`;
+
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
     //     const schema = {
@@ -130,12 +132,12 @@ export class OpenaiService {
       // model: `gpt-4.1-${mode}`,
       // model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
       model:
+        // process.env.LOCAL_LLM === 'true'
+        //   ? 'qwen/qwen3-4b-2507'
+        //   : `gpt-4.1-mini`,
         process.env.LOCAL_LLM === 'true'
-          ? 'qwen/qwen3-4b-2507'
+          ? 'Qwen/Qwen3-4B-Instruct-2507'
           : `gpt-4.1-mini`,
-      // process.env.LOCAL_LLM === 'true'
-      //   ? 'liquid/lfm2.5-1.2b'
-      //   : `gpt-4.1-mini`,
       // model: `gpt-5-nano`,
       // reasoning_effort: "low",
       // temperature: 0,
@@ -236,7 +238,7 @@ export class OpenaiService {
                     "type": "object",
                     "description": "For every flag below, very concisely in the least words possible, quote or paraphrase the page snippet that proves it.",
                     "properties": {
-                      "packagingTypeMatchExplain": { "type": "string" },
+                      "packagingTypeMatchExplain": { "type": "string", "description": "You will need to go through the page content to discern what type of packaging is being used. Sometimes it can say pack of boosters but then state it's all contained within a box. We don't care what is contained in it. We care if it's EG: pack, box, bundle etc. Collector box and box are the same thing in this context. We do not care what the product contains, but rather what it's contained in. If it's 24 packs or more, classify as a box by default" },
                       "editionMatchReasoning": { "type": "string", "description": "True only if the main product on the page belongs to the same named edition/release as the Required Target product. 'Edition' here means the named product line identifier (the set/series/theme/brand name that distinguishes one release from another). Do not use packaging or sale-unit terms (e.g., box/pack/bundle/display/booster/deck) to determine edition—those belong to packagingTypeMatch. Judge the main product only, not related or recommended items." }
                     },
                     "required": [
@@ -249,9 +251,9 @@ export class OpenaiService {
                   "isMainProductPage": { "type": "boolean" },
                   "isNamedProduct": {
                     "type": "boolean",
-                    "description": "True if the productName provided as the target refers to the same logical product as the main product listed on the page. The comparison must be made against the page’s primary product only (not related or recommended items) and should allow for naming variations while requiring the same product identity."
+                    "description": "True if the productName provided as the target refers to the same logical product as the main product listed on the page. The comparison must be made against the page’s primary product only (not related or recommended items) and should allow for naming variations while requiring the same product identity. The names don't need to be exact but inferred"
                   },
-                  "packagingTypeMatch": { "type": "boolean", "description": "If packaging type matches. BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, BOX ≠ DISPLAY unless your BOX definition explicitly includes DISPLAY. Evaluate only the main page product."
+                  "packagingTypeMatch": { "type": "boolean", "description": "If packaging type matches. BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, BOX ≠ DISPLAY unless your BOX definition explicitly includes DISPLAY. A box and collector box are both boxes. They are considered the same thing in terms of packaging. If a product has more than 24 booster packs or more, classify as a box. Therefore if the product being looked for is a collector box and the found product is also a box, they are considered the same packaging type. A bundle is not a box. A product including a card box is for holding individual cards, not he prdoduct, thus should not be put into consideration"
                   },
                   "price": { "type": "number" },
                   "currencyCode": { "type": "string" },
@@ -287,6 +289,7 @@ export class OpenaiService {
     });
 
     const json = JSON.parse(response.choices[0].message?.content || '{}');
+    console.log(json);
     return json;
   };
 
@@ -396,7 +399,9 @@ export class OpenaiService {
     });
 
     if (process.env.LOCAL_LLM === 'true')
-      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
+      // openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
+      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:8000/v1`;
+
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
     // 'analysis',
@@ -406,12 +411,12 @@ export class OpenaiService {
     // NEW VERSION TESTING
     const openAiResponse = await openai.chat.completions.create({
       model:
+        // process.env.LOCAL_LLM === 'true'
+        //   ? 'qwen/qwen3-4b-2507'
+        //   : `gpt-4.1-${mode}`,
         process.env.LOCAL_LLM === 'true'
-          ? 'qwen/qwen3-4b-2507'
-          : `gpt-4.1-${mode}`,
-      // process.env.LOCAL_LLM === 'true'
-      //   ? 'liquid/lfm2.5-1.2b'
-      //   : `gpt-4.1-mini`,
+          ? 'Qwen/Qwen3-4B-Instruct-2507'
+          : `gpt-4.1-mini`,
       temperature: 0.2,
       top_p: 0.9,
       frequency_penalty: 0.05,
@@ -428,7 +433,7 @@ Rules:
 - If the page has "Out of Stock", "Sold Out", "Currently Unavailable",
   "Request notification", or "Notify me when available" → OUT OF STOCK.
 - Preorders are only classified as IN STOCK if the text of the page contains explicit checkout phrases such as ‘Add to cart’, ‘Add to basket’, ‘Buy now’, ‘Pre-order now’, or ‘Reserve now’, which confirm the product can be actively ordered; if the text merely mentions ‘pre-order’ without including one of these checkout phrases, or if it instead shows wording like ‘Request notification’, ‘Notify me when available’, ‘Out of stock’, or similar, then the product must be treated as OUT OF STOCK.
-- If unclear, default to OUT OF STOCK.
+- If unclear, default to OUT OF STOCK. Price should be with vat and if two prices are right beside each other, it'll usually be the higher of the two
 
 Output schema:
 {
@@ -786,17 +791,21 @@ current date: ${new Date().toISOString()}
     });
 
     if (process.env.LOCAL_LLM === 'true')
-      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
+      // openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
+      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:8000/v1`;
+
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
     let openAiResponse;
     try {
       openAiResponse = await openai.chat.completions.create({
         model:
+          // process.env.LOCAL_LLM === 'true'
+          //   ? 'qwen/qwen3-4b-2507'
+          //   : `gpt-4.1-${version}`,
           process.env.LOCAL_LLM === 'true'
-            ? 'qwen/qwen3-4b-2507'
-            : `gpt-4.1-${version}`,
-        temperature: 0,
+            ? 'Qwen/Qwen3-4B-Instruct-2507'
+            : `gpt-4.1-mini`,
         messages: [
           {
             role: 'system',
