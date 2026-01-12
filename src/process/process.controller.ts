@@ -46,14 +46,18 @@ export class ProcessController {
 
     try {
       await new Promise((r) => setTimeout(r, 750));
+      console.log(`shopifyCollectionsTest called`);
       const result = await this.processService.shopifyCollectionsTest(shopDto);
       console.log(result);
       // if (result.length === 0) throw new NotFoundException(`No sitemap URLs found for shop ${shopDto.id}`);
-      await fetch(`http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collections: result }),
-      });
+      await fetch(
+        `http://localhost:3000/sitemap/update-from-shopify-collection-test/${shopDto.sitemapEntity.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ collections: result }),
+        },
+      );
       // ACK message on success
       channel.ack(originalMsg);
     } catch (error) {

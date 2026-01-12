@@ -56,22 +56,22 @@ export class ProcessService implements OnModuleInit {
     );
     console.log(`shopifySearch Result: ${result}`);
     const setup = await fetch(
-      `http://localhost:3000/sitemap/${shopDto.sitemapEntity.id}`,
+      `http://localhost:3000/sitemap/shopify-or-not/${shopDto.sitemapEntity.id}`,
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isShopifySite: result }),
       },
     );
-    if (result === true) {
-      await fetch(
-        `http://localhost:3000/sitemap/test-shopify-site-collection/${shopDto.id}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        },
-      );
-    }
+    // if (result === true) {
+    //   await fetch(
+    //     `http://localhost:3000/sitemap/test-shopify-site-collection/${shopDto.id}`,
+    //     {
+    //       method: 'POST',
+    //       headers: { 'Content-Type': 'application/json' },
+    //     },
+    //   );
+    // }
     if (setup.ok === true) return true;
     throw new Error('update_to_server_failed');
   }
