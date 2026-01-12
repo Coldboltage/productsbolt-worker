@@ -22,7 +22,7 @@ import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
 export class ProcessController {
   constructor(private readonly processService: ProcessService) {}
 
-  @EventPattern('shopyifyCheck')
+  @EventPattern('shopifyCheck')
   async shopifySearch(@Payload() shopDto: ShopDto, @Ctx() context: RmqContext) {
     const channel = context.getChannelRef();
     const originalMsg = context.getMessage();
