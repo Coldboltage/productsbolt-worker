@@ -125,7 +125,7 @@ export class BrowserService {
     const { browser, page } = await connect({
       headless: false,
       args: [
-        '--window-position=-99999,-99999',
+        // '--window-position=-99999,-99999',
         '--disable-backgrounding-occluded-windows',
         '--disable-features=CalculateNativeWinOcclusion',
         '--no-sandbox',
@@ -162,11 +162,18 @@ export class BrowserService {
         waitUntil: ['networkidle2'],
         timeout: 60000,
       });
+      // const testPage = await page.goto(url, {
+      //   waitUntil: 'domcontentloaded',
+      //   timeout: 60000,
+      // });
+
+      // // Optional, safe hydration wait
+      // await page.waitForNetworkIdle({ idleTime: 1000, timeout: 10000 });
 
       let status = testPage.status();
 
       try {
-        await this.utilService.waitForCloudflareBypass(page);
+        await this.utilService.waitForCloudflareBypass(page, url);
         if (status === 404) throw new NotFoundException(`404 Not Found`);
         if (status === 403 || status === 429) {
           console.log('403 or 429 detected, reloading page');
@@ -250,7 +257,7 @@ export class BrowserService {
       await page.goto(url, { waitUntil: ['networkidle2'], timeout: 60000 });
 
       try {
-        await this.utilService.waitForCloudflareBypass(page);
+        await this.utilService.waitForCloudflareBypass(page, url);
       } catch (e) {
         console.log('Error during Cloudflare bypass, continuing anyway');
       }
@@ -323,7 +330,7 @@ export class BrowserService {
         try {
           await page.goto(url, { waitUntil: 'load' });
           await new Promise((r) => setTimeout(r, 100));
-          await this.utilService.waitForCloudflareBypass(page, 10000);
+          await this.utilService.waitForCloudflareBypass(page, url, 10000);
           response = await page.goto(url);
         } catch (e) {
           console.log('Error during Cloudflare bypass, continuing anyway');
