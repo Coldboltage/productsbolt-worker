@@ -1,4 +1,5 @@
 import { ProductType } from 'src/app.type.js';
+import { CandidatePageCacheDto } from 'src/process/dto/candidate-page-cache.dto';
 import { CreateProcessDto } from 'src/process/dto/create-process.dto.js';
 
 export class LmStudio {}
@@ -13,8 +14,9 @@ export interface lmStudioWebDiscoveryPayload {
   createProcessDto: CreateProcessDto;
   specificUrl: string;
   hash: string;
-  count: number;
+  countIteration: number;
   shopifySite: boolean;
+  candidatePage: CandidatePageCacheDto;
 }
 
 export interface LmStudioReduceLinksPayload {

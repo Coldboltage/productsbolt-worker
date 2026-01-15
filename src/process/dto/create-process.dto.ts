@@ -14,6 +14,7 @@ import { UniqueShopType } from '../entities/process.entity.js';
 import { EbayProductDetailDto } from './ebay-product-detail.dto.js';
 import { Type } from 'class-transformer';
 import { SitemapDto } from './sitemap-dto.js';
+import { FullCandidatePageDto } from './candidate-page.dto.js';
 
 export class CreateProcessDto {
   @IsUrl()
@@ -83,4 +84,9 @@ export class CreateProcessDto {
   @ValidateNested()
   @Type(() => SitemapDto)
   sitemapEntity: SitemapDto;
+
+  @IsArray()
+  @ValidateNested()
+  @Type(() => FullCandidatePageDto)
+  candidatePages: FullCandidatePageDto[];
 }

@@ -33,6 +33,8 @@ import {
 import { OpenaiService } from '../openai/openai.service.js';
 import * as cheerio from 'cheerio';
 import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
+import { CandidatePageCacheDto } from './dto/candidate-page-cache.dto.js';
+import { FullCandidatePageDto } from './dto/candidate-page.dto.js';
 
 @Injectable()
 export class ProcessService implements OnModuleInit {
@@ -258,6 +260,7 @@ export class ProcessService implements OnModuleInit {
       createProcessDto.hash,
       createProcessDto.confirmed,
       createProcessDto.count,
+      createProcessDto.candidatePages,
     );
     if (result) {
       return true;
@@ -277,6 +280,7 @@ export class ProcessService implements OnModuleInit {
     hash: string,
     confirmed: boolean,
     count: number,
+    candidatePages: FullCandidatePageDto[],
   ): Promise<boolean> {
     // Think the router has to be added here
     let html: string;
@@ -293,6 +297,7 @@ export class ProcessService implements OnModuleInit {
     };
     let info: { title: string; mainText: string };
     let specificUrl: string;
+    let candidatePage;
 
     if (shopifySite) {
       console.log('extractShopifyWebsite activated');
@@ -339,6 +344,8 @@ export class ProcessService implements OnModuleInit {
         );
       }
 
+      candidatePage = candidatePages.find((page) => page.url === specificUrl);
+
       const html = textInformation.html;
       mainText = textInformation.mainText;
       const dom = new JSDOM(html);
@@ -366,7 +373,10 @@ export class ProcessService implements OnModuleInit {
       .update(allText)
       .digest('hex');
 
-    if (currentHash === hash && confirmed === true) {
+    if (
+      currentHash === candidatePage?.candidatePageCache?.hash &&
+      candidatePage?.candidatePageCache?.confirmed === true
+    ) {
       console.log({
         message: 'no-need-to-continue',
         webpage: url,
@@ -374,6 +384,7 @@ export class ProcessService implements OnModuleInit {
       throw new Error('no-need-to-continue');
     }
     hash = currentHash;
+    const countIteration = candidatePage?.candidatePageCache?.count || 0;
 
     const lmStudioWebDiscoveryPayload: lmStudioWebDiscoveryPayload = {
       title,
@@ -385,8 +396,9 @@ export class ProcessService implements OnModuleInit {
       createProcessDto,
       specificUrl,
       hash,
-      count,
+      countIteration,
       shopifySite,
+      candidatePage,
     };
 
     this.lmStudioClient.emit(
@@ -669,6 +681,7 @@ export class ProcessService implements OnModuleInit {
     hash: string,
     confirmed: boolean,
     count: number,
+    candidatePages: FullCandidatePageDto[],
   ): Promise<boolean> {
     console.log(`https://${base}${seed}`);
 
@@ -721,6 +734,7 @@ export class ProcessService implements OnModuleInit {
       hash,
       confirmed,
       count,
+      candidatePages,
     );
     return true;
     // if (answer) {
