@@ -820,6 +820,7 @@ export class ProcessService implements OnModuleInit {
       createProcessDto.hash,
       createProcessDto.confirmed,
       createProcessDto.count,
+      createProcessDto.candidatePages,
     );
     if (answer) {
       console.log('Product Found');
