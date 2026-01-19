@@ -41,7 +41,7 @@ describe('AppController (e2e)', () => {
     });
   });
 
-  describe('test each website', () => {
+  describe.only('test each website', () => {
     for (let run = 1; run <= RUNS; run++) {
       it.each(arrayOfWebpages)(
         'should output with the correct answer provided',
@@ -70,7 +70,7 @@ describe('AppController (e2e)', () => {
     }
   });
 
-  describe.only('test each page versus specific context/query', () => {
+  describe('test each page versus specific context/query', () => {
     const RUNS = 3;
     // Arrange
     for (let run = 1; run <= RUNS; run++) {
