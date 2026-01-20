@@ -434,7 +434,9 @@ Rules:
   "Request notification", or "Notify me when available" → OUT OF STOCK.
 - Preorders are only classified as IN STOCK if the text of the page contains explicit checkout phrases such as ‘Add to cart’, ‘Add to basket’, ‘Buy now’, ‘Pre-order now’, or ‘Reserve now’, which confirm the product can be actively ordered; if the text merely mentions ‘pre-order’ without including one of these checkout phrases, or if it instead shows wording like ‘Request notification’, ‘Notify me when available’, ‘Out of stock’, or similar, then the product must be treated as OUT OF STOCK.
 - If unclear, default to OUT OF STOCK. Price should be with vat and if two prices are right beside each other, it'll usually be the higher of the two
-- Having a price and delievery method are not to be considered at all
+- The price and delievery method are not to be considered at all. 
+- Add To Wishlist must be ignored
+- If a page is found with something like "Loading..", it is impossible to confirm status as parts of the page haven't loaded correctly, thus default to OUT OF STOCK.
 
 Output schema:
 {
