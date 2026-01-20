@@ -787,15 +787,7 @@ current date: ${new Date().toISOString()}
     mainUrl: string,
     context,
   ): Promise<ParsedLinks[]> => {
-    console.log(sitemapUrls);
-    const sitemapBestLinkSchema = z.object({
-      bestSites: z.array(
-        z.object({
-          url: z.string(),
-          score: z.number(),
-        }),
-      ),
-    });
+    console.log({ sitemapUrls, query, version, mainUrl, context });
 
     const openai = new OpenAI({
       timeout: 3600000,
@@ -828,7 +820,7 @@ current date: ${new Date().toISOString()}
           },
           {
             role: 'user',
-            content: `Please use the sitemap URLs and figure the best links to use for ${query}. The URLs must include ${mainUrl} within the url. URLs: ${sitemapUrls.join(', ')}. Links that are below 0.9 score will not be included. Therefore only include links with scores which are 0.9 or above. Highest score first. Only give 4 links maximum.
+            content: `Please use the sitemap URLs and figure the best links to use for the product, ${query}. The URLs must include ${mainUrl} within the url. URLs: ${sitemapUrls.join(', ')}. Links that are below 0.9 score will not be included. Therefore only include links with scores which are 0.9 or above. Highest score first. Only give 4 links maximum.
           
           To find out more about the product, here is it's description to help you ${context}
           
@@ -879,6 +871,7 @@ current date: ${new Date().toISOString()}
     const linksResponse = JSON.parse(
       openAiResponse.choices[0].message?.content,
     ) as ParsedLinks[];
+    console.log(linksResponse);
     return linksResponse;
   };
 }

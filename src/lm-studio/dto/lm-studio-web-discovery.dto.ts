@@ -7,10 +7,9 @@ import {
 } from 'class-validator';
 import { ProductType } from 'src/app.type';
 import { CreateProcessDto } from 'src/process/dto/create-process.dto';
-import { lmStudioWebDiscoveryPayload } from '../entities/lm-studio.entity';
 import { CandidatePageCacheDto } from 'src/process/dto/candidate-page-cache.dto';
 
-export class LmStudioWebDiscoveryDto implements lmStudioWebDiscoveryPayload {
+export class LmStudioWebDiscoveryDto implements LmStudioWebDiscoveryDto {
   countIteration: number;
   candidatePage: CandidatePageCacheDto;
   @IsString()

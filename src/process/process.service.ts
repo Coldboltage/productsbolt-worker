@@ -28,12 +28,11 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import {
   LmStudioReduceLinksPayload,
-  lmStudioWebDiscoveryPayload,
+  LmStudioWebDiscoveryPayload,
 } from 'src/lm-studio/entities/lm-studio.entity.js';
 import { OpenaiService } from '../openai/openai.service.js';
 import * as cheerio from 'cheerio';
 import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
-import { CandidatePageCacheDto } from './dto/candidate-page-cache.dto.js';
 import { FullCandidatePageDto } from './dto/candidate-page.dto.js';
 
 @Injectable()
@@ -307,6 +306,12 @@ export class ProcessService implements OnModuleInit {
           textInformation = { html: info.title, mainText: info.mainText };
           specificUrl = url[index];
           success = true;
+
+          candidatePage = candidatePages.find(
+            (page) => page.url === specificUrl,
+          );
+          console.log(candidatePage);
+
           break;
         } catch (error) {
           console.error(`Skipping ${url[index]}: ${error.message}`);
@@ -345,6 +350,7 @@ export class ProcessService implements OnModuleInit {
       }
 
       candidatePage = candidatePages.find((page) => page.url === specificUrl);
+      console.log(candidatePage);
 
       const html = textInformation.html;
       mainText = textInformation.mainText;
@@ -386,7 +392,9 @@ export class ProcessService implements OnModuleInit {
     hash = currentHash;
     const countIteration = candidatePage?.candidatePageCache?.count || 0;
 
-    const lmStudioWebDiscoveryPayload: lmStudioWebDiscoveryPayload = {
+    console.log(`countIteration = ${countIteration}`);
+
+    const lmStudioWebDiscoveryPayload: LmStudioWebDiscoveryPayload = {
       title,
       allText,
       query,

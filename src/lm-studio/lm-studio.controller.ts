@@ -33,9 +33,11 @@ export class LmStudioController {
       createProcessDto,
       specificUrl,
       hash,
-      count,
+      countIteration,
       shopifySite,
     } = lmStudioWebDiscoveryPayloadDto;
+
+    console.log(`count is: ${countIteration}`);
 
     try {
       await this.lmStudioService.lmStudioWebDiscovery(
@@ -48,7 +50,7 @@ export class LmStudioController {
         createProcessDto,
         specificUrl,
         hash,
-        count,
+        countIteration,
         shopifySite,
       );
       channel.ack(originalMsg);
