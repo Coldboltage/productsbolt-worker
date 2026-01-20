@@ -256,6 +256,40 @@ export const unscannedArrayOfWebpages: unscannedWebsitePageRequiredInfo[] = [
       },
     ],
   },
+  {
+    title: `Magic: The Gathering - Edge of Eternities Collector Booster`,
+    content: `Publisher Release Date:01/08/2025 Each interstellar booster contains Rares and/or Mythics, Traditional Foils, a Borderless Celestial basic land, and more. You could find Borderless Poster Stellar Sights cards or even Sothera, the Supervoid!. Out of stock`,
+    examples: [
+      {
+        // 14
+        productName: 'Edge of Eternities Collector Booster Box',
+        context: `This product is the official Magic: The Gathering Edge of Eternities Collector Booster Box, sold as a single, sealed box. The product title or description must clearly state 'Collector Booster Box' and confirm it includes exactly 12 Edge of Eternities Collector Booster packs. Each booster contains 15 Magic: The Gathering cards, including 5 or more Rare or Mythic Rare cards, Traditional Foils, and at least one Borderless or showcase treatment card. Special chase variants may include Galaxy Foils, Poster Showcase Lands, and serialized cards. This product must be in English and must not be a bundle, case, multi-pack, partial box, single pack, or any split listing. It must not be a Draft, Set, Play, or Commander Booster, Gift Bundle, or any other MTG product. This box is part of the Magic: The Gathering Edge of Eternities set, which introduces sci-fi-themed cards and mechanics such as Void and Warp, with exclusive treatments only found in Collector Boosters. These constraints ensure the listing is uniquely identifiable as the sealed MTG Edge of Eternities Collector Booster Box and prevent confusion with other formats or products.`,
+        inStock: false,
+        isNamedProduct: false,
+        packagingTypeMatch: false,
+        editionMatch: true,
+        type: ProductType.BOX,
+        mode: 'test',
+      },
+    ],
+  },
+  {
+    title: `Magic: The Gathering: Avatar: The Last Airbender Collector Booster`,
+    content: `Team Avatar is back! The action, adventure, and spirit of Avatar: The Last Airbender awaken in Magic: The Gathering. Master new mechanics: Earthbending, Airbending, Waterbending, and Firebending to tell your version of the story and discover your Magic playstyle. Bend the elements. Master the game. Discover wonders rivaling Wan Shi Tong's library with Magic: The Gathering | Avatar: The Last Airbender Collector Boosters. Each booster contains cards from across the four nations, including rares and/or mythic rares, traditional foils, and a full-art basic land. You may also find source material cards and neon ink borderless battle pose cards celebrating the show’s iconic visuals, and even hunt for a raised foil Avatar Aang illustrated by show creator Bryan Konietzko. 15 cards per pack. Out of stock. Single Booster`,
+    examples: [
+      {
+        // 14
+        productName: 'Avatar: The Last Airbender Collector Booster Box',
+        context: `This product is the official Magic: The Gathering – Avatar: The Last Airbender Collector Booster Box, sold as a single, factory-sealed retail unit in English. The listing must clearly state both 'Avatar: The Last Airbender' and 'Collector Booster Box' together in the title or description. It must not be any other Magic: The Gathering set, product line, or booster type (e.g., Play Boosters, Draft Boosters, Set Boosters, Bundles, Gift Editions, cases, multi-packs, partial boxes, or single packs). Accessories, pack counts, or card breakdown details may appear in the listing, but they are only supporting evidence and are not required for a match. The key requirement is that the listing unambiguously matches the exact product name, set ('Avatar: The Last Airbender'), type ('Collector Booster Box'), language, and condition described above.`,
+        inStock: false,
+        isNamedProduct: false,
+        packagingTypeMatch: false,
+        editionMatch: true,
+        type: ProductType.BOX,
+        mode: 'test',
+      },
+    ],
+  },
   // {
   //   title: `Grand Archive TCG Distorted Reflections 1st Edition Booster Box`,
   //   content: `"\\n\\nSkip to content\\nFacebook\\nInstagram\\nCountry/region\\n\\nUnited Kingdom | GBP £\\nPLEASE READ -> Next shipping date is Monday 5th January 2026! HAPPY NEW YEAR 🎊\\n\\nTranscendent Cards \\nLog in\\nCart\\n⭐ JOIN our Discord for Early Drops/Pre Order Info Click Here To Join!⭐\\n\\nSkip to product information\\n\\nOpen media 1 in modal\\nGrand Archive TCG Distorted Reflections 1st Edition Booster Box\\nRegular price£95.76 GBP Sale price£73.50 GBPSale\\n18 in stock\\n\\nQuantity\\nDecrease quantity for Grand Archive TCG Distorted Reflections 1st Edition Booster Box\\n1\\nIncrease quantity for Grand Archive TCG Distorted Reflections 1st Edition Booster Box\\n\\nAdd to cart\\nBuy it now\\nWelcome to Underland, a world where magic and madness entwine in an endless waltz. As our Champions travel deeper down the rabbit hole, they must decipher the riddles of this bewildering realm, uncover the fate of their vanished predecessors, and face their most formidable foes yet – themselves. Will they piece together the fragments of reason and save Underland, or will their house of cards collapse into darkness?\\nDistorted Reflections is a standard set that supports all seven classes, with a focus on the Guardian and Ranger classes.\\n\\nFeatures:\\n• Distorted Reflections is a standard set that supports all seven classes, with a focus on the Guardian and Ranger classes!\\n• Set contains 222 unique cards, with 72C, 59U, 53R, 30SR, 8UR, 15CSR, and 1CUR cards.\\n• There are also 234 foil variation cards in this set.\\n\\nContents:\\n• 12 x Cards Per Pack\\n\\nCommunity Trusted - 300+ 5* Reviews.\\nStockist of Over 7+ TCG's.\\nReduced Shipping over £100.00\\nThe \"Before You Order\" Information\\nProcesssing Period\\nPre Order Information\\nCancellation Details\\nQuick Links\\nShipping Policy\\nRefund/Cancellation Policy\\nTerms of Service\\nPrivacy Policy\\nSearch\\nContact Us\\nBusiness Information\\nRegistered Business: 14199768\\n\\nVAT Registration: 418868943\\n\\nAbout Us:\\nWe are an independent online trading card game (TCG) store based in Newcastle upon Tyne in the North-East of England- We operate only a few hours per day . Founded in June 2022, our store was created out of a profound passion for collecting and a love for trading card games.\\nAt Transcendent Cards, we provide a wide selection of TCGs and accessories to meet the needs of all enthusiasts. Our mission is to deliver a quality customer experience, ensuring that each purchase is enjoyable and fulfilling. Whether you are a seasoned collector or just starting your journey into the hobby, we are here to assist you in finding exactly what you need. Thank you for supporting our small business!\\n\\nSubscribe to Our Emails:\\nEmail\\nEmail\\nFacebook\\nInstagram\\nCountry/region\\n\\nUnited Kingdom | GBP £\\nPayment methods\\n© 2026, Transcendent Cards Powered by Shopify\\nRefund policy\\nPrivacy policy\\nTerms of service\\nShipping policy\\nContact information\\nJoin Our Mailing List! Latest Products and News."`,

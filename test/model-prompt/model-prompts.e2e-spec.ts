@@ -41,7 +41,7 @@ describe('AppController (e2e)', () => {
     });
   });
 
-  describe.only('test each website', () => {
+  describe('test each website', () => {
     for (let run = 1; run <= RUNS; run++) {
       it.each(arrayOfWebpages)(
         'should output with the correct answer provided',
@@ -70,12 +70,12 @@ describe('AppController (e2e)', () => {
     }
   });
 
-  describe('test each page versus specific context/query', () => {
-    const RUNS = 3;
+  describe.only('test each page versus specific context/query', () => {
+    const RUNS = 1;
     // Arrange
     for (let run = 1; run <= RUNS; run++) {
       for (const [index, webpage] of unscannedArrayOfWebpages.entries()) {
-        if (index > 6) continue; // 2nd item (0-based)
+        if (index > 10) continue; // 2nd item (0-based)
         it.each(webpage.examples)(
           'should get each classification correct',
           async (example) => {

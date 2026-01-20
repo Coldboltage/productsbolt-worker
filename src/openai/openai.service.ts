@@ -219,12 +219,21 @@ export class OpenaiService {
           //       ],
           //       "additionalProperties": false
           //     }`,
-          content: `Required Target product name: ${productName}
-              Required Expected product type: ${type.toUpperCase()}
-              Context: ${context}
+          content: `
 
-              Analysed Product Title: ${title}
-              Analaysed Page Content: ${content}
+          -- Information to be used to compare versus the page --
+          
+          Required Target product name: ${productName}
+              Required Expected product type: ${type.toUpperCase()}
+              Required Product Helpful Context: ${context}
+
+              Note: Context is only used to help determine if the product page, matches the product we are looking for.
+
+              -- Page Information to compare against --
+
+              Analysed Page Product Title: ${title}
+              Analaysed Page Product Content: ${content}
+
 
               --- JSON Schema to follow strictly and exactly as shown ---
               {
@@ -232,7 +241,7 @@ export class OpenaiService {
                 "properties": {
                   "analysis": {
                     "type": "string",
-                    "description": "Very Concisely in as little words as possible, use this field to reason about what the product fundamentally is, based on all available evidence. Analyze the product title, description, and any contextual information to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked \"Add to Cart\", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”)\n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching. To note, a booster display is usually indicitive of a Box. The description usually gives light to this. Products that state a quantity of booster packs (e.g. “X packs”) and are purchased as one item represent a sealed box containing packs, even though the description references packs."
+                    "description": "Using only the page information, use this field to reason about what the product fundamentally is on the webpage, based on all available evidence. Analyze the product title, description, and any contextual information on the webpage to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked \"Add to Cart\", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”)\n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching. To note, a booster display is usually indicitive of a Box. The description usually gives light to this. Products that state a quantity of booster packs (e.g. “X packs”) and are purchased as one item represent a sealed box containing packs, even though the description references packs. Note, some sites just say Collector Booster. Without the box part, this is most likely an individual booster pack. Collector doesn't imply quantity at all. Justify"
                   },
                   "justifications": {
                     "type": "object",
@@ -253,7 +262,7 @@ export class OpenaiService {
                     "type": "boolean",
                     "description": "True if the productName provided as the target refers to the same logical product as the main product listed on the page. The comparison must be made against the page’s primary product only (not related or recommended items) and should allow for naming variations while requiring the same product identity. The names don't need to be exact but inferred"
                   },
-                  "packagingTypeMatch": { "type": "boolean", "description": "If packaging type matches. BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, BOX ≠ DISPLAY unless your BOX definition explicitly includes DISPLAY. A box and collector box are both boxes. They are considered the same thing in terms of packaging. If a product has more than 24 booster packs or more, classify as a box. Therefore if the product being looked for is a collector box and the found product is also a box, they are considered the same packaging type. A bundle is not a box. A product including a card box is for holding individual cards, not he prdoduct, thus should not be put into consideration"
+                  "packagingTypeMatch": { "type": "boolean", "description": "If packaging type matches. BOOSTER = PACK, BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, BOX ≠ DISPLAY unless your BOX definition explicitly includes DISPLAY. A box and collector box are both boxes. They are considered the same thing in terms of packaging. If a product has more than 24 booster packs or more, classify as a box. Therefore if the product being looked for is a collector box and the found product is also a box, they are considered the same packaging type. A bundle is not a box. A product including a card box is for holding individual cards, not he prdoduct, thus should not be put into consideration. Stating the "
                   },
                   "price": { "type": "number" },
                   "currencyCode": { "type": "string" },
