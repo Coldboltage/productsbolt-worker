@@ -693,40 +693,40 @@ export class ProcessService implements OnModuleInit {
   ): Promise<boolean> {
     console.log(`https://${base}${seed}`);
 
-    let urls = links;
+    const urls = links;
     let bestSites: ParsedLinks[];
 
     if (links.length === 0) {
       throw new Error(`No Link Provided: ${query} - ${base}${seed}`);
-      let foundSitemapUrls: {
-        websiteUrls: string[];
-        fast: boolean;
-      } = { websiteUrls: [], fast: false };
+      // let foundSitemapUrls: {
+      //   websiteUrls: string[];
+      //   fast: boolean;
+      // } = { websiteUrls: [], fast: false };
 
-      foundSitemapUrls = await this.utilService.getUrlsFromSitemap(
-        sitemap,
-        `https://${base}${seed}`,
-        crawlAmount,
-        fast,
-        sitemapUrls,
-      );
+      // foundSitemapUrls = await this.utilService.getUrlsFromSitemap(
+      //   sitemap,
+      //   `https://${base}${seed}`,
+      //   crawlAmount,
+      //   fast,
+      //   sitemapUrls,
+      // );
 
-      const reducedUrls = this.utilService.reduceSitemap(
-        foundSitemapUrls.websiteUrls,
-        query,
-      );
+      // const reducedUrls = this.utilService.reduceSitemap(
+      //   foundSitemapUrls.websiteUrls,
+      //   query,
+      // );
 
-      console.log(`ReducedUrls: ${reducedUrls.length}`);
+      // console.log(`ReducedUrls: ${reducedUrls.length}`);
 
-      bestSites = await this.openaiService.crawlFromSitemap(
-        reducedUrls,
-        query,
-        mode,
-        `${base}${seed}`,
-        context,
-      );
+      // bestSites = await this.openaiService.crawlFromSitemap(
+      //   reducedUrls,
+      //   query,
+      //   mode,
+      //   `${base}${seed}`,
+      //   context,
+      // );
 
-      urls = bestSites.map((site) => site.url);
+      // urls = bestSites.map((site) => site.url);
     }
 
     console.log(urls);
