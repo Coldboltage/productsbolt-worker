@@ -8,6 +8,7 @@ import {
   EbaySoldProductStrip,
 } from '../ebay/entities/ebay.entity.js';
 import { ProductDto } from '../process/dto/product.dto.js';
+import { ShopifyVariant } from 'src/utils/utils.type.js';
 
 @Injectable()
 export class OpenaiService {
@@ -883,17 +884,15 @@ current date: ${new Date().toISOString()}
   };
 
   whichVariant = async (
-    sitemapUrls: string[],
     query: string,
-    version: string,
-    mainUrl: string,
-    context,
+    context: string,
+    variants: ShopifyVariant[],
   ): Promise<ParsedLinks[]> => {
-    console.log({ sitemapUrls, query, version, mainUrl, context });
+    // console.log({ sitemapUrls, query, version, mainUrl, context });
 
     const openai = new OpenAI({
       timeout: 3600000,
-      maxRetries: 2,
+      // maxRetries: 2,
     });
 
     if (process.env.LOCAL_LLM === 'true')
@@ -922,36 +921,36 @@ current date: ${new Date().toISOString()}
           },
           {
             role: 'user',
-            content: `Please use the sitemap URLs and figure the best links to use for the product, ${query}. The URLs must include ${mainUrl} within the url. URLs: ${sitemapUrls.join(', ')}. Links that are below 0.9 score will not be included. Therefore only include links with scores which are 0.9 or above. Highest score first. Only give 4 links maximum.
+            content: `Here is the product in question, ${query}. 
+            
+            Here are both variants as objects: ${variants}
+            
+
+            -- Context to be used to understand what we are looking for. It is not part of the URL --
           
-          To find out more about the product, here is it's description to help you ${context}
+            To find out more about the product, here is it's description to help you. This is not part of the url. Context: ${context}.
+
+            -- Rules --
+
+            Your job is to give me the index number of the variant and justifications to why you chose it. It can only be one. Variants in this case are generally the same product but packaged in a different way. The Context will help you understand what we are aiming to identify while the product is what we're aiming to buy.
+
           
           JSON OUTPUT with object
 
           {
-
-
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "url": {
-                  "type": "string"
-                },
-              "score": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1,
-              "multipleOf": 0.01,
-              "description": "A relevance score between 0 and 1 (inclusive), rounded to two decimal places. 1 = perfect match, 0 = not relevant. Each result must have a unique score so that the list forms a strict ranking with no ties."
-            }
+            "type": "object",
+            "properties": {
+              "index": {
+                "type": "number"
               },
-              "required": ["url", "score"],
-              "additionalProperties": false
+            "justification": {
+              "type": "string",
+            }
             },
-            "required": ["bestSites"],
+            "required": ["index", "justification"],
             "additionalProperties": false
-      }
+          },
+        }
           `,
           },
         ],
@@ -974,6 +973,7 @@ current date: ${new Date().toISOString()}
       openAiResponse.choices[0].message?.content,
     ) as ParsedLinks[];
     console.log(linksResponse);
+
     return linksResponse;
   };
 }

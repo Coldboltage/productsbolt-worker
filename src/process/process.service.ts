@@ -319,6 +319,13 @@ export class ProcessService implements OnModuleInit {
             console.log(candidatePage);
           } else {
             // We need to make an immediate LLM Call and we need the state.
+            const test = await this.openaiService.whichVariant(
+              query,
+              context,
+              info.shopifyProduct.variants,
+            );
+            console.log(test);
+            await new Promise((r) => setTimeout(r, 30000000));
           }
 
           break;
