@@ -321,12 +321,11 @@ export class ProcessService implements OnModuleInit {
               query,
               context,
               info.shopifyProduct.variants,
+              type,
             );
             title = info.title;
             allText = `${textInformation.mainText}. Price is ${info.shopifyProduct.variants[test.index].price / 100}, InStock Status: ${info.shopifyProduct.variants[test.index].available}`;
           }
-
-          console.log(textInformation.mainText);
 
           candidatePage = candidatePages.find(
             (page) => page.url === specificUrl,

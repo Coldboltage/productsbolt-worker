@@ -887,6 +887,7 @@ current date: ${new Date().toISOString()}
     query: string,
     context: string,
     variants: ShopifyVariant[],
+    type: ProductType,
   ): Promise<{ index: number; justification: string }> => {
     // console.log({ sitemapUrls, query, version, mainUrl, context });
 
@@ -921,18 +922,17 @@ current date: ${new Date().toISOString()}
           },
           {
             role: 'user',
-            content: `Here is the product in question, ${query}. 
+            content: `
             
-            Here are both variants as objects: ${variants}
+            Here are the variants as objects. Please seperate each one: ${JSON.stringify(variants.map((variant) => variant))}
             
+            Here is the product in question, ${query}. Here is the product packaging type: ${type}
 
-            -- Context to be used to understand what we are looking for. It is not part of the URL --
-          
-            To find out more about the product, here is it's description to help you. This is not part of the url. Context: ${context}.
+            Here is the context to help what we are looking to buy: ${context}
 
             -- Rules --
 
-            Your job is to give me the index number of the variant and justifications to why you chose it. It can only be one. Variants in this case are generally the same product but packaged in a different way. The Context will help you understand what we are aiming to identify while the product is what we're aiming to buy.
+            Your job is to give me the index number of the variant and justifications to why you chose it. It can only be one. Variants in this case are generally the same product but packaged in a different way. Using the type, you will be able to determine which object is the correct one to identify. The Context will help you understand what we are aiming to identify while the product is what we're aiming to buy.
 
           
           JSON OUTPUT with object
