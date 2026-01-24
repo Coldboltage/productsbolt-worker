@@ -887,7 +887,7 @@ current date: ${new Date().toISOString()}
     query: string,
     context: string,
     variants: ShopifyVariant[],
-  ): Promise<ParsedLinks[]> => {
+  ): Promise<{ index: number; justification: string }> => {
     // console.log({ sitemapUrls, query, version, mainUrl, context });
 
     const openai = new OpenAI({
@@ -971,7 +971,7 @@ current date: ${new Date().toISOString()}
 
     const linksResponse = JSON.parse(
       openAiResponse.choices[0].message?.content,
-    ) as ParsedLinks[];
+    ) as { index: number; justification: string };
     console.log(linksResponse);
 
     return linksResponse;

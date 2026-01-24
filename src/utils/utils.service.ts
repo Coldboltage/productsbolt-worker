@@ -401,7 +401,7 @@ export class UtilsService {
       mainText = `${mainText}`;
 
       console.log({ title, mainText });
-      return { title, mainText, json };
+      return { title, mainText, shopifyProduct: json };
     } catch (error) {
       console.log(error);
       throw new Error('Could not fetch Shopify product');

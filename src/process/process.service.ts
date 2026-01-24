@@ -313,10 +313,8 @@ export class ProcessService implements OnModuleInit {
           success = true;
 
           if (info.shopifyProduct.variants.length === 1) {
-            candidatePage = candidatePages.find(
-              (page) => page.url === specificUrl,
-            );
-            console.log(candidatePage);
+            title = info.title;
+            allText = textInformation.mainText;
           } else {
             // We need to make an immediate LLM Call and we need the state.
             const test = await this.openaiService.whichVariant(
@@ -324,9 +322,16 @@ export class ProcessService implements OnModuleInit {
               context,
               info.shopifyProduct.variants,
             );
-            console.log(test);
-            await new Promise((r) => setTimeout(r, 30000000));
+            title = info.title;
+            allText = `${textInformation.mainText}. Price is ${info.shopifyProduct.variants[test.index].price / 100}, InStock Status: ${info.shopifyProduct.variants[test.index].available}`;
           }
+
+          console.log(textInformation.mainText);
+
+          candidatePage = candidatePages.find(
+            (page) => page.url === specificUrl,
+          );
+          console.log(candidatePage);
 
           break;
         } catch (error) {
@@ -334,8 +339,6 @@ export class ProcessService implements OnModuleInit {
           index++;
         }
       }
-      title = info.title;
-      allText = textInformation.mainText;
     } else {
       while (index < url.length) {
         try {
