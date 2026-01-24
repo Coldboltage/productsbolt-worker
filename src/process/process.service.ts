@@ -661,6 +661,8 @@ export class ProcessService implements OnModuleInit {
     );
 
     console.log(`ReducedUrls: ${reducedUrls.length}`);
+    // console.log(reducedUrls);
+    // await new Promise((resolve) => setTimeout(resolve, 30000000));
 
     const lmStudioReduceLinksPayload: LmStudioReduceLinksPayload = {
       reducedUrls: reducedUrls,

@@ -105,7 +105,7 @@ export class LmStudioService {
     const preStrippedResult = result
       .filter((site) => site.score >= 0.9)
       .sort((a, b) => b.score - a.score);
-    console.log(preStrippedResult);
+
     const strippedResult = preStrippedResult.map((site) => site.url);
 
     await fetch(
