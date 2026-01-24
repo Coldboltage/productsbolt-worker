@@ -40,4 +40,6 @@ export class CheckPageDto {
 
   @IsBoolean()
   cloudflare: boolean;
+
+  variantId: null | string;
 }

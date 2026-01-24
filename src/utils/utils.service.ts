@@ -451,6 +451,7 @@ export class UtilsService {
       hash: webpage.hash,
       count: webpage.count,
       shopifySite: webpage.shopifySite,
+      variantId: webpage.variantId,
     };
     console.log(webPage);
     console.log('webDiscoverySend called');
@@ -485,6 +486,7 @@ export class UtilsService {
       hash: webpage.hash,
       count: webpage.count,
       shopifySite: webpage.shopifySite,
+      variantId: webpage.variantId,
     };
     console.log(webPage);
     try {

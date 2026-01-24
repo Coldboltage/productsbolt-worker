@@ -103,6 +103,7 @@ export class EbayService implements OnModuleInit {
         count: 1,
         hash: 'abc123',
         shopifySite: false,
+        variantId: null,
       },
     ]);
   }

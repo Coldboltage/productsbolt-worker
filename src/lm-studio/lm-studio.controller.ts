@@ -35,6 +35,7 @@ export class LmStudioController {
       hash,
       countIteration,
       shopifySite,
+      variantId,
     } = lmStudioWebDiscoveryPayloadDto;
 
     console.log(`count is: ${countIteration}`);
@@ -52,6 +53,7 @@ export class LmStudioController {
         hash,
         countIteration,
         shopifySite,
+        variantId,
       );
       channel.ack(originalMsg);
     } catch (error) {

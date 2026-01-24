@@ -24,6 +24,7 @@ export class LmStudioService {
     hash: string,
     count: number,
     shopifySite: boolean,
+    variantId: null | string,
   ): Promise<void> {
     let openaiAnswer: boolean;
     const answer = await this.openaiService.productInStock(
@@ -61,6 +62,7 @@ export class LmStudioService {
           hash,
           count,
           shopifySite,
+          variantId,
         },
         createProcessDto,
       );
@@ -75,6 +77,7 @@ export class LmStudioService {
           count,
           hash,
           shopifySite,
+          variantId,
         },
         createProcessDto,
       );

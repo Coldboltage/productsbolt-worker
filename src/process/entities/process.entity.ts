@@ -33,6 +33,7 @@ export interface ProductInStockWithAnalysisStripped {
   count: number;
   hash: string;
   shopifySite: boolean;
+  variantId: null | string;
 }
 
 export interface Justification {

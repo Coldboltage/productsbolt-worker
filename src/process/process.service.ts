@@ -302,6 +302,7 @@ export class ProcessService implements OnModuleInit {
     };
     let specificUrl: string;
     let candidatePage;
+    let variantId: null | string = null;
 
     if (shopifySite) {
       console.log('extractShopifyWebsite activated');
@@ -315,6 +316,7 @@ export class ProcessService implements OnModuleInit {
           if (info.shopifyProduct.variants.length === 1) {
             title = info.title;
             allText = textInformation.mainText;
+            variantId = String(info.shopifyProduct.variants[0].id);
           } else {
             // We need to make an immediate LLM Call and we need the state.
             const test = await this.openaiService.whichVariant(
@@ -325,6 +327,7 @@ export class ProcessService implements OnModuleInit {
             );
             title = info.title;
             allText = `${textInformation.mainText}. Price is ${info.shopifyProduct.variants[test.index].price / 100}, InStock Status: ${info.shopifyProduct.variants[test.index].available}`;
+            variantId = String(info.shopifyProduct.variants[0].id);
           }
 
           candidatePage = candidatePages.find(
@@ -338,6 +341,7 @@ export class ProcessService implements OnModuleInit {
           index++;
         }
       }
+      console.log(variantId);
     } else {
       while (index < url.length) {
         try {
@@ -425,6 +429,7 @@ export class ProcessService implements OnModuleInit {
       countIteration,
       shopifySite,
       candidatePage,
+      variantId,
     };
 
     this.lmStudioClient.emit(
@@ -467,6 +472,7 @@ export class ProcessService implements OnModuleInit {
     shopWebsite: string,
     webPageId: string,
     cloudflare: boolean,
+    variantId: null | string,
   ): Promise<boolean> {
     // Note, the html discovery part should be it's own function
     // This is for testing for now
@@ -482,10 +488,13 @@ export class ProcessService implements OnModuleInit {
       console.log('extractShopifyWebsite activated');
       await new Promise((r) => setTimeout(r, 50));
       const result = await this.utilService.extractShopifyWebsite(url);
+      const variantProduct = result.shopifyProduct.variants.find(
+        (v) => String(v.id) === variantId,
+      );
       this.updateWebpageSend({
         url,
-        inStock: result.available ? result.available : false,
-        price: result.price / 100,
+        inStock: variantProduct.available ? variantProduct.available : false,
+        price: variantProduct.price / 100,
         productName: query,
         hash: 'shopify',
         count: 0,
@@ -882,6 +891,7 @@ export class ProcessService implements OnModuleInit {
       checkPageDto.shopWebsite,
       checkPageDto.webPageId,
       checkPageDto.cloudflare,
+      checkPageDto.variantId,
     );
     return result;
   }

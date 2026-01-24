@@ -44,4 +44,6 @@ export class LmStudioWebDiscoveryDto implements LmStudioWebDiscoveryDto {
 
   @IsBoolean()
   shopifySite: boolean;
+
+  variantId: null | string;
 }

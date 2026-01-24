@@ -45,4 +45,6 @@ export class CreateCandidatePageDto {
 
   @IsString()
   pageTitle: string;
+
+  variantId: null | string;
 }

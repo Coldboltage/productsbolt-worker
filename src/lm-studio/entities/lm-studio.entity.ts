@@ -17,6 +17,7 @@ export interface LmStudioWebDiscoveryPayload {
   countIteration: number;
   shopifySite: boolean;
   candidatePage: CandidatePageCacheDto;
+  variantId: null | string;
 }
 
 export interface LmStudioReduceLinksPayload {
