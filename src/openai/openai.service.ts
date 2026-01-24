@@ -878,4 +878,99 @@ current date: ${new Date().toISOString()}
     console.log(linksResponse);
     return linksResponse;
   };
+
+  whichVariant = async (
+    sitemapUrls: string[],
+    query: string,
+    version: string,
+    mainUrl: string,
+    context,
+  ): Promise<ParsedLinks[]> => {
+    console.log({ sitemapUrls, query, version, mainUrl, context });
+
+    const openai = new OpenAI({
+      timeout: 3600000,
+      maxRetries: 2,
+    });
+
+    if (process.env.LOCAL_LLM === 'true')
+      // openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
+      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:8000/v1`;
+
+    // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
+
+    let openAiResponse;
+    try {
+      openAiResponse = await openai.chat.completions.create({
+        model:
+          // process.env.LOCAL_LLM === 'true'
+          //   ? 'qwen/qwen3-4b-2507'
+          //   : `gpt-4.1-${version}`,
+          process.env.LOCAL_LLM === 'true'
+            ? 'Qwen/Qwen3-4B-Instruct-2507'
+            : `gpt-4.1-mini`,
+        messages: [
+          {
+            role: 'system',
+            content: `Extract product page information - Do not add \`\`\`json fences.
+            - Do not add explanations.
+            - Do not add extra text.
+            Just return valid JSON according to the schema.`,
+          },
+          {
+            role: 'user',
+            content: `Please use the sitemap URLs and figure the best links to use for the product, ${query}. The URLs must include ${mainUrl} within the url. URLs: ${sitemapUrls.join(', ')}. Links that are below 0.9 score will not be included. Therefore only include links with scores which are 0.9 or above. Highest score first. Only give 4 links maximum.
+          
+          To find out more about the product, here is it's description to help you ${context}
+          
+          JSON OUTPUT with object
+
+          {
+
+
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+              "score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "multipleOf": 0.01,
+              "description": "A relevance score between 0 and 1 (inclusive), rounded to two decimal places. 1 = perfect match, 0 = not relevant. Each result must have a unique score so that the list forms a strict ranking with no ties."
+            }
+              },
+              "required": ["url", "score"],
+              "additionalProperties": false
+            },
+            "required": ["bestSites"],
+            "additionalProperties": false
+      }
+          `,
+          },
+        ],
+        // text: {
+        //   format: zodTextFormat(sitemapBestLinkSchema, 'links'),
+        // },
+      });
+    } catch (error) {
+      console.log('Error with openai', error);
+    }
+
+    // if (!openAiResponse.output_parsed) throw new Error('crawlError');
+
+    // const linksResponse = openAiResponse.output_parsed as BestSitesInterface;
+
+    if (!openAiResponse.choices[0].message?.content)
+      throw new Error('crawlError');
+
+    const linksResponse = JSON.parse(
+      openAiResponse.choices[0].message?.content,
+    ) as ParsedLinks[];
+    console.log(linksResponse);
+    return linksResponse;
+  };
 }

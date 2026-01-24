@@ -34,6 +34,7 @@ import { OpenaiService } from '../openai/openai.service.js';
 import * as cheerio from 'cheerio';
 import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
 import { FullCandidatePageDto } from './dto/candidate-page.dto.js';
+import { ShopifyProduct } from 'src/utils/utils.type.js';
 
 @Injectable()
 export class ProcessService implements OnModuleInit {
@@ -294,7 +295,11 @@ export class ProcessService implements OnModuleInit {
       html: string;
       mainText: string;
     };
-    let info: { title: string; mainText: string };
+    let info: {
+      title: string;
+      mainText: string;
+      shopifyProduct?: ShopifyProduct;
+    };
     let specificUrl: string;
     let candidatePage;
 
@@ -307,10 +312,14 @@ export class ProcessService implements OnModuleInit {
           specificUrl = url[index];
           success = true;
 
-          candidatePage = candidatePages.find(
-            (page) => page.url === specificUrl,
-          );
-          console.log(candidatePage);
+          if (info.shopifyProduct.variants.length === 1) {
+            candidatePage = candidatePages.find(
+              (page) => page.url === specificUrl,
+            );
+            console.log(candidatePage);
+          } else {
+            // We need to make an immediate LLM Call and we need the state.
+          }
 
           break;
         } catch (error) {
