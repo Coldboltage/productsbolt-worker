@@ -34,6 +34,7 @@ import { OpenaiService } from '../openai/openai.service.js';
 import * as cheerio from 'cheerio';
 import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
 import { FullCandidatePageDto } from './dto/candidate-page.dto.js';
+import { ShopifyProduct } from 'src/utils/utils.type.js';
 
 @Injectable()
 export class ProcessService implements OnModuleInit {
@@ -294,7 +295,11 @@ export class ProcessService implements OnModuleInit {
       html: string;
       mainText: string;
     };
-    let info: { title: string; mainText: string };
+    let info: {
+      title: string;
+      mainText: string;
+      shopifyProduct?: ShopifyProduct;
+    };
     let specificUrl: string;
     let candidatePage;
 
@@ -307,6 +312,21 @@ export class ProcessService implements OnModuleInit {
           specificUrl = url[index];
           success = true;
 
+          if (info.shopifyProduct.variants.length === 1) {
+            title = info.title;
+            allText = textInformation.mainText;
+          } else {
+            // We need to make an immediate LLM Call and we need the state.
+            const test = await this.openaiService.whichVariant(
+              query,
+              context,
+              info.shopifyProduct.variants,
+              type,
+            );
+            title = info.title;
+            allText = `${textInformation.mainText}. Price is ${info.shopifyProduct.variants[test.index].price / 100}, InStock Status: ${info.shopifyProduct.variants[test.index].available}`;
+          }
+
           candidatePage = candidatePages.find(
             (page) => page.url === specificUrl,
           );
@@ -318,8 +338,6 @@ export class ProcessService implements OnModuleInit {
           index++;
         }
       }
-      title = info.title;
-      allText = textInformation.mainText;
     } else {
       while (index < url.length) {
         try {
@@ -652,6 +670,8 @@ export class ProcessService implements OnModuleInit {
     );
 
     console.log(`ReducedUrls: ${reducedUrls.length}`);
+    // console.log(reducedUrls);
+    // await new Promise((resolve) => setTimeout(resolve, 30000000));
 
     const lmStudioReduceLinksPayload: LmStudioReduceLinksPayload = {
       reducedUrls: reducedUrls,

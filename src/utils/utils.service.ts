@@ -397,9 +397,11 @@ export class UtilsService {
       const { stripHtml } = await import('string-strip-html');
 
       let mainText = stripHtml(json.description).result;
-      mainText = `${mainText}. Price is ${json.price / 100}, InStock Status: ${json.available}`;
+      // mainText = `${mainText}. Price is ${json.price / 100}, InStock Status: ${json.available}`;
+      mainText = `${mainText}`;
+
       console.log({ title, mainText });
-      return { title, mainText, ...json };
+      return { title, mainText, shopifyProduct: json };
     } catch (error) {
       console.log(error);
       throw new Error('Could not fetch Shopify product');

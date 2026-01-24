@@ -10,6 +10,15 @@ export interface ShopifyProduct {
   price_min: number;
   price_max: number;
   available: boolean;
+  variants: ShopifyVariant[];
+}
+
+export interface ShopifyVariant {
+  id: number;
+  title: string;
+  available: boolean;
+  name: string;
+  price: number;
 }
 
 export interface ShopifyProductCollections {
@@ -25,9 +34,8 @@ export interface ShopifyProductCollections {
 }
 
 export interface ShopifyProductCollectionsFullCall {
-  products: ShopifyProductCollections[]
+  products: ShopifyProductCollections[];
 }
-
 
 export interface Variant {
   id: number;

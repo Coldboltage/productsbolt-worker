@@ -8,6 +8,7 @@ import {
   EbaySoldProductStrip,
 } from '../ebay/entities/ebay.entity.js';
 import { ProductDto } from '../process/dto/product.dto.js';
+import { ShopifyVariant } from 'src/utils/utils.type.js';
 
 @Injectable()
 export class OpenaiService {
@@ -236,7 +237,7 @@ export class OpenaiService {
 
               -- Note --
 
-              There is a difference betwen a Play Booster Box and a Collector Booster Box. These are two totally different products
+              There is a difference betwen a Play Booster Box and a Collector Booster Box. These are two totally different products though they are both boxes
 
 
               --- JSON Schema to follow strictly and exactly as shown ---
@@ -266,7 +267,7 @@ export class OpenaiService {
                     "type": "boolean",
                     "description": "True if the productName provided as the target refers to the same logical product as the main product listed on the page. The comparison must be made against the page’s primary product only (not related or recommended items) and should allow for naming variations while requiring the same product identity. The names don't need to be exact but inferred"
                   },
-                  "packagingTypeMatch": { "type": "boolean", "description": "If packaging type matches. BOOSTER = PACK, BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, BOX ≠ DISPLAY unless your BOX definition explicitly includes DISPLAY. A box and collector box are both boxes. They are considered the same thing in terms of packaging. If a product has more than 24 booster packs or more, classify as a box. Therefore if the product being looked for is a collector box and the found product is also a box, they are considered the same packaging type. A bundle is not a box. A product including a card box is for holding individual cards, not he prdoduct, thus should not be put into consideration. Stating the "
+                  "packagingTypeMatch": { "type": "boolean", "description": "If packaging type matches. BOOSTER = PACK, BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, BOX ≠ DISPLAY unless your BOX definition explicitly includes DISPLAY. A box and collector box are both boxes. They are considered the same thing in terms of packaging. If a product has more than 24 booster packs or more, classify as a box. Therefore if the product being looked for is a collector box and the found product is also a box, they are considered the same packaging type. A bundle is not a box. A product including a card box is for holding individual cards, not he prdoduct, thus should not be put into consideration. If the name and description don't reflect the product, refer to the price"
                   },
                   "price": { "type": "number" },
                   "currencyCode": { "type": "string" },
@@ -791,11 +792,11 @@ current date: ${new Date().toISOString()}
     mainUrl: string,
     context,
   ): Promise<ParsedLinks[]> => {
-    console.log({ sitemapUrls, query, version, mainUrl, context });
+    // console.log({ sitemapUrls, query, version, mainUrl, context });
 
     const openai = new OpenAI({
       timeout: 3600000,
-      maxRetries: 2,
+      // maxRetries: 2,
     });
 
     if (process.env.LOCAL_LLM === 'true')
@@ -824,9 +825,11 @@ current date: ${new Date().toISOString()}
           },
           {
             role: 'user',
-            content: `Please use the sitemap URLs and figure the best links to use for the product, ${query}. The URLs must include ${mainUrl} within the url. URLs: ${sitemapUrls.join(', ')}. Links that are below 0.9 score will not be included. Therefore only include links with scores which are 0.9 or above. Highest score first. Only give 4 links maximum.
+            content: `Please use the sitemap URLs and figure the best links to use for the product, ${query}. The URLs must include ${mainUrl} within the url. URL List: ${sitemapUrls.join(', ')}. Seperate each link as it's own thing to compare against. Links that are below 0.9 score will not be included. Therefore only include links with scores which are 0.9 or above. Highest score first. Only give 4 links maximum. Packing needs to be taken into consideration. Product Packaging like pack or box is very important
+
+            -- Context to be used to understand what we are looking for. It is not part of the URL --
           
-          To find out more about the product, here is it's description to help you ${context}
+          To find out more about the product, here is it's description to help you. This is not part of the url. Context: ${context}.
           
           JSON OUTPUT with object
 
@@ -876,6 +879,101 @@ current date: ${new Date().toISOString()}
       openAiResponse.choices[0].message?.content,
     ) as ParsedLinks[];
     console.log(linksResponse);
+
+    return linksResponse;
+  };
+
+  whichVariant = async (
+    query: string,
+    context: string,
+    variants: ShopifyVariant[],
+    type: ProductType,
+  ): Promise<{ index: number; justification: string }> => {
+    // console.log({ sitemapUrls, query, version, mainUrl, context });
+
+    const openai = new OpenAI({
+      timeout: 3600000,
+      // maxRetries: 2,
+    });
+
+    if (process.env.LOCAL_LLM === 'true')
+      // openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
+      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:8000/v1`;
+
+    // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
+
+    let openAiResponse;
+    try {
+      openAiResponse = await openai.chat.completions.create({
+        model:
+          // process.env.LOCAL_LLM === 'true'
+          //   ? 'qwen/qwen3-4b-2507'
+          //   : `gpt-4.1-${version}`,
+          process.env.LOCAL_LLM === 'true'
+            ? 'Qwen/Qwen3-4B-Instruct-2507'
+            : `gpt-4.1-mini`,
+        messages: [
+          {
+            role: 'system',
+            content: `Extract product page information - Do not add \`\`\`json fences.
+            - Do not add explanations.
+            - Do not add extra text.
+            Just return valid JSON according to the schema.`,
+          },
+          {
+            role: 'user',
+            content: `
+            
+            Here are the variants as objects. Please seperate each one: ${JSON.stringify(variants.map((variant) => variant))}
+            
+            Here is the product in question, ${query}. Here is the product packaging type: ${type}
+
+            Here is the context to help what we are looking to buy: ${context}
+
+            -- Rules --
+
+            Your job is to give me the index number of the variant and justifications to why you chose it. It can only be one. Variants in this case are generally the same product but packaged in a different way. Using the type, you will be able to determine which object is the correct one to identify. The Context will help you understand what we are aiming to identify while the product is what we're aiming to buy.
+
+          
+          JSON OUTPUT with object
+
+          {
+            "type": "object",
+            "properties": {
+              "index": {
+                "type": "number"
+              },
+            "justification": {
+              "type": "string",
+            }
+            },
+            "required": ["index", "justification"],
+            "additionalProperties": false
+          },
+        }
+          `,
+          },
+        ],
+        // text: {
+        //   format: zodTextFormat(sitemapBestLinkSchema, 'links'),
+        // },
+      });
+    } catch (error) {
+      console.log('Error with openai', error);
+    }
+
+    // if (!openAiResponse.output_parsed) throw new Error('crawlError');
+
+    // const linksResponse = openAiResponse.output_parsed as BestSitesInterface;
+
+    if (!openAiResponse.choices[0].message?.content)
+      throw new Error('crawlError');
+
+    const linksResponse = JSON.parse(
+      openAiResponse.choices[0].message?.content,
+    ) as { index: number; justification: string };
+    console.log(linksResponse);
+
     return linksResponse;
   };
 }
