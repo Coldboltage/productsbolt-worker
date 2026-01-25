@@ -25,6 +25,7 @@ export class LmStudioService {
     count: number,
     shopifySite: boolean,
     variantId: null | string,
+    imageData: string,
   ): Promise<void> {
     let openaiAnswer: boolean;
     const answer = await this.openaiService.productInStock(
@@ -34,6 +35,7 @@ export class LmStudioService {
       type,
       mode,
       context,
+      imageData,
     );
 
     if (

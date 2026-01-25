@@ -19,6 +19,7 @@ export class OpenaiService {
     type: ProductType,
     mode: string, // e.g., 'mini', 'pro'
     context = '',
+    imageUrl: string,
   ): Promise<ProductInStockWithAnalysis> => {
     const openai = new OpenAI({
       timeout: 3600000,
@@ -136,8 +137,11 @@ export class OpenaiService {
         // process.env.LOCAL_LLM === 'true'
         //   ? 'qwen/qwen3-4b-2507'
         //   : `gpt-4.1-mini`,
+        // process.env.LOCAL_LLM === 'true'
+        //   ? 'Qwen/Qwen3-4B-Instruct-2507'
+        //   : `gpt-4.1-mini`,
         process.env.LOCAL_LLM === 'true'
-          ? 'Qwen/Qwen3-4B-Instruct-2507'
+          ? 'Qwen/Qwen3-VL-4B-Instruct'
           : `gpt-4.1-mini`,
       // model: `gpt-5-nano`,
       // reasoning_effort: "low",
@@ -220,7 +224,16 @@ export class OpenaiService {
           //       ],
           //       "additionalProperties": false
           //     }`,
-          content: `
+          content: [
+            {
+              type: 'image_url',
+              image_url: {
+                url: imageUrl,
+              },
+            },
+            {
+              type: 'text',
+              text: `
 
           -- Information to be used to compare versus the page --
           
@@ -246,7 +259,7 @@ export class OpenaiService {
                 "properties": {
                   "analysis": {
                     "type": "string",
-                    "description": "Using only the page information, use this field to reason about what the product fundamentally is on the webpage, based on all available evidence. Analyze the product title, description, and any contextual information on the webpage to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked \"Add to Cart\", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”)\n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching. To note, a booster display is usually indicitive of a Box. The description usually gives light to this. Products that state a quantity of booster packs (e.g. “X packs”) and are purchased as one item represent a sealed box containing packs, even though the description references packs. Note, some sites just say Collector Booster. Without the box part, this is most likely an individual booster pack. Justify"
+                    "description": "Using only the page information, use this field to reason about what the product fundamentally is on the webpage, based on all available evidence. Analyze the product title, description, and any contextual information on the webpage to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked \"Add to Cart\", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”)\n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching. To note, a booster display is usually indicitive of a Box. The description usually gives light to this. Products that state a quantity of booster packs (e.g. “X packs”) and are purchased as one item represent a sealed box containing packs, even though the description references packs. Note, some sites just say Collector Booster. Without the box part, this is most likely an individual booster pack. Identify if an image was added. Justify"
                   },
                   "justifications": {
                     "type": "object",
@@ -263,6 +276,7 @@ export class OpenaiService {
                   },
                   "inStock": { "type": "boolean" },
                   "isMainProductPage": { "type": "boolean" },
+                  "imageSupplied": {"type": "boolean"},
                   "isNamedProduct": {
                     "type": "boolean",
                     "description": "True if the productName provided as the target refers to the same logical product as the main product listed on the page. The comparison must be made against the page’s primary product only (not related or recommended items) and should allow for naming variations while requiring the same product identity. The names don't need to be exact but inferred. Type of productPackaing matters more here as a collector is a different product though still a box"
@@ -290,9 +304,12 @@ export class OpenaiService {
                   "detectedFullName",
                   "editionMatch",
                   "justifications"
+                  "imageSupplied"
                 ],
                 "additionalProperties": false
               }`,
+            },
+          ],
         },
       ],
 
@@ -428,8 +445,11 @@ export class OpenaiService {
         // process.env.LOCAL_LLM === 'true'
         //   ? 'qwen/qwen3-4b-2507'
         //   : `gpt-4.1-${mode}`,
+        // process.env.LOCAL_LLM === 'true'
+        //   ? 'Qwen/Qwen3-4B-Instruct-2507'
+        //   : `gpt-4.1-mini`,
         process.env.LOCAL_LLM === 'true'
-          ? 'Qwen/Qwen3-4B-Instruct-2507'
+          ? 'Qwen/Qwen3-VL-4B-Instruct'
           : `gpt-4.1-mini`,
       temperature: 0.2,
       top_p: 0.9,
@@ -812,8 +832,11 @@ current date: ${new Date().toISOString()}
           // process.env.LOCAL_LLM === 'true'
           //   ? 'qwen/qwen3-4b-2507'
           //   : `gpt-4.1-${version}`,
+          // process.env.LOCAL_LLM === 'true'
+          //   ? 'Qwen/Qwen3-4B-Instruct-2507'
+          //   : `gpt-4.1-mini`,
           process.env.LOCAL_LLM === 'true'
-            ? 'Qwen/Qwen3-4B-Instruct-2507'
+            ? 'Qwen/Qwen3-VL-4B-Instruct'
             : `gpt-4.1-mini`,
         messages: [
           {
@@ -909,8 +932,11 @@ current date: ${new Date().toISOString()}
           // process.env.LOCAL_LLM === 'true'
           //   ? 'qwen/qwen3-4b-2507'
           //   : `gpt-4.1-${version}`,
+          // process.env.LOCAL_LLM === 'true'
+          //   ? 'Qwen/Qwen3-4B-Instruct-2507'
+          //   : `gpt-4.1-mini`,
           process.env.LOCAL_LLM === 'true'
-            ? 'Qwen/Qwen3-4B-Instruct-2507'
+            ? 'Qwen/Qwen3-VL-4B-Instruct'
             : `gpt-4.1-mini`,
         messages: [
           {

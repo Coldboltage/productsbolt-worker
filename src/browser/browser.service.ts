@@ -121,7 +121,12 @@ export class BrowserService {
 
   getPageInfo = async (
     url: string,
-  ): Promise<{ html: string; mainText: string }> => {
+  ): Promise<{
+    html: string;
+    mainText: string;
+    shopyifySite: boolean;
+    base64Image: string;
+  }> => {
     const { browser, page } = await connect({
       headless: false,
       args: [
@@ -144,16 +149,16 @@ export class BrowserService {
       deviceScaleFactor: 1,
     });
 
-    await page.setRequestInterception(true);
+    // await page.setRequestInterception(true);
 
-    page.on('request', (req) => {
-      const block = ['image', 'font', 'media'];
-      if (block.includes(req.resourceType())) {
-        req.abort();
-      } else {
-        req.continue();
-      }
-    });
+    // page.on('request', (req) => {
+    //   const block = ['image', 'font', 'media'];
+    //   if (block.includes(req.resourceType())) {
+    //     req.abort();
+    //   } else {
+    //     req.continue();
+    //   }
+    // });
 
     // Promise that resolves with the page content and mainText
 
@@ -217,7 +222,18 @@ export class BrowserService {
         return isShopyifySite ? true : false;
       });
 
-      return { html, mainText, shopyifySite };
+      await page.addStyleTag({
+        content: `
+    header, footer, nav, aside { display: none !important; }
+  `,
+      });
+
+      const base64Image = await page.screenshot({
+        type: 'png',
+        encoding: 'base64',
+      });
+
+      return { html, mainText, shopyifySite, base64Image };
     })();
 
     // Timeout promise that closes browser after 10 seconds

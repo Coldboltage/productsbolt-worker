@@ -294,6 +294,7 @@ export class ProcessService implements OnModuleInit {
     let textInformation: {
       html: string;
       mainText: string;
+      base64Image: string;
     };
     let info: {
       title: string;
@@ -303,13 +304,18 @@ export class ProcessService implements OnModuleInit {
     let specificUrl: string;
     let candidatePage;
     let variantId: null | string = null;
+    let imageData: string;
 
     if (shopifySite) {
       console.log('extractShopifyWebsite activated');
       while (index < url.length) {
         try {
           info = await this.utilService.extractShopifyWebsite(url[index]);
-          textInformation = { html: info.title, mainText: info.mainText };
+          textInformation = {
+            html: info.title,
+            mainText: info.mainText,
+            base64Image: '',
+          };
           specificUrl = url[index];
           success = true;
 
@@ -317,6 +323,9 @@ export class ProcessService implements OnModuleInit {
             title = info.title;
             allText = textInformation.mainText;
             variantId = String(info.shopifyProduct.variants[0].id);
+            imageData = await this.utilService.imageUrlToDataUrl(
+              info.shopifyProduct.featured_image['src'],
+            );
           } else {
             // We need to make an immediate LLM Call and we need the state.
             const test = await this.openaiService.whichVariant(
@@ -327,7 +336,10 @@ export class ProcessService implements OnModuleInit {
             );
             title = info.title;
             allText = `${textInformation.mainText}. Price is ${info.shopifyProduct.variants[test.index].price / 100}, InStock Status: ${info.shopifyProduct.variants[test.index].available}`;
-            variantId = String(info.shopifyProduct.variants[0].id);
+            variantId = String(info.shopifyProduct.variants[test.index].id);
+            imageData = await this.utilService.imageUrlToDataUrl(
+              info.shopifyProduct.variants[test.index].featured_image['src'],
+            );
           }
 
           candidatePage = candidatePages.find(
@@ -349,9 +361,14 @@ export class ProcessService implements OnModuleInit {
             console.log('getPageInfo activated');
             textInformation = await this.browserService.getPageInfo(url[index]);
             specificUrl = url[index];
+            imageData = `data:image/png;base64,${textInformation.base64Image}`;
           } else {
             console.log('getPageInfo activated');
-            textInformation = await this.browserService.getPageHtml(url[index]);
+            const testInformation = await this.browserService.getPageHtml(
+              url[index],
+            );
+            textInformation = { ...testInformation, base64Image: '' };
+            imageData = `data:image/png;base64,${textInformation.base64Image}`;
             specificUrl = url[index];
           }
           success = true;
@@ -430,6 +447,7 @@ export class ProcessService implements OnModuleInit {
       shopifySite,
       candidatePage,
       variantId,
+      imageData,
     };
 
     this.lmStudioClient.emit(

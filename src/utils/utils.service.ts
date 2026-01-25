@@ -499,4 +499,18 @@ export class UtilsService {
       console.log(error);
     }
   }
+
+  async imageUrlToDataUrl(imageUrl: string) {
+    console.log(imageUrl);
+
+    const res = await fetch(imageUrl, {
+      headers: { 'user-agent': 'Mozilla/5.0' },
+    });
+    if (!res.ok) throw new Error(`Failed ${res.status} fetching ${imageUrl}`);
+
+    const contentType = res.headers.get('content-type') || 'image/jpeg';
+    const arrayBuffer = await res.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    return `data:${contentType};base64,${base64}`;
+  }
 }

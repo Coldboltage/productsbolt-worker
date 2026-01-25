@@ -18,6 +18,7 @@ export interface LmStudioWebDiscoveryPayload {
   shopifySite: boolean;
   candidatePage: CandidatePageCacheDto;
   variantId: null | string;
+  imageData: string;
 }
 
 export interface LmStudioReduceLinksPayload {
