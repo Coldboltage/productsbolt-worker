@@ -503,6 +503,8 @@ export class UtilsService {
   async imageUrlToDataUrl(imageUrl: string) {
     console.log(imageUrl);
 
+    if (imageUrl === null) return `data:image/png;base64,`;
+
     const res = await fetch(imageUrl, {
       headers: { 'user-agent': 'Mozilla/5.0' },
     });

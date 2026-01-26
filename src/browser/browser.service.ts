@@ -9,6 +9,7 @@ import { JSDOM } from 'jsdom';
 import { UtilsService } from '../utils/utils.service.js';
 import { ShopifyProductCollectionsFullCall } from '../utils/utils.type.js';
 import sanitizeHtml from 'sanitize-html';
+import puppeteer from 'puppeteer';
 
 @Injectable()
 export class BrowserService {
@@ -47,6 +48,39 @@ export class BrowserService {
     console.log(`URL ${url} is accessible with status code: ${status}`);
     // Cloudflare or other fetch blocking thing doesn't exist
     return false;
+  }
+
+  async headlessChrome(url: string): Promise<{
+    html: string;
+    mainText: string;
+    base64Image: string;
+  }> {
+    const browser = await puppeteer.connect({
+      browserWSEndpoint: 'ws://localhost:4000?token=change_me',
+    });
+
+    const page = await browser.newPage();
+    const testPage = await page.goto(url, { waitUntil: 'networkidle2' });
+
+    const status = testPage.status();
+    if (status === 404) throw new NotFoundException(`404 Not Found`);
+
+    const html = await page.content();
+    const mainText = await page.evaluate(() => {
+      document
+        .querySelectorAll('header, footer, nav, aside')
+        .forEach((el) => el.remove());
+      const main = document.querySelector('main') || document.body;
+      return main.innerText;
+    });
+
+    const base64Image = await page.screenshot({
+      type: 'png',
+      encoding: 'base64',
+    });
+
+    console.log(base64Image);
+    return { html, mainText, base64Image };
   }
 
   async getPageHtml(url: string): Promise<{ html: string; mainText: string }> {

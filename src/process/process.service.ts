@@ -324,7 +324,7 @@ export class ProcessService implements OnModuleInit {
             allText = textInformation.mainText;
             variantId = String(info.shopifyProduct.variants[0].id);
             imageData = await this.utilService.imageUrlToDataUrl(
-              info.shopifyProduct.featured_image['src'],
+              `https:${info.shopifyProduct.featured_image}`,
             );
           } else {
             // We need to make an immediate LLM Call and we need the state.
@@ -337,9 +337,51 @@ export class ProcessService implements OnModuleInit {
             title = info.title;
             allText = `${textInformation.mainText}. Price is ${info.shopifyProduct.variants[test.index].price / 100}, InStock Status: ${info.shopifyProduct.variants[test.index].available}`;
             variantId = String(info.shopifyProduct.variants[test.index].id);
-            imageData = await this.utilService.imageUrlToDataUrl(
-              info.shopifyProduct.variants[test.index].featured_image['src'],
-            );
+
+            const featuredImageUrl = (
+              shopifyProduct: ShopifyProduct,
+            ): string | null => {
+              // Check if variant even has a featured image
+              if (shopifyProduct.variants[test.index].featured_image === null) {
+                // Check featured image is a string or null
+                if (shopifyProduct.featured_image) {
+                  if (typeof shopifyProduct.featured_image === 'string') {
+                    // return string
+                    return `https:${info.shopifyProduct.featured_image}`;
+                  } else {
+                    return `https:${info.shopifyProduct.featured_image['src']}`;
+                  }
+                } else {
+                  // return null
+                  return null;
+                }
+                // We're using variant featured image.
+                // Check if featured_image a string
+              } else if (
+                typeof shopifyProduct.variants[test.index].featured_image ===
+                'string'
+              ) {
+                // Return string
+                return shopifyProduct.variants[test.index]
+                  .featured_image as string;
+              } else {
+                // It's an object, get the src url from the object
+                return shopifyProduct.variants[test.index].featured_image[
+                  'src'
+                ];
+              }
+            };
+
+            // imageData = await this.utilService.imageUrlToDataUrl(
+            //   info.shopifyProduct.variants[test.index].featured_image['src']
+            //     ? info.shopifyProduct.variants[test.index].featured_image['src']
+            //     : `https:${info.shopifyProduct.featured_image}`,
+            // );
+
+            const determinedImageUrl = featuredImageUrl(info.shopifyProduct);
+
+            imageData =
+              await this.utilService.imageUrlToDataUrl(determinedImageUrl);
           }
 
           candidatePage = candidatePages.find(
