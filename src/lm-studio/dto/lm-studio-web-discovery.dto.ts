@@ -49,4 +49,7 @@ export class LmStudioWebDiscoveryDto implements LmStudioWebDiscoveryDto {
 
   @IsString()
   imageData: string;
+
+  @IsNumber()
+  expectedPrice: number;
 }

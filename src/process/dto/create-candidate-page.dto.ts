@@ -47,4 +47,10 @@ export class CreateCandidatePageDto {
   pageTitle: string;
 
   variantId: null | string;
+
+  @IsBoolean()
+  priceCheck: boolean;
+
+  @IsBoolean()
+  editionMatch: boolean;
 }

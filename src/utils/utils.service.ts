@@ -452,6 +452,8 @@ export class UtilsService {
       count: webpage.count,
       shopifySite: webpage.shopifySite,
       variantId: webpage.variantId,
+      priceCheck: true,
+      editionMatch: webpage.editionMatch,
     };
     console.log(webPage);
     console.log('webDiscoverySend called');
@@ -487,6 +489,8 @@ export class UtilsService {
       count: webpage.count,
       shopifySite: webpage.shopifySite,
       variantId: webpage.variantId,
+      priceCheck: webpage.priceInRange,
+      editionMatch: webpage.editionMatch,
     };
     console.log(webPage);
     try {

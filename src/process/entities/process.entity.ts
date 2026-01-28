@@ -34,6 +34,8 @@ export interface ProductInStockWithAnalysisStripped {
   hash: string;
   shopifySite: boolean;
   variantId: null | string;
+  priceInRange: boolean;
+  editionMatch: boolean;
 }
 
 export interface Justification {

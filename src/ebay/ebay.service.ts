@@ -104,6 +104,8 @@ export class EbayService implements OnModuleInit {
         hash: 'abc123',
         shopifySite: false,
         variantId: null,
+        priceInRange: false,
+        editionMatch: false,
       },
     ]);
   }

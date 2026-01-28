@@ -261,6 +261,7 @@ export class ProcessService implements OnModuleInit {
       createProcessDto.confirmed,
       createProcessDto.count,
       createProcessDto.candidatePages,
+      createProcessDto.expectedPrice,
     );
     if (result) {
       return true;
@@ -281,6 +282,7 @@ export class ProcessService implements OnModuleInit {
     confirmed: boolean,
     count: number,
     candidatePages: FullCandidatePageDto[],
+    expectedPrice: number,
   ): Promise<boolean> {
     // Think the router has to be added here
     let html: string;
@@ -321,7 +323,7 @@ export class ProcessService implements OnModuleInit {
 
           if (info.shopifyProduct.variants.length === 1) {
             title = info.title;
-            allText = textInformation.mainText;
+            allText = `${textInformation.mainText}. Price is ${info.shopifyProduct.price / 100}, InStock Status: ${info.shopifyProduct.available}`;
             variantId = String(info.shopifyProduct.variants[0].id);
             imageData = await this.utilService.imageUrlToDataUrl(
               `https:${info.shopifyProduct.featured_image}`,
@@ -490,6 +492,7 @@ export class ProcessService implements OnModuleInit {
       candidatePage,
       variantId,
       imageData,
+      expectedPrice,
     };
 
     this.lmStudioClient.emit(
@@ -779,6 +782,7 @@ export class ProcessService implements OnModuleInit {
     confirmed: boolean,
     count: number,
     candidatePages: FullCandidatePageDto[],
+    expectedPrice: number,
   ): Promise<boolean> {
     console.log(`https://${base}${seed}`);
 
@@ -832,6 +836,7 @@ export class ProcessService implements OnModuleInit {
       confirmed,
       count,
       candidatePages,
+      expectedPrice,
     );
     return true;
     // if (answer) {
@@ -918,6 +923,7 @@ export class ProcessService implements OnModuleInit {
       createProcessDto.confirmed,
       createProcessDto.count,
       createProcessDto.candidatePages,
+      createProcessDto.expectedPrice,
     );
     if (answer) {
       console.log('Product Found');

@@ -19,6 +19,7 @@ export interface LmStudioWebDiscoveryPayload {
   candidatePage: CandidatePageCacheDto;
   variantId: null | string;
   imageData: string;
+  expectedPrice: number;
 }
 
 export interface LmStudioReduceLinksPayload {
