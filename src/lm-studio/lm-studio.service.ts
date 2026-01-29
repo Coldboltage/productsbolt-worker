@@ -43,8 +43,12 @@ export class LmStudioService {
     const price = answer.price;
     const tolerance = 0.3;
 
-    const pct = Math.abs(price - expectedPrice) / expectedPrice; // 0.0642...
-    const priceInRange = pct <= tolerance;
+    console.log({ price, tolerance, expectedPrice });
+
+    const unit = Math.abs(price - expectedPrice) / expectedPrice;
+    const priceInRange = unit <= tolerance;
+
+    console.log(`princeInRange = ${priceInRange}`);
 
     if (
       answer?.isNamedProduct === true &&
@@ -91,6 +95,7 @@ export class LmStudioService {
           shopifySite,
           variantId,
           priceInRange,
+          editionMatch: answer.editionMatch,
         },
         createProcessDto,
       );

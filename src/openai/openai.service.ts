@@ -151,7 +151,6 @@ export class OpenaiService {
           Required Target product name: ${productName}
           Required Expected product type: ${type.toUpperCase()}
           Reference Context (DO NOT USE AS EVIDENCE): ${context}
-          Expected Price 140
 
           You must follow these rules:
           1) PAGE-ONLY EXTRACTION: First extract facts using ONLY the analysed page title/content. Ignore context completely in this step.
@@ -182,18 +181,16 @@ export class OpenaiService {
           - Collector line is TRUE if page text contains “Collector Booster” or “Collector Boosters”.
           - Play line is TRUE if page text contains “Play Booster” or “Play Boosters”.
 
-          2) Unit-of-sale (qty=1):
-          - BOX if page indicates a multi-pack sealed unit, including any of:
-            “Booster Box”, “Display”, “Display Box”, “CDU”, “12-count”, “24-count”, “30-count”, or “contains 12/24/30 boosters”.
-          - PACK only if it is clearly a single booster pack (e.g., “1 pack”, per-pack contents with no multi-pack unit wording).
-
-          3) Collector Booster Box match rule:
+          2) Collector Booster Box match rule:
           - Treat “Collector Booster Display / CDU / 12-count / Full box” as BOX-equivalent.
           - Do NOT require the exact phrase “Collector Booster Box” if:
             product line = Collector Booster AND unit-of-sale = BOX.
 
-
           - If the page is for another game line (e.g., “Final Fantasy Trading Card Game”, “Opus”), it is NOT the MTG Collector Booster Box unless "Magic: The Gathering" AND "Collector" are explicitly present in the page text.
+
+          - Ignore ‘BOX CONTENTS—…’ lines unless the page also explicitly says Box/Display/Case/CDU in the sellable product name/option.
+
+          CRITICAL: If the title and URL strongly disagree on unit-of-sale (e.g., title says Pack but URL says Box/Display/Case), treat unit-of-sale as ambiguous and mention “conflicting signals” in the reasoning.
 
               --- JSON Schema to follow strictly and exactly as shown ---
               {
@@ -209,7 +206,7 @@ export class OpenaiService {
               },
               "compare": {
                 "type": "string",
-                "description": "Output exactly MATCH or NO_MATCH, then 1–2 sentences. If NO_MATCH, cite the single strongest conflicting marker (e.g., wrong game line, wrong product line, wrong unit-of-sale)."
+                "description": "Output exactly MATCH or NO_MATCH, then 1–2 sentences. If NO_MATCH, cite the single strongest conflicting marker (e.g., wrong game line, wrong product line, wrong unit-of-sale). If the page shows contradictory identity signals (two or more different product forms/variants implied by title/URL/content), do NOT auto-match; mark NO_MATCH and require human review."
               },
 
               "analysis": {
@@ -219,7 +216,7 @@ export class OpenaiService {
                   "justifications": {
                  "packagingTypeMatchExplain": {
                     "type": "string",
-                    "description": "Determine packaging type based on what the customer receives when purchasing quantity=1.\n\nHard rules (override):\n- If the page explicitly uses the product term 'Deck' (e.g., 'Deck', 'Commander Deck', 'Starter Deck', 'Preconstructed Deck') as the unit-of-sale name, classify as DECK. This must override any pack-count heuristic (even if it includes a sample pack or accessories). A deck/deck box is never BOX.\n- If the page explicitly uses the product term 'Tin' (e.g., 'Tin', 'Collector Tin', 'Mini Tin') as the unit-of-sale name, classify as TIN. This must override any pack-count heuristic (even if it contains multiple packs).\n- If the page explicitly uses the product term 'Binder' (e.g., 'Binder', 'Card Binder', 'Portfolio', 'Album') as the unit-of-sale name, classify as BINDER. This must override any pack-count heuristic (even if it includes promos or packs).\n- If the page explicitly uses the product term 'Bundle' (e.g., 'Bundle', 'Gift Bundle', 'Fat Pack') as the unit-of-sale name, classify as BUNDLE. This must override any pack-count heuristic (even if it contains 8/10/12+ packs).\n\nOtherwise:\n- PACK: A single booster/pack (qty=1 is one pack).\n- BOX: A factory-sealed booster box/display where qty=1 is a box containing multiple booster packs. 'Collector box' counts as BOX. BOX does not mean a generic sealed cardboard box of cards.\n\nIgnore conditional bulk deals like 'if you buy 36 packs you receive a sealed box/case' — that does not change the unit-of-sale packaging type.\n\nPack-count heuristic (fallback only): Only if there is no explicit PACK/BOX/BUNDLE/TIN/BINDER/DECK label. Do not upgrade to BOX just because the text mentions 24+ packs in a bundle or bulk-deal context.\n\nComparison step: After determining the page packaging type, compare it to the target packaging implied by the Required Target product name and Reference Context; set packagingTypeMatch to true only if they match, otherwise false."
+                    "description": "Determine packaging type based on what the customer receives when purchasing quantity=1.\n\nHard rules (override):\n- If the page explicitly uses the product term 'Deck' (e.g., 'Deck', 'Commander Deck', 'Starter Deck', 'Preconstructed Deck') as the unit-of-sale name, classify as DECK. This must override any pack-count heuristic (even if it includes a sample pack or accessories). A deck/deck box is never BOX.\n- If the page explicitly uses the product term 'Tin' (e.g., 'Tin', 'Collector Tin', 'Mini Tin') as the unit-of-sale name, classify as TIN. This must override any pack-count heuristic (even if it contains multiple packs).\n- If the page explicitly uses the product term 'Binder' (e.g., 'Binder', 'Card Binder', 'Portfolio', 'Album') as the unit-of-sale name, classify as BINDER. This must override any pack-count heuristic (even if it includes promos or packs).\n- If the page explicitly uses the product term 'Bundle' (e.g., 'Bundle', 'Gift Bundle', 'Fat Pack') as the unit-of-sale name, classify as BUNDLE. This must override any pack-count heuristic (even if it contains 8/10/12+ packs).\n\nOtherwise:\n- PACK: A single booster/pack (qty=1 is one pack).\n- BOX: A factory-sealed booster box/display where qty=1 is a box containing multiple booster packs. 'Collector box' counts as BOX. BOX does not mean a generic sealed cardboard box of cards.\n\nIgnore conditional bulk deals like 'if you buy 36 packs you receive a sealed box/case' — that does not change the unit-of-sale packaging type.\n\nPack-count heuristic (fallback only): Only if there is no explicit PACK/BOX/BUNDLE/TIN/BINDER/DECK label.\n\nComparison step: After determining the page packaging type, compare it to the target packaging implied by the Required Target product name and Reference Context; set packagingTypeMatch to true only if they match, otherwise false."
                   }
                   "editionMatchReasoning": {
                     "type": "string",
@@ -290,7 +287,7 @@ export class OpenaiService {
       // model: `gpt-5-nano`,
       // reasoning_effort: "low",
       // temperature: 0,
-      temperature: 0.2,
+      temperature: 0,
       top_p: 0.9,
       frequency_penalty: 0.05,
       n: 1,
@@ -510,7 +507,7 @@ export class OpenaiService {
         process.env.LOCAL_LLM === 'true'
           ? 'Qwen/Qwen3-VL-4B-Instruct'
           : `gpt-4.1-mini`,
-      temperature: 0.2,
+      temperature: 0,
       top_p: 0.9,
       frequency_penalty: 0.05,
       n: 1,
@@ -555,7 +552,7 @@ current date: ${new Date().toISOString()}
     //       // model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
     //       model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-${mode}`,
 
-    //       temperature: 0.2,
+    //       temperature: 0,
     //       top_p: 0.9,
     //       frequency_penalty: 0.05,
     //       n: 1,

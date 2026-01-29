@@ -452,7 +452,7 @@ export class UtilsService {
       count: webpage.count,
       shopifySite: webpage.shopifySite,
       variantId: webpage.variantId,
-      priceCheck: true,
+      priceCheck: webpage.priceInRange,
       editionMatch: webpage.editionMatch,
     };
     console.log(webPage);
