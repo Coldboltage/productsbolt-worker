@@ -46,4 +46,10 @@ export class LmStudioWebDiscoveryDto implements LmStudioWebDiscoveryDto {
   shopifySite: boolean;
 
   variantId: null | string;
+
+  @IsString()
+  imageData: string;
+
+  @IsNumber()
+  expectedPrice: number;
 }

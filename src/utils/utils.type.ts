@@ -11,6 +11,7 @@ export interface ShopifyProduct {
   price_max: number;
   available: boolean;
   variants: ShopifyVariant[];
+  featured_image: string | null;
 }
 
 export interface ShopifyVariant {
@@ -19,6 +20,11 @@ export interface ShopifyVariant {
   available: boolean;
   name: string;
   price: number;
+  featured_image: null | string | ShopVariantFeatureImageObject;
+}
+
+export interface ShopVariantFeatureImageObject {
+  src: string;
 }
 
 export interface ShopifyProductCollections {

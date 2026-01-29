@@ -68,6 +68,9 @@ export class CreateProcessDto {
   @IsNumber()
   count: number;
 
+  @IsNumber()
+  expectedPrice: number;
+
   @IsArray()
   @IsString({ each: true })
   sitemapUrls: string[];

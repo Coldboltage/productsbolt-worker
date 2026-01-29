@@ -289,7 +289,7 @@ export class UtilsService {
         scannedSites = response.sites.filter((site) => site.includes(seed));
       } catch (error) {
         console.dir(error, { depth: 5 }); // should show a Z_DATA_ERROR or BrotliDecodeError
-        throw error;
+        throw new Error(error);
       }
 
       // console.log(scannedSites)
@@ -452,6 +452,8 @@ export class UtilsService {
       count: webpage.count,
       shopifySite: webpage.shopifySite,
       variantId: webpage.variantId,
+      priceCheck: webpage.priceInRange,
+      editionMatch: webpage.editionMatch,
     };
     console.log(webPage);
     console.log('webDiscoverySend called');
@@ -487,6 +489,8 @@ export class UtilsService {
       count: webpage.count,
       shopifySite: webpage.shopifySite,
       variantId: webpage.variantId,
+      priceCheck: webpage.priceInRange,
+      editionMatch: webpage.editionMatch,
     };
     console.log(webPage);
     try {
@@ -498,5 +502,21 @@ export class UtilsService {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  async imageUrlToDataUrl(imageUrl: string) {
+    console.log(imageUrl);
+
+    if (imageUrl === null) return `data:image/png;base64,`;
+
+    const res = await fetch(imageUrl, {
+      headers: { 'user-agent': 'Mozilla/5.0' },
+    });
+    if (!res.ok) throw new Error(`Failed ${res.status} fetching ${imageUrl}`);
+
+    const contentType = res.headers.get('content-type') || 'image/jpeg';
+    const arrayBuffer = await res.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    return `data:${contentType};base64,${base64}`;
   }
 }

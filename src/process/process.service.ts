@@ -168,12 +168,24 @@ export class ProcessService implements OnModuleInit {
   async sitemapSearch(shopDto: ShopDto) {
     console.log(shopDto.sitemapEntity);
     // await this.hasSitemapChanged(shopDto.sitemap, shopDto.etag)
-    const sitemapUrls = await this.utilService.getUrlsFromSitemap(
-      shopDto.sitemapEntity.sitemap,
-      `https://${shopDto.website}${shopDto.category}`,
-      90,
-      shopDto.sitemapEntity.fast,
-    );
+    let sitemapUrls: {
+      websiteUrls: string[];
+      fast: boolean;
+    };
+    try {
+      sitemapUrls = await this.utilService.getUrlsFromSitemap(
+        shopDto.sitemapEntity.sitemap,
+        `https://${shopDto.website}${shopDto.category}`,
+        90,
+        shopDto.sitemapEntity.fast,
+      );
+    } catch (error) {
+      console.log(error);
+      sitemapUrls = {
+        websiteUrls: [''],
+        fast: true,
+      };
+    }
     return sitemapUrls;
   }
 
@@ -261,6 +273,7 @@ export class ProcessService implements OnModuleInit {
       createProcessDto.confirmed,
       createProcessDto.count,
       createProcessDto.candidatePages,
+      createProcessDto.expectedPrice,
     );
     if (result) {
       return true;
@@ -281,6 +294,7 @@ export class ProcessService implements OnModuleInit {
     confirmed: boolean,
     count: number,
     candidatePages: FullCandidatePageDto[],
+    expectedPrice: number,
   ): Promise<boolean> {
     // Think the router has to be added here
     let html: string;
@@ -294,6 +308,7 @@ export class ProcessService implements OnModuleInit {
     let textInformation: {
       html: string;
       mainText: string;
+      base64Image: string;
     };
     let info: {
       title: string;
@@ -303,20 +318,28 @@ export class ProcessService implements OnModuleInit {
     let specificUrl: string;
     let candidatePage;
     let variantId: null | string = null;
+    let imageData: string;
 
     if (shopifySite) {
       console.log('extractShopifyWebsite activated');
       while (index < url.length) {
         try {
           info = await this.utilService.extractShopifyWebsite(url[index]);
-          textInformation = { html: info.title, mainText: info.mainText };
+          textInformation = {
+            html: info.title,
+            mainText: info.mainText,
+            base64Image: '',
+          };
           specificUrl = url[index];
           success = true;
 
           if (info.shopifyProduct.variants.length === 1) {
             title = info.title;
-            allText = textInformation.mainText;
+            allText = `${textInformation.mainText}. Price is ${info.shopifyProduct.price / 100}, InStock Status: ${info.shopifyProduct.available}`;
             variantId = String(info.shopifyProduct.variants[0].id);
+            imageData = await this.utilService.imageUrlToDataUrl(
+              `https:${info.shopifyProduct.featured_image}`,
+            );
           } else {
             // We need to make an immediate LLM Call and we need the state.
             const test = await this.openaiService.whichVariant(
@@ -327,7 +350,52 @@ export class ProcessService implements OnModuleInit {
             );
             title = info.title;
             allText = `${textInformation.mainText}. Price is ${info.shopifyProduct.variants[test.index].price / 100}, InStock Status: ${info.shopifyProduct.variants[test.index].available}`;
-            variantId = String(info.shopifyProduct.variants[0].id);
+            variantId = String(info.shopifyProduct.variants[test.index].id);
+
+            const featuredImageUrl = (
+              shopifyProduct: ShopifyProduct,
+            ): string | null => {
+              // Check if variant even has a featured image
+              if (shopifyProduct.variants[test.index].featured_image === null) {
+                // Check featured image is a string or null
+                if (shopifyProduct.featured_image) {
+                  if (typeof shopifyProduct.featured_image === 'string') {
+                    // return string
+                    return `https:${info.shopifyProduct.featured_image}`;
+                  } else {
+                    return `https:${info.shopifyProduct.featured_image['src']}`;
+                  }
+                } else {
+                  // return null
+                  return null;
+                }
+                // We're using variant featured image.
+                // Check if featured_image a string
+              } else if (
+                typeof shopifyProduct.variants[test.index].featured_image ===
+                'string'
+              ) {
+                // Return string
+                return shopifyProduct.variants[test.index]
+                  .featured_image as string;
+              } else {
+                // It's an object, get the src url from the object
+                return shopifyProduct.variants[test.index].featured_image[
+                  'src'
+                ];
+              }
+            };
+
+            // imageData = await this.utilService.imageUrlToDataUrl(
+            //   info.shopifyProduct.variants[test.index].featured_image['src']
+            //     ? info.shopifyProduct.variants[test.index].featured_image['src']
+            //     : `https:${info.shopifyProduct.featured_image}`,
+            // );
+
+            const determinedImageUrl = featuredImageUrl(info.shopifyProduct);
+
+            imageData =
+              await this.utilService.imageUrlToDataUrl(determinedImageUrl);
           }
 
           candidatePage = candidatePages.find(
@@ -349,9 +417,14 @@ export class ProcessService implements OnModuleInit {
             console.log('getPageInfo activated');
             textInformation = await this.browserService.getPageInfo(url[index]);
             specificUrl = url[index];
+            imageData = `data:image/png;base64,${textInformation.base64Image}`;
           } else {
             console.log('getPageInfo activated');
-            textInformation = await this.browserService.getPageHtml(url[index]);
+            const testInformation = await this.browserService.getPageHtml(
+              url[index],
+            );
+            textInformation = { ...testInformation, base64Image: '' };
+            imageData = `data:image/png;base64,${textInformation.base64Image}`;
             specificUrl = url[index];
           }
           success = true;
@@ -430,6 +503,8 @@ export class ProcessService implements OnModuleInit {
       shopifySite,
       candidatePage,
       variantId,
+      imageData,
+      expectedPrice,
     };
 
     this.lmStudioClient.emit(
@@ -719,6 +794,7 @@ export class ProcessService implements OnModuleInit {
     confirmed: boolean,
     count: number,
     candidatePages: FullCandidatePageDto[],
+    expectedPrice: number,
   ): Promise<boolean> {
     console.log(`https://${base}${seed}`);
 
@@ -772,6 +848,7 @@ export class ProcessService implements OnModuleInit {
       confirmed,
       count,
       candidatePages,
+      expectedPrice,
     );
     return true;
     // if (answer) {
@@ -858,6 +935,7 @@ export class ProcessService implements OnModuleInit {
       createProcessDto.confirmed,
       createProcessDto.count,
       createProcessDto.candidatePages,
+      createProcessDto.expectedPrice,
     );
     if (answer) {
       console.log('Product Found');

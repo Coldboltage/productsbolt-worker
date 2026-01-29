@@ -25,6 +25,8 @@ export class LmStudioService {
     count: number,
     shopifySite: boolean,
     variantId: null | string,
+    imageData: string,
+    expectedPrice = 0,
   ): Promise<void> {
     let openaiAnswer: boolean;
     const answer = await this.openaiService.productInStock(
@@ -34,7 +36,19 @@ export class LmStudioService {
       type,
       mode,
       context,
+      imageData,
+      specificUrl,
     );
+
+    const price = answer.price;
+    const tolerance = 0.3;
+
+    console.log({ price, tolerance, expectedPrice });
+
+    const unit = Math.abs(price - expectedPrice) / expectedPrice;
+    const priceInRange = unit <= tolerance;
+
+    console.log(`princeInRange = ${priceInRange}`);
 
     if (
       answer?.isNamedProduct === true &&
@@ -63,6 +77,8 @@ export class LmStudioService {
           count,
           shopifySite,
           variantId,
+          priceInRange,
+          editionMatch: answer.editionMatch,
         },
         createProcessDto,
       );
@@ -78,6 +94,8 @@ export class LmStudioService {
           hash,
           shopifySite,
           variantId,
+          priceInRange,
+          editionMatch: answer.editionMatch,
         },
         createProcessDto,
       );
