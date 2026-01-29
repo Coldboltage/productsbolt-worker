@@ -168,12 +168,24 @@ export class ProcessService implements OnModuleInit {
   async sitemapSearch(shopDto: ShopDto) {
     console.log(shopDto.sitemapEntity);
     // await this.hasSitemapChanged(shopDto.sitemap, shopDto.etag)
-    const sitemapUrls = await this.utilService.getUrlsFromSitemap(
-      shopDto.sitemapEntity.sitemap,
-      `https://${shopDto.website}${shopDto.category}`,
-      90,
-      shopDto.sitemapEntity.fast,
-    );
+    let sitemapUrls: {
+      websiteUrls: string[];
+      fast: boolean;
+    };
+    try {
+      sitemapUrls = await this.utilService.getUrlsFromSitemap(
+        shopDto.sitemapEntity.sitemap,
+        `https://${shopDto.website}${shopDto.category}`,
+        90,
+        shopDto.sitemapEntity.fast,
+      );
+    } catch (error) {
+      console.log(error);
+      sitemapUrls = {
+        websiteUrls: [''],
+        fast: true,
+      };
+    }
     return sitemapUrls;
   }
 

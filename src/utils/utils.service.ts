@@ -289,7 +289,7 @@ export class UtilsService {
         scannedSites = response.sites.filter((site) => site.includes(seed));
       } catch (error) {
         console.dir(error, { depth: 5 }); // should show a Z_DATA_ERROR or BrotliDecodeError
-        throw error;
+        throw new Error(error);
       }
 
       // console.log(scannedSites)
