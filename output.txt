@@ -1,0 +1,141 @@
+
+
+          -- Information to be used to compare versus the page --
+          
+          Required Target product name: Pokémon Scarlet & Violet 10.5 - Black Bolt Elite Trainer Box
+          Required Expected product type: ETB
+          Reference Context (DO NOT USE AS EVIDENCE): This product is the official factory-sealed English-language Pokémon TCG: Scarlet & Violet 10.5—Black Bolt Elite Trainer Box (ETB), sold as a single retail unit. The listing must clearly state “Elite Trainer Box” (or ETB) and identify the set as Scarlet & Violet 10.5—Black Bolt. It must not be any other set or series, nor a Pokémon Center ETB (11 packs), Booster Box, Booster Bundle, Build & Battle product, Stadium, tin, collection, gift bundle, case, multi-pack, partial box, single pack, non-English item, or opened/loose product. Accessories, pack counts, or promo card details are supporting details only and are not required for a match, but if present they can help confirm authenticity. The key requirement is that the listing unambiguously matches the exact product name, set, type, language, and condition described above. It must specifically be Black Bolt
+
+          You must follow these rules:
+          1) PAGE-ONLY EXTRACTION: First extract facts using ONLY the analysed page title/content. Ignore context completely in this step.
+          2) COMPARISON: After extraction, compare those extracted facts to the context to decide MATCH or NO_MATCH.
+          3) If the page does not explicitly support something, write "UNKNOWN". Do NOT infer from context.
+
+          -- Page Information (EVIDENCE) --
+          Analysed Page Product Title: Pokemon Scarlet & Violet 10.5 Black Bolt Elite Trainer Box - 1 Per Customer
+          Analysed Page Product Content: Pokemon Scarlet & Violet Black Bolt Elite Trainer Box  1 Per Customer
+Includes nine Scarlet & Violet—Black Bolt or Scarlet & Violet—White Flare booster packs, respectively; one illustration rare style promo card featuring Thundurus or Tornadus, respectively; and various gameplay accessories.. Price is 64.95, InStock Status: false
+          Analysed Page URL: https://tierzerogames.com/products/pokemon-scarlet-violet-black-bolt-elite-trainer-box-pre-order-1-per-customer
+
+          -- Notes --
+
+          There is a difference betwen a Play Booster Box and a Collector Booster Box. These are two totally different products though they are both boxes.
+
+          We will not be incluiding Board Games at all. Any sign of a board game is to be discounted immediately.
+
+          Scene boxes are not play booster boxes or collector boxes. They are a different line of products. Scene box by default is always false, we don't stock them.
+
+          A deck is not a box. A bundle is not a box. Final Fantasy TCG is different than Magic the Gatherings offerings. A Portfolio is not a binder. A tin product is a distinct product which needs to be mentioned within the context to match. Jumpstart Boosters are different than Play Boosters. There is a difference between Final Fantasy TCG Booster Boxes and Magic the Gathering Final Fantasy Player booster boxes, they are not the same.
+
+          Unit-of-sale rule (CRITICAL):
+          - Classify the product form based ONLY on what a customer receives when purchasing quantity = 1.
+
+          CRITICAL (Product line vs unit-of-sale):
+
+          1) Product line:
+          - Collector line is TRUE if page text contains “Collector Booster” or “Collector Boosters”.
+          - Play line is TRUE if page text contains “Play Booster” or “Play Boosters”.
+
+          2) Collector Booster Box match rule:
+          - Treat “Collector Booster Display / CDU / 12-count / Full box” as BOX-equivalent.
+          - Do NOT require the exact phrase “Collector Booster Box” if:
+            product line = Collector Booster AND unit-of-sale = BOX.
+
+          - If the page is for another game line (e.g., “Final Fantasy Trading Card Game”, “Opus”), it is NOT the MTG Collector Booster Box unless "Magic: The Gathering" AND "Collector" are explicitly present in the page text.
+
+          - Ignore ‘BOX CONTENTS—…’ lines unless the page also explicitly says Box/Display/Case/CDU in the sellable product name/option.
+
+          CRITICAL: If the title and URL strongly disagree on unit-of-sale (e.g., title says Pack but URL says Box/Display/Case), treat unit-of-sale as ambiguous and mention “conflicting signals” in the reasoning.
+
+              --- JSON Schema to follow strictly and exactly as shown ---
+              {
+                "type": "object",
+                "properties": {
+              "target": {
+                "type": "string",
+                "description": "TARGET IDENTITY SUMMARY (use ONLY: Required Target product name + Reference Context). Include: game line/manufacturer, set/edition, product line (Play/Collector/etc), unit (Box/Pack/etc), language if known."
+              },
+              "page": {
+                "type": "string",
+                "description": "PAGE-ONLY identity summary from the analysed title/content. Include: game line/manufacturer, set/edition, product line, unit-of-sale (PACK/BOX/BUNDLE/DECK/TIN/BINDER/UNKNOWN) and the 1-2 strongest page anchors."
+              },
+              "compare": {
+                "type": "string",
+                "description": "Output exactly MATCH or NO_MATCH, then 1–2 sentences. If NO_MATCH, cite the single strongest conflicting marker (e.g., wrong game line, wrong product line, wrong unit-of-sale). If the page shows contradictory identity signals (two or more different product forms/variants implied by title/URL/content), do NOT auto-match; mark NO_MATCH and require human review."
+              },
+
+              "analysis": {
+                "type": "string",
+                "description": "PAGE-ONLY reasoning: what is being sold at qty=1, using title/content evidence. If ambiguous/boilerplate, state UNKNOWN and why."
+              },
+                  "justifications": {
+                 "packagingTypeMatchExplain": {
+                    "type": "string",
+                    "description": "Determine packaging type based on what the customer receives when purchasing quantity=1.
+
+Hard rules (override):
+- If the page explicitly uses the product term 'Deck' (e.g., 'Deck', 'Commander Deck', 'Starter Deck', 'Preconstructed Deck') as the unit-of-sale name, classify as DECK. This must override any pack-count heuristic (even if it includes a sample pack or accessories). A deck/deck box is never BOX.
+- If the page explicitly uses the product term 'Tin' (e.g., 'Tin', 'Collector Tin', 'Mini Tin') as the unit-of-sale name, classify as TIN. This must override any pack-count heuristic (even if it contains multiple packs).
+- If the page explicitly uses the product term 'Binder' (e.g., 'Binder', 'Card Binder', 'Portfolio', 'Album') as the unit-of-sale name, classify as BINDER. This must override any pack-count heuristic (even if it includes promos or packs).
+- If the page explicitly uses the product term 'Bundle' (e.g., 'Bundle', 'Gift Bundle', 'Fat Pack') as the unit-of-sale name, classify as BUNDLE. This must override any pack-count heuristic (even if it contains 8/10/12+ packs).
+
+Otherwise:
+- PACK: A single booster/pack (qty=1 is one pack).
+- BOX: A factory-sealed booster box/display where qty=1 is a box containing multiple booster packs. 'Collector box' counts as BOX. BOX does not mean a generic sealed cardboard box of cards.
+
+Ignore conditional bulk deals like 'if you buy 36 packs you receive a sealed box/case' — that does not change the unit-of-sale packaging type.
+
+Pack-count heuristic (fallback only): Only if there is no explicit PACK/BOX/BUNDLE/TIN/BINDER/DECK label.
+
+Comparison step: After determining the page packaging type, compare it to the target packaging implied by the Required Target product name and Reference Context; set packagingTypeMatch to true only if they match, otherwise false."
+                  }
+                  "editionMatchReasoning": {
+                    "type": "string",
+                      "description": "1 sentence. State the normalized set tokens found on page vs target (e.g., target=marvel spiderman, page=marvel spiderman) and conclude true/false. Do NOT mention packaging/product-line."
+
+                  },
+                  "required": [
+                    "packagingTypeMatchExplain",
+                    "editionMatchReasoning"
+                  ],
+                  "additionalProperties": false
+                },
+                  "inStock": { "type": "boolean" },
+                  "isMainProductPage": { "type": "boolean" },
+                  "isNamedProduct": {
+                    "type": "boolean",
+                    "description": "True only if the page’s PRIMARY product is the same logical product as the target. Use the provided target context (brand/product line, set/edition, language/region, and any identity-defining variant terms like Collector/Limited/Deluxe/Promo/Bundle/Case/Single-pack) to infer identity even when the listing is sloppy. HARD RULE: if the page contains clear markers that the product belongs to a different brand/manufacturer/franchise/game/product line than the target context, isNamedProduct MUST be false, even if some keywords overlap. Also treat identity-defining variants as different products: do not mark true if the page appears to be a different variant (e.g. standard vs collector, box vs case, single pack vs box, different language) unless there is strong supporting evidence on-page that it matches the target variant."
+                  },
+                  "packagingTypeMatch": { "type": "boolean", "description": "If packaging type matches. BOOSTER = PACK, BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, BOX ≠ DISPLAY unless your BOX definition explicitly includes DISPLAY, Display should always be treated the same as a box in all circumstances. A box and collector box are both boxes. They are considered the same thing in terms of packaging. Therefore if the product being looked for is a collector box and the found product is also a box, they are considered the same packaging type. A bundle is not a box. A product including a card box is for holding individual cards, not he prdoduct, thus should not be put into consideration. If the name and description don't reflect the product, refer to the price. Named Scene boxes and game set are automatically false, we do not want to stock them, classify as Scene box and game set specifically."
+                  },
+                  "price": { "type": "number" },
+                  "currencyCode": { "type": "string" },
+                  "detectedVariant": { "type": "string" },
+                  "detectedFullName": { "type": "string" },
+                  "editionMatch": {
+                    "type": "boolean",
+                      "description": "SET/EDITION ONLY. True iff the page’s PRIMARY product contains the same normalized set name as the target. NORMALIZE by ignoring apostrophes (’ vs '), hyphens, punctuation, casing, and extra whitespace (e.g., "Marvel’s Spider-Man" == "Marvel Spider-Man"). HARD RULE: Do NOT use packaging/unit-of-sale words (box/pack/bundle/display/deck/tin/binder/case) and do NOT use product-line words (Play/Collector/Draft/Set/Jumpstart/Prerelease/Kit) to decide. If game/manufacturer differs (e.g., MTG vs FFTCG/Pokemon/One Piece), editionMatch MUST be false."
+
+                  },
+                  "conciseReason": { "type": "string", "description": Explain what is true and false, why you've given them the designation as concise as possible. },
+  
+                },
+                  "required": [
+                  "target",
+                  "page",
+                  "compare",
+                  "analysis",
+                  "inStock",
+                  "isMainProductPage",
+                  "isNamedProduct",
+                  "packagingTypeMatch",
+                  "price",
+                  "currencyCode",
+                  "conciseReason",
+                  "detectedVariant",
+                  "detectedFullName",
+                  "editionMatch",
+                  "justifications".
+                ],
+                "additionalProperties": false
+              }

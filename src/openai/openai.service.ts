@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
-import z from 'zod';
 import { ProductType, BestSitesInterface, ParsedLinks } from '../app.type.js';
 import { ProductInStockWithAnalysis } from '../process/entities/process.entity.js';
 import {
@@ -270,6 +269,11 @@ export class OpenaiService {
               }`,
     };
 
+    // console.log(assuredMessage);
+    // writeFileSync('./output.txt', assuredMessage.text, 'utf8');
+
+    // await new Promise((r) => setTimeout(r, 2000000));
+
     // messagesForPrompt.push(assuredMessage);
     const response = await openai.chat.completions.create({
       // model: `gpt-4.1-${mode}`,
@@ -282,7 +286,7 @@ export class OpenaiService {
         //   ? 'Qwen/Qwen3-4B-Instruct-2507'
         //   : `gpt-4.1-mini`,
         process.env.LOCAL_LLM === 'true'
-          ? 'Qwen/Qwen3-VL-4B-Instruct'
+          ? process.env.LOCAL_MODEL_NAME
           : `gpt-4.1-mini`,
       // model: `gpt-5-nano`,
       // reasoning_effort: "low",
@@ -505,7 +509,7 @@ export class OpenaiService {
         //   ? 'Qwen/Qwen3-4B-Instruct-2507'
         //   : `gpt-4.1-mini`,
         process.env.LOCAL_LLM === 'true'
-          ? 'Qwen/Qwen3-VL-4B-Instruct'
+          ? process.env.LOCAL_MODEL_NAME
           : `gpt-4.1-mini`,
       temperature: 0,
       top_p: 0.9,
@@ -780,7 +784,7 @@ current date: ${new Date().toISOString()}
     const openAiResponse = await openai.chat.completions.create({
       model:
         process.env.EBAY_LOCAL_LLM === 'true'
-          ? 'openai/gpt-oss-20b'
+          ? process.env.LOCAL_MODEL_NAME
           : `gpt-4.1-mini`,
       // model: process.env.EBAY_LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-mini`,
       // model: process.env.EBAY_LOCAL_LLM === "true" ? "nvidia-nemotron-nano-12b-v2" : `gpt-4.1-mini`,
@@ -892,7 +896,7 @@ current date: ${new Date().toISOString()}
           //   ? 'Qwen/Qwen3-4B-Instruct-2507'
           //   : `gpt-4.1-mini`,
           process.env.LOCAL_LLM === 'true'
-            ? 'Qwen/Qwen3-VL-4B-Instruct'
+            ? process.env.LOCAL_MODEL_NAME
             : `gpt-4.1-mini`,
         messages: [
           {
@@ -992,7 +996,7 @@ current date: ${new Date().toISOString()}
           //   ? 'Qwen/Qwen3-4B-Instruct-2507'
           //   : `gpt-4.1-mini`,
           process.env.LOCAL_LLM === 'true'
-            ? 'Qwen/Qwen3-VL-4B-Instruct'
+            ? process.env.LOCAL_MODEL_NAME
             : `gpt-4.1-mini`,
         messages: [
           {

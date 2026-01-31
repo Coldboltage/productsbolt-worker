@@ -454,6 +454,7 @@ export class UtilsService {
       variantId: webpage.variantId,
       priceCheck: webpage.priceInRange,
       editionMatch: webpage.editionMatch,
+      packagingTypeMatch: webpage.packagingTypeMatch,
     };
     console.log(webPage);
     console.log('webDiscoverySend called');
@@ -491,6 +492,7 @@ export class UtilsService {
       variantId: webpage.variantId,
       priceCheck: webpage.priceInRange,
       editionMatch: webpage.editionMatch,
+      packagingTypeMatch: webpage.packagingTypeMatch,
     };
     console.log(webPage);
     try {
