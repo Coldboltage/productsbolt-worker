@@ -41,7 +41,7 @@ export class LmStudioService {
     );
 
     const price = answer.price;
-    const tolerance = 0.3;
+    const tolerance = 0.45;
 
     console.log({ price, tolerance, expectedPrice });
 
@@ -79,6 +79,7 @@ export class LmStudioService {
           variantId,
           priceInRange,
           editionMatch: answer.editionMatch,
+          packagingTypeMatch: answer.packagingTypeMatch,
         },
         createProcessDto,
       );
@@ -96,6 +97,7 @@ export class LmStudioService {
           variantId,
           priceInRange,
           editionMatch: answer.editionMatch,
+          packagingTypeMatch: answer.packagingTypeMatch,
         },
         createProcessDto,
       );

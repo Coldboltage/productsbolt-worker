@@ -53,4 +53,7 @@ export class CreateCandidatePageDto {
 
   @IsBoolean()
   editionMatch: boolean;
+
+  @IsBoolean()
+  packagingTypeMatch: boolean;
 }

@@ -106,6 +106,7 @@ export class EbayService implements OnModuleInit {
         variantId: null,
         priceInRange: false,
         editionMatch: false,
+        packagingTypeMatch: false,
       },
     ]);
   }

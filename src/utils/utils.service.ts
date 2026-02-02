@@ -232,6 +232,7 @@ export class UtilsService {
     fast: boolean,
     importSites?: string[],
   ): Promise<{ websiteUrls: string[]; fast: boolean }> {
+    console.log(`fast state: ${fast}`);
     if (importSites && importSites.length > 0) {
       const filtered = this.filterObviousNonPages(importSites, seed);
       // console.log(filtered)
@@ -267,8 +268,7 @@ export class UtilsService {
 
       const sitemap = new Sitemapper({
         url: sitemapUrl,
-        lastmod: crawlAmountDaysAgo.getTime(),
-        timeout: 30000,
+        timeout: 60000,
         concurrency: 1,
         retries: 0,
         debug: true,
@@ -284,6 +284,7 @@ export class UtilsService {
         console.log(
           response.errors.length === 0 ? 'No Errors' : response.errors,
         );
+        console.log(`Amount of pages: ${response.sites.length}`);
         if (response.errors.length > 0)
           await new Promise((r) => setTimeout(r, pauseTimer));
         scannedSites = response.sites.filter((site) => site.includes(seed));
@@ -454,6 +455,7 @@ export class UtilsService {
       variantId: webpage.variantId,
       priceCheck: webpage.priceInRange,
       editionMatch: webpage.editionMatch,
+      packagingTypeMatch: webpage.packagingTypeMatch,
     };
     console.log(webPage);
     console.log('webDiscoverySend called');
@@ -491,6 +493,7 @@ export class UtilsService {
       variantId: webpage.variantId,
       priceCheck: webpage.priceInRange,
       editionMatch: webpage.editionMatch,
+      packagingTypeMatch: webpage.packagingTypeMatch,
     };
     console.log(webPage);
     try {

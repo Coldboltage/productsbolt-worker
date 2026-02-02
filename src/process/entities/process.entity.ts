@@ -36,6 +36,7 @@ export interface ProductInStockWithAnalysisStripped {
   variantId: null | string;
   priceInRange: boolean;
   editionMatch: boolean;
+  packagingTypeMatch: boolean;
 }
 
 export interface Justification {
