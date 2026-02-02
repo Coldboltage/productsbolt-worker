@@ -268,8 +268,7 @@ export class UtilsService {
 
       const sitemap = new Sitemapper({
         url: sitemapUrl,
-        lastmod: crawlAmountDaysAgo.getTime(),
-        timeout: 30000,
+        timeout: 60000,
         concurrency: 1,
         retries: 0,
         debug: true,
@@ -285,6 +284,7 @@ export class UtilsService {
         console.log(
           response.errors.length === 0 ? 'No Errors' : response.errors,
         );
+        console.log(`Amount of pages: ${response.sites.length}`);
         if (response.errors.length > 0)
           await new Promise((r) => setTimeout(r, pauseTimer));
         scannedSites = response.sites.filter((site) => site.includes(seed));
