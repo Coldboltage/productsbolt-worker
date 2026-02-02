@@ -183,16 +183,16 @@ export class BrowserService {
       deviceScaleFactor: 1,
     });
 
-    // await page.setRequestInterception(true);
+    await page.setRequestInterception(true);
 
-    // page.on('request', (req) => {
-    //   const block = ['image', 'font', 'media'];
-    //   if (block.includes(req.resourceType())) {
-    //     req.abort();
-    //   } else {
-    //     req.continue();
-    //   }
-    // });
+    page.on('request', (req) => {
+      const block = ['image', 'font', 'media'];
+      if (block.includes(req.resourceType())) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
 
     // Promise that resolves with the page content and mainText
 
