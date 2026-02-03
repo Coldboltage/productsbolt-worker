@@ -262,10 +262,12 @@ export class BrowserService {
   `,
       });
 
-      const base64Image = await page.screenshot({
-        type: 'png',
-        encoding: 'base64',
-      });
+      // const base64Image = await page.screenshot({
+      //   type: 'png',
+      //   encoding: 'base64',
+      // });
+
+      const base64Image = 'removed';
 
       return { html, mainText, shopyifySite, base64Image };
     })();
