@@ -87,6 +87,8 @@ describe('AppController (e2e)', () => {
               example.type,
               example.mode,
               example.context,
+              '',
+              '',
             );
             // Assert
             expect(llmResponse.inStock).toEqual(example.inStock);
