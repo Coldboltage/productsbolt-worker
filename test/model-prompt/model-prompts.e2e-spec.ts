@@ -70,12 +70,12 @@ describe('AppController (e2e)', () => {
     }
   });
 
-  describe.only('test each page versus specific context/query', () => {
+  describe('test each page versus specific context/query', () => {
     const RUNS = 1;
     // Arrange
     for (let run = 1; run <= RUNS; run++) {
       for (const [index, webpage] of unscannedArrayOfWebpages.entries()) {
-        if (index > 10) continue; // 2nd item (0-based)
+        if (index > 10 || webpage.active === false) continue; // 2nd item (0-based)
         it.each(webpage.examples)(
           'should get each classification correct',
           async (example) => {
@@ -96,6 +96,34 @@ describe('AppController (e2e)', () => {
             expect(llmResponse.packagingTypeMatch).toEqual(
               example.packagingTypeMatch,
             );
+            expect(llmResponse.editionMatch).toEqual(example.editionMatch);
+          },
+        );
+      }
+    }
+  });
+
+  describe.only('test each page versus specific context/query editionMatch only', () => {
+    const RUNS = 1;
+    // Arrange
+    for (let run = 1; run <= RUNS; run++) {
+      for (const [index, webpage] of unscannedArrayOfWebpages.entries()) {
+        if (index > 10 || webpage.active === false) continue; // 2nd item (0-based)
+        it.each(webpage.examples)(
+          'should get each classification correct',
+          async (example) => {
+            // Act
+            const llmResponse = await openaiService.productInStock(
+              webpage.title,
+              webpage.content,
+              example.productName,
+              example.type,
+              example.mode,
+              example.context,
+              '',
+              '',
+            );
+            // Assert
             expect(llmResponse.editionMatch).toEqual(example.editionMatch);
           },
         );
