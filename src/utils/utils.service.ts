@@ -456,6 +456,8 @@ export class UtilsService {
       priceCheck: webpage.priceInRange,
       editionMatch: webpage.editionMatch,
       packagingTypeMatch: webpage.packagingTypeMatch,
+      loadedData: webpage.loadedData,
+      hasMixedSignals: webpage.hasMixedSignals,
     };
     console.log(webPage);
     console.log('webDiscoverySend called');
@@ -494,6 +496,8 @@ export class UtilsService {
       priceCheck: webpage.priceInRange,
       editionMatch: webpage.editionMatch,
       packagingTypeMatch: webpage.packagingTypeMatch,
+      loadedData: webpage.loadedData,
+      hasMixedSignals: webpage.hasMixedSignals,
     };
     console.log(webPage);
     try {

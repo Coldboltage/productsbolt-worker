@@ -80,6 +80,8 @@ export class LmStudioService {
           priceInRange,
           editionMatch: answer.editionMatch,
           packagingTypeMatch: answer.packagingTypeMatch,
+          loadedData: answer.loadedData,
+          hasMixedSignals: answer.hasMixedSignals,
         },
         createProcessDto,
       );
@@ -98,6 +100,8 @@ export class LmStudioService {
           priceInRange,
           editionMatch: answer.editionMatch,
           packagingTypeMatch: answer.packagingTypeMatch,
+          loadedData: answer.loadedData,
+          hasMixedSignals: answer.hasMixedSignals,
         },
         createProcessDto,
       );

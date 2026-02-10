@@ -107,6 +107,8 @@ export class EbayService implements OnModuleInit {
         priceInRange: false,
         editionMatch: false,
         packagingTypeMatch: false,
+        loadedData: false,
+        hasMixedSignals: false,
       },
     ]);
   }

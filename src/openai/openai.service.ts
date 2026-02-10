@@ -192,63 +192,96 @@ export class OpenaiService {
           CRITICAL: If the title and URL strongly disagree on unit-of-sale (e.g., title says Pack but URL says Box/Display/Case), treat unit-of-sale as ambiguous and mention “conflicting signals” in the reasoning.
 
               --- JSON Schema to follow strictly and exactly as shown ---
+              -- Return ONLY valid JSON (RFC 8259) that conforms to this JSON Schema.
+                  All required properties must be present. --
               {
                 "type": "object",
                 "properties": {
-              "target": {
-                "type": "string",
-                "description": "TARGET IDENTITY SUMMARY (use ONLY: Required Target product name + Reference Context). Include: game line/manufacturer, set/edition, product line (Play/Collector/etc), unit (Box/Pack/etc), language if known."
-              },
-              "page": {
-                "type": "string",
-                "description": "PAGE-ONLY identity summary from the analysed title/content. Include: game line/manufacturer, set/edition, product line, unit-of-sale (PACK/BOX/BUNDLE/DECK/TIN/BINDER/UNKNOWN) and the 1-2 strongest page anchors."
-              },
-              "compare": {
-                "type": "string",
-                "description": "Output exactly MATCH or NO_MATCH, then 1–2 sentences. If NO_MATCH, cite the single strongest conflicting marker (e.g., wrong game line, wrong product line, wrong unit-of-sale). If the page shows contradictory identity signals (two or more different product forms/variants implied by title/URL/content), do NOT auto-match; mark NO_MATCH and require human review."
-              },
-
-              "analysis": {
-                "type": "string",
-                "description": "PAGE-ONLY reasoning: what is being sold at qty=1, using title/content evidence. If ambiguous/boilerplate, state UNKNOWN and why."
-              },
-                  "justifications": {
-                 "packagingTypeMatchExplain": {
+                  "target": {
                     "type": "string",
-                    "description": "Determine packaging type based on what the customer receives when purchasing quantity=1.\n\nHard rules (override):\n- If the page explicitly uses the product term 'Deck' (e.g., 'Deck', 'Commander Deck', 'Starter Deck', 'Preconstructed Deck') as the unit-of-sale name, classify as DECK. This must override any pack-count heuristic (even if it includes a sample pack or accessories). A deck/deck box is never BOX.\n- If the page explicitly uses the product term 'Tin' (e.g., 'Tin', 'Collector Tin', 'Mini Tin') as the unit-of-sale name, classify as TIN. This must override any pack-count heuristic (even if it contains multiple packs).\n- If the page explicitly uses the product term 'Binder' (e.g., 'Binder', 'Card Binder', 'Portfolio', 'Album') as the unit-of-sale name, classify as BINDER. This must override any pack-count heuristic (even if it includes promos or packs).\n- If the page explicitly uses the product term 'Bundle' (e.g., 'Bundle', 'Gift Bundle', 'Fat Pack') as the unit-of-sale name, classify as BUNDLE. This must override any pack-count heuristic (even if it contains 8/10/12+ packs).\n\nOtherwise:\n- PACK: A single booster/pack (qty=1 is one pack).\n- BOX: A factory-sealed booster box/display where qty=1 is a box containing multiple booster packs. 'Collector box' counts as BOX. BOX does not mean a generic sealed cardboard box of cards.\n\nIgnore conditional bulk deals like 'if you buy 36 packs you receive a sealed box/case' — that does not change the unit-of-sale packaging type.\n\nPack-count heuristic (fallback only): Only if there is no explicit PACK/BOX/BUNDLE/TIN/BINDER/DECK label.\n\nComparison step: After determining the page packaging type, compare it to the target packaging implied by the Required Target product name and Reference Context; set packagingTypeMatch to true only if they match, otherwise false."
-                  }
-                  "editionMatchReasoning": {
-                    "type": "string",
-                      "description": "1 sentence. State the normalized set tokens found on page vs target (e.g., target=marvel spiderman, page=marvel spiderman) and conclude true/false. Do NOT mention packaging/product-line."
-
+                    "description": "TARGET IDENTITY SUMMARY (use ONLY: Required Target product name + Reference Context). Include: game line/manufacturer, set/edition, product line (Play/Collector/etc), unit (Box/Pack/etc), language if known."
                   },
-                  "required": [
-                    "packagingTypeMatchExplain",
-                    "editionMatchReasoning"
-                  ],
-                  "additionalProperties": false
-                },
-                  "inStock": { "type": "boolean" },
-                  "isMainProductPage": { "type": "boolean" },
+                  "page": {
+                    "type": "string",
+                    "description": "PAGE-ONLY identity summary from the analysed title/content. Include: game line/manufacturer, set/edition, product line, unit-of-sale (PACK/BOX/BUNDLE/DECK/TIN/BINDER/UNKNOWN) and the 1-2 strongest page anchors."
+                  },
+                  "compare": {
+                    "type": "string",
+                    "description": "Output exactly MATCH or NO_MATCH, then 1–2 sentences. If NO_MATCH, cite the single strongest conflicting marker (e.g., wrong game line, wrong product line, wrong unit-of-sale). If the page shows contradictory identity signals (two or more different product forms/variants implied by title/URL/content), do NOT auto-match; mark NO_MATCH and require human review."
+                  },
+                  "analysis": {
+                    "type": "string",
+                    "description": "PAGE-ONLY reasoning: what is being sold at qty=1, using title/content evidence. If ambiguous/boilerplate, state UNKNOWN and why."
+                  },
+                  "justifications": {
+                    "type": "object",
+                    "properties": {
+                      "packagingTypeMatchExplain": {
+                        "type": "string",
+                        "description": "Determine packaging type based on what the customer receives when purchasing quantity=1.\n\nHard rules (override):\n- If the page explicitly uses the product term 'Deck' (e.g., 'Deck', 'Commander Deck', 'Starter Deck', 'Preconstructed Deck') as the unit-of-sale name, classify as DECK. This must override any pack-count heuristic (even if it includes a sample pack or accessories). A deck/deck box is never BOX.\n- If the page explicitly uses the product term 'Tin' (e.g., 'Tin', 'Collector Tin', 'Mini Tin') as the unit-of-sale name, classify as TIN. This must override any pack-count heuristic (even if it contains multiple packs).\n- If the page explicitly uses the product term 'Binder' (e.g., 'Binder', 'Card Binder', 'Portfolio', 'Album') as the unit-of-sale name, classify as BINDER. This must override any pack-count heuristic (even if it includes promos or packs).\n- If the page explicitly uses the product term 'Bundle' (e.g., 'Bundle', 'Gift Bundle', 'Fat Pack') as the unit-of-sale name, classify as BUNDLE. This must override any pack-count heuristic (even if it contains 8/10/12+ packs).\n\nOtherwise:\n- PACK: A single booster/pack (qty=1 is one pack).\n- BOX: A factory-sealed booster box/display where qty=1 is a box containing multiple booster packs. 'Collector box' counts as BOX. BOX does not mean a generic sealed cardboard box of cards.\n\nIgnore conditional bulk deals like 'if you buy 36 packs you receive a sealed box/case' — that does not change the unit-of-sale packaging type.\n\nPack-count heuristic (fallback only): Only if there is no explicit PACK/BOX/BUNDLE/TIN/BINDER/DECK label.\n\nComparison step: After determining the page packaging type, compare it to the target packaging implied by the Required Target product name and Reference Context; set packagingTypeMatch to true only if they match, otherwise false."
+                      },
+                      "editionMatchReasoning": {
+                        "type": "string",
+                        "description": "1 sentence. State the normalized set tokens found on page vs target (e.g., target=marvel spiderman, page=marvel spiderman) and conclude true/false. Do NOT mention packaging/product-line."
+                      }
+                    },
+                    "required": [
+                      "packagingTypeMatchExplain",
+                      "editionMatchReasoning"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "inStock": {
+                    "type": "boolean"
+                  },
+                  "isMainProductPage": {
+                    "type": "boolean"
+                  },
                   "isNamedProduct": {
                     "type": "boolean",
                     "description": "True only if the page’s PRIMARY product is the same logical product as the target. Use the provided target context (brand/product line, set/edition, language/region, and any identity-defining variant terms like Collector/Limited/Deluxe/Promo/Bundle/Case/Single-pack) to infer identity even when the listing is sloppy. HARD RULE: if the page contains clear markers that the product belongs to a different brand/manufacturer/franchise/game/product line than the target context, isNamedProduct MUST be false, even if some keywords overlap. Also treat identity-defining variants as different products: do not mark true if the page appears to be a different variant (e.g. standard vs collector, box vs case, single pack vs box, different language) unless there is strong supporting evidence on-page that it matches the target variant."
                   },
-                  "packagingTypeMatch": { "type": "boolean", "description": "If packaging type matches. BOOSTER = PACK, BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, BOX ≠ DISPLAY unless your BOX definition explicitly includes DISPLAY, Display should always be treated the same as a box in all circumstances. A box and collector box are both boxes. They are considered the same thing in terms of packaging. Therefore if the product being looked for is a collector box and the found product is also a box, they are considered the same packaging type. A bundle is not a box. A product including a card box is for holding individual cards, not he prdoduct, thus should not be put into consideration. If the name and description don't reflect the product, refer to the price. Named Scene boxes and game set are automatically false, we do not want to stock them, classify as Scene box and game set specifically."
+                  "packagingTypeMatch": {
+                    "type": "boolean",
+                    "description": "If packaging type matches. BOOSTER = PACK, BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, BOX ≠ DISPLAY unless your BOX definition explicitly includes DISPLAY, Display should always be treated the same as a box in all circumstances. A box and collector box are both boxes. They are considered the same thing in terms of packaging. Therefore if the product being looked for is a collector box and the found product is also a box, they are considered the same packaging type. A bundle is not a box. A product including a card box is for holding individual cards, not he prdoduct, thus should not be put into consideration. If the name and description don't reflect the product, refer to the price. Named Scene boxes and game set are automatically false, we do not want to stock them, classify as Scene box and game set specifically."
                   },
-                  "price": { "type": "number" },
-                  "currencyCode": { "type": "string" },
-                  "detectedVariant": { "type": "string" },
-                  "detectedFullName": { "type": "string" },
+                  "price": {
+                    "type": "number"
+                  },
+                  "currencyCode": {
+                    "type": "string"
+                  },
+                  "detectedVariant": {
+                    "type": "string"
+                  },
+                  "detectedFullName": {
+                    "type": "string"
+                  },
                   "editionMatch": {
                     "type": "boolean",
-                      "description": "SET/EDITION ONLY. True iff the page’s PRIMARY product contains the same normalized set name as the target. NORMALIZE by ignoring apostrophes (’ vs '), hyphens, punctuation, casing, and extra whitespace (e.g., \"Marvel’s Spider-Man\" == \"Marvel Spider-Man\"). HARD RULE: Do NOT use packaging/unit-of-sale words (box/pack/bundle/display/deck/tin/binder/case) and do NOT use product-line words (Play/Collector/Draft/Set/Jumpstart/Prerelease/Kit) to decide. If game/manufacturer differs (e.g., MTG vs FFTCG/Pokemon/One Piece), editionMatch MUST be false."
-
+                    "description": "SET/EDITION ONLY. True iff the page’s PRIMARY product contains the same normalized set name as the target. NORMALIZE by ignoring apostrophes (’ vs '), hyphens, punctuation, casing, and extra whitespace (e.g., \"Marvel’s Spider-Man\" == \"Marvel Spider-Man\"). HARD RULE: Do NOT use packaging/unit-of-sale words (box/pack/bundle/display/deck/tin/binder/case) and do NOT use product-line words (Play/Collector/Draft/Set/Jumpstart/Prerelease/Kit) to decide. If game/manufacturer differs (e.g., MTG vs FFTCG/Pokemon/One Piece), editionMatch MUST be false."
                   },
-                  "conciseReason": { "type": "string", "description": Explain what is true and false, why you've given them the designation as concise as possible. },
-  
+                  "hasMixedSignals": {
+                    "type": "boolean",
+                    "description": "True if the page contains both pack-level cues (e.g., 'per pack', 'cards per pack') and box/display cues (e.g., 'X packs', 'display', 'box of', 'contains X boosters'), which can mislead classification."
+                  },
+                  "mixedSignalsExplain": {
+                    "type": "string",
+                    "description": "One sentence naming the conflicting cues (only when hasMixedSignals=true)."
+                  },
+                  "loadedDataExplain": {
+                    "type": "string",
+                  },
+                  "loadedData": {
+                    "type": "boolean",
+                    "description": "False if 400+ HTTP error shown or price is not shown"
+                  },
+                  "conciseReason": {
+                    "type": "string",
+                    "description": "Explain what is true and false, why you've given them the designation as concise as possible."
+                  }
                 },
-                  "required": [
+                "required": [
                   "target",
                   "page",
                   "compare",
@@ -263,10 +296,15 @@ export class OpenaiService {
                   "detectedVariant",
                   "detectedFullName",
                   "editionMatch",
-                  "justifications".
+                  "justifications",
+                  "loadedDataExplain",
+                  "loadedData",
+                  "hasMixedSignals",
+                  "mixedSignalsExplain"
                 ],
                 "additionalProperties": false
-              }`,
+              }
+`,
     };
 
     // console.log(assuredMessage);
@@ -300,7 +338,7 @@ export class OpenaiService {
         {
           role: 'system',
           content:
-            'You are a product-matching assistant. Start by analyzing the product page against the target context. Use this analysis to guide your output of structured product fields.',
+            'You are a product-matching assistant. Start by analyzing the product page against the target context. Use this analysis to guide your output of structured product fields. Return ONLY valid JSON (RFC 8259) that conforms to this JSON Schema. All required properties must be present.',
         },
         {
           role: 'user',

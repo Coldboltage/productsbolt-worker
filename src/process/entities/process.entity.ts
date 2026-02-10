@@ -19,6 +19,9 @@ export interface ProductInStockWithAnalysis {
   detectedFullName: string;
   editionMatch: boolean;
   justifications: Justification;
+  loadedData: boolean;
+  hasMixedSignals: boolean;
+  hasMixedSignalsExplain: string;
 }
 
 export interface ProductInStockWithAnalysisStripped {
@@ -37,6 +40,8 @@ export interface ProductInStockWithAnalysisStripped {
   priceInRange: boolean;
   editionMatch: boolean;
   packagingTypeMatch: boolean;
+  loadedData: boolean;
+  hasMixedSignals: boolean;
 }
 
 export interface Justification {
