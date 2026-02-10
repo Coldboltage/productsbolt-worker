@@ -131,6 +131,11 @@ export class LmStudioService {
 
     const strippedResult = preStrippedResult.map((site) => site.url);
 
+    if (strippedResult.length === 0) {
+      console.log('no_links_passed_score');
+      throw new Error('no_links_passed_scor');
+    }
+
     await fetch(
       `http://localhost:3000/shop-product/shop-product-links/${shopProductId}`,
       {

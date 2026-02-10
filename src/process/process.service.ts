@@ -755,6 +755,14 @@ export class ProcessService implements OnModuleInit {
 
     console.log(`ReducedUrls: ${reducedUrls.length}`);
 
+    // const momentOfTruth = foundSitemapUrls.websiteUrls.includes(
+    //   'https://bossminis.co.uk/products/magic-the-gathering-edge-of-eternities-collector-booster-pack-releases-01-08-20205',
+    // );
+
+    // console.log(momentOfTruth);
+
+    // await new Promise((r) => setTimeout(r, 20000000));
+
     const lmStudioReduceLinksPayload: LmStudioReduceLinksPayload = {
       reducedUrls: reducedUrls,
       query: query,

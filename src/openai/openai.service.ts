@@ -898,6 +898,11 @@ current date: ${new Date().toISOString()}
           process.env.LOCAL_LLM === 'true'
             ? process.env.LOCAL_MODEL_NAME
             : `gpt-4.1-mini`,
+        temperature: 0,
+        top_p: 0.9,
+        frequency_penalty: 0.05,
+        n: 1,
+        seed: 42,
         messages: [
           {
             role: 'system',
@@ -937,8 +942,6 @@ current date: ${new Date().toISOString()}
               "required": ["url", "score"],
               "additionalProperties": false
             },
-            "required": ["bestSites"],
-            "additionalProperties": false
       }
           `,
           },
