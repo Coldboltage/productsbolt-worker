@@ -86,7 +86,7 @@ async function bootstrap() {
         autoDelete: false, // <-- add this
       },
       noAck: false, // <-- manual ack mode
-      prefetchCount: 40, // <-- cap concurrency
+      prefetchCount: +process.env.LM_QUEUE, // <-- cap concurrency
     },
   });
 
