@@ -93,21 +93,6 @@ async function bootstrap() {
     });
   }
 
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
-      queue: `lm_studio_queue`,
-      queueOptions: {
-        durable: false,
-        exclusive: false,
-        autoDelete: false, // <-- add this
-      },
-      noAck: false, // <-- manual ack mode
-      prefetchCount: +process.env.LM_QUEUE, // <-- cap concurrency
-    },
-  });
-
   await app.startAllMicroservices();
 }
 
