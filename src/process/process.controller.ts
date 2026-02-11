@@ -17,6 +17,7 @@ import { CheckPageDto } from './dto/check-page.dto.js';
 import { ShopDto } from './dto/shop.dto.js';
 import { ProductDto } from './dto/product.dto.js';
 import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
+import { LmStudioCheckProductDto } from './dto/lm-studio-check-product.dto.js';
 
 @Controller()
 export class ProcessController {
@@ -153,6 +154,52 @@ export class ProcessController {
             scannedAt: new Date(),
           }),
         },
+      );
+      // ACK message on success
+      channel.ack(originalMsg);
+    } catch (error) {
+      console.error(error);
+
+      // Optionally nack with requeue false to avoid infinite retry loops
+      channel.nack(originalMsg, false, false);
+    }
+  }
+
+  @EventPattern('lmStudioCheckProduct')
+  async lmStudioCheckProduct(
+    @Payload() createProcessDto: LmStudioCheckProductDto,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    const {
+      title,
+      allText,
+      query,
+      type,
+      mode,
+      url,
+      hash,
+      count,
+      shopifySite,
+      shopWebsite,
+      webPageId,
+    } = createProcessDto;
+
+    try {
+      await this.processService.lmStudioCheckProduct(
+        title,
+        allText,
+        query,
+        type,
+        mode,
+        url,
+        hash,
+        count,
+        shopifySite,
+        shopWebsite,
+        webPageId,
       );
       // ACK message on success
       channel.ack(originalMsg);

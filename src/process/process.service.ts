@@ -35,6 +35,7 @@ import * as cheerio from 'cheerio';
 import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
 import { FullCandidatePageDto } from './dto/candidate-page.dto.js';
 import { ShopifyProduct } from 'src/utils/utils.type.js';
+import { LmStudioCheckProductDto } from './dto/lm-studio-check-product.dto.js';
 
 @Injectable()
 export class ProcessService implements OnModuleInit {
@@ -644,7 +645,7 @@ export class ProcessService implements OnModuleInit {
     }
     hash = currentHash;
 
-    this.lmStudioCheckProduct(
+    const payload: LmStudioCheckProductDto = {
       title,
       allText,
       query,
@@ -656,7 +657,9 @@ export class ProcessService implements OnModuleInit {
       shopifySite,
       shopWebsite,
       webPageId,
-    );
+    };
+
+    this.lmStudioClient.emit('lmStudioCheckProduct', payload);
 
     return true;
 
