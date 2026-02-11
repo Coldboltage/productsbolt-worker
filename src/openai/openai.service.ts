@@ -1002,6 +1002,7 @@ current date: ${new Date().toISOString()}
     const linksResponse = JSON.parse(
       openAiResponse.choices[0].message?.content,
     ) as ParsedLinks[];
+    console.log(openAiResponse);
     console.log(linksResponse);
 
     return linksResponse;

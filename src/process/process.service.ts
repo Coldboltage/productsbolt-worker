@@ -708,14 +708,16 @@ export class ProcessService implements OnModuleInit {
     updatePackage: UpdatePagePayloadInterface,
   ): Promise<void> {
     console.log(updatePackage);
-    await fetch(
-      `http://localhost:3000/webpage-cache/update-single-page-and-cache/${updatePackage.webPageId}`,
-      {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatePackage),
-      },
-    );
+    try {
+      await fetch(
+        `http://localhost:3000/webpage-cache/update-single-page-and-cache/${updatePackage.webPageId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatePackage),
+        },
+      );
+    } catch (error) {}
   }
 
   async reduceLinks(

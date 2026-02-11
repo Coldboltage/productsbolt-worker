@@ -9,7 +9,7 @@ import { JSDOM } from 'jsdom';
 import { UtilsService } from '../utils/utils.service.js';
 import { ShopifyProductCollectionsFullCall } from '../utils/utils.type.js';
 import sanitizeHtml from 'sanitize-html';
-import puppeteer from 'puppeteer';
+import puppeteer, { HTTPResponse } from 'puppeteer';
 
 @Injectable()
 export class BrowserService {
@@ -197,10 +197,20 @@ export class BrowserService {
     // Promise that resolves with the page content and mainText
 
     const pageTask = (async () => {
-      const testPage = await page.goto(url, {
-        waitUntil: ['networkidle2'],
-        timeout: 60000,
-      });
+      let testPage;
+
+      try {
+        testPage = await page.goto(url, {
+          waitUntil: ['networkidle2'],
+          timeout: 15000,
+        });
+      } catch (error) {
+        testPage = await page.reload({
+          waitUntil: ['domcontentloaded'],
+          timeout: 60000,
+        });
+      }
+
       // const testPage = await page.goto(url, {
       //   waitUntil: 'domcontentloaded',
       //   timeout: 60000,
