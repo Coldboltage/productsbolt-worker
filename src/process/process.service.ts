@@ -178,6 +178,7 @@ export class ProcessService implements OnModuleInit {
         `https://${shopDto.website}${shopDto.category}`,
         90,
         shopDto.sitemapEntity.fast,
+        shopDto.cloudflare,
       );
     } catch (error) {
       console.log(error);
@@ -756,6 +757,7 @@ export class ProcessService implements OnModuleInit {
       `https://${base}${seed}`,
       crawlAmount,
       fast,
+      cloudflare,
       sitemapUrls,
     );
 

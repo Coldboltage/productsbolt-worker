@@ -232,6 +232,7 @@ export class UtilsService {
     seed: string,
     crawlAmount: number,
     fast: boolean,
+    cloudflare: boolean,
     importSites?: string[],
   ): Promise<{ websiteUrls: string[]; fast: boolean }> {
     console.log(`fast state: ${fast}`);
@@ -295,7 +296,7 @@ export class UtilsService {
 
       let scannedSites: string[] = [];
 
-      if (fast) {
+      if (fast && cloudflare) {
         const sites = await this.fetchSitemapViaBrowser(sitemapUrl);
         console.log(sites);
         scannedSites = sites.urls.filter((site) => site.includes(seed));

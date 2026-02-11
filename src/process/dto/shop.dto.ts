@@ -1,6 +1,6 @@
-import { Type } from "class-transformer";
-import { IsBoolean, IsNumber, IsString, ValidateNested } from "class-validator";
-import { SitemapDto } from "./sitemap-dto.js";
+import { Type } from 'class-transformer';
+import { IsBoolean, IsNumber, IsString, ValidateNested } from 'class-validator';
+import { SitemapDto } from './sitemap-dto.js';
 
 export class ShopDto {
   @IsString()
@@ -25,12 +25,15 @@ export class ShopDto {
   active: true;
 
   @IsString()
-  etag: string
+  etag: string;
 
   @IsNumber()
-  etagCount: number
+  etagCount: number;
+
+  @IsBoolean()
+  cloudflare: boolean;
 
   @ValidateNested()
   @Type(() => SitemapDto)
-  sitemapEntity: SitemapDto
+  sitemapEntity: SitemapDto;
 }
