@@ -59,7 +59,7 @@ export class ProcessService implements OnModuleInit {
     );
     console.log(`shopifySearch Result: ${result}`);
     const setup = await fetch(
-      `http://localhost:3000/sitemap/shopify-or-not/${shopDto.sitemapEntity.id}`,
+      `http://${process.env.API_IP}:3000/sitemap/shopify-or-not/${shopDto.sitemapEntity.id}`,
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -68,7 +68,7 @@ export class ProcessService implements OnModuleInit {
     );
     // if (result === true) {
     //   await fetch(
-    //     `http://localhost:3000/sitemap/test-shopify-site-collection/${shopDto.id}`,
+    //     `http://${process.env.API_IP}:3000/sitemap/test-shopify-site-collection/${shopDto.id}`,
     //     {
     //       method: 'POST',
     //       headers: { 'Content-Type': 'application/json' },
@@ -723,7 +723,7 @@ export class ProcessService implements OnModuleInit {
     console.log(updatePackage);
     try {
       await fetch(
-        `http://localhost:3000/webpage-cache/update-single-page-and-cache/${updatePackage.webPageId}`,
+        `http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${updatePackage.webPageId}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -1139,7 +1139,7 @@ export class ProcessService implements OnModuleInit {
     // Temp for test
     try {
       await fetch(
-        `http://localhost:3000/ebay-stats/patch-and-update-price-points/${product.ebayStat.id}`,
+        `http://${process.env.API_IP}:3000/ebay-stats/patch-and-update-price-points/${product.ebayStat.id}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -1156,7 +1156,7 @@ export class ProcessService implements OnModuleInit {
     const cloudflareStatusResult = await this.browserService.cloudflareTest(
       `${shopDto.protocol}${shopDto.website}`,
     );
-    await fetch(`http://localhost:3000/shop/${shopDto.id}`, {
+    await fetch(`http://${process.env.API_IP}:3000/shop/${shopDto.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cloudflare: cloudflareStatusResult }),
@@ -1254,7 +1254,7 @@ export class ProcessService implements OnModuleInit {
 
     if (newListing.length > 0) {
       await fetch(
-        `http://localhost:3000/shop-listing/add-product-listing/${shopId}`,
+        `http://${process.env.API_IP}:3000/shop-listing/add-product-listing/${shopId}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },

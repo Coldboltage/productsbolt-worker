@@ -141,7 +141,7 @@ export class LmStudioService {
     }
 
     await fetch(
-      `http://localhost:3000/shop-product/shop-product-links/${shopProductId}`,
+      `http://${process.env.API_IP}:3000/shop-product/shop-product-links/${shopProductId}`,
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

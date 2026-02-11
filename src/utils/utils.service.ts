@@ -485,7 +485,7 @@ export class UtilsService {
     console.log(webPage);
     console.log('webDiscoverySend called');
     try {
-      await fetch('http://localhost:3000/webpage/', {
+      await fetch(`http://${process.env.API_IP}:3000/webpage/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(webPage),
@@ -524,7 +524,7 @@ export class UtilsService {
     };
     console.log(webPage);
     try {
-      await fetch('http://localhost:3000/candidate-page/', {
+      await fetch(`http://${process.env.API_IP}:3000/candidate-page/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(webPage),

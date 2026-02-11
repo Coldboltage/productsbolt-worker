@@ -52,7 +52,7 @@ export class ProcessController {
       console.log(result);
       // if (result.length === 0) throw new NotFoundException(`No sitemap URLs found for shop ${shopDto.id}`);
       await fetch(
-        `http://localhost:3000/sitemap/update-from-shopify-collection-test/${shopDto.sitemapEntity.id}`,
+        `http://${process.env.API_IP}:3000/sitemap/update-from-shopify-collection-test/${shopDto.sitemapEntity.id}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -81,7 +81,7 @@ export class ProcessController {
       const result = await this.processService.shopifySitemapSearch(shopDto);
       // if (result.length === 0) throw new NotFoundException(`No sitemap URLs found for shop ${shopDto.id}`);
       await fetch(
-        `http://localhost:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
+        `http://${process.env.API_IP}:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -116,7 +116,7 @@ export class ProcessController {
       const result = await this.processService.manualSitemapSearch(shopDto);
       // If successful and group of links found, send back
       await fetch(
-        `http://localhost:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
+        `http://${process.env.API_IP}:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -144,7 +144,7 @@ export class ProcessController {
           `No sitemap URLs found for shop ${shopDto.id}`,
         );
       fetch(
-        `http://localhost:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
+        `http://${process.env.API_IP}:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -279,7 +279,7 @@ export class ProcessController {
       //   shopifySite: result.shopifySite
       // };
       // console.log(webPage);
-      // await fetch(`http://localhost:3000/webpage-cache/update-single-page-and-cache/${webPage.webPageId}`, {
+      // await fetch(`http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${webPage.webPageId}`, {
       //   method: 'PATCH',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify(webPage),

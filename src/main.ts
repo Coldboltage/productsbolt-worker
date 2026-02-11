@@ -7,7 +7,7 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === `production`) {
     console.debug = () => {};
     console.log = () => {};
     console.info = () => {};
@@ -18,8 +18,8 @@ async function bootstrap() {
   const processQueue = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
-      urls: ['amqp://localhost:5672'],
-      queue: 'headful_queue',
+      urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
+      queue: `headful_queue`,
       queueOptions: {
         durable: false,
         exclusive: false,
@@ -33,8 +33,8 @@ async function bootstrap() {
   const miscQueue = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
-      urls: ['amqp://localhost:5672'],
-      queue: 'headless_queue',
+      urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
+      queue: `headless_queue`,
       queueOptions: {
         durable: false,
         exclusive: false,
@@ -48,8 +48,8 @@ async function bootstrap() {
   const sitemapQueue = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
-      urls: ['amqp://localhost:5672'],
-      queue: 'sitemap_queue',
+      urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
+      queue: `sitemap_queue`,
       queueOptions: {
         durable: false,
         exclusive: false,
@@ -63,8 +63,8 @@ async function bootstrap() {
   const slowSitemapQueue = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
-      urls: ['amqp://localhost:5672'],
-      queue: 'slow_sitemap_queue',
+      urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
+      queue: `slow_sitemap_queue`,
       queueOptions: {
         durable: false,
         exclusive: false,
@@ -78,8 +78,8 @@ async function bootstrap() {
   const lmQueue = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
-      urls: ['amqp://localhost:5672'],
-      queue: 'lm_studio_queue',
+      urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
+      queue: `lm_studio_queue`,
       queueOptions: {
         durable: false,
         exclusive: false,
