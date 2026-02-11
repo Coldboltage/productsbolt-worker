@@ -76,6 +76,7 @@ async function bootstrap() {
   });
 
   if (+process.env.LM_QUEUE > 0) {
+    console.log('created');
     app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
       options: {
