@@ -190,8 +190,6 @@ export class BrowserService {
 
     if (headless === true) {
       browser = this.browser;
-      console.log('hi alan');
-      console.log(browser);
       try {
         page = await browser.newPage();
       } catch (error) {
