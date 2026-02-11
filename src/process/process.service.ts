@@ -274,6 +274,7 @@ export class ProcessService implements OnModuleInit {
       createProcessDto.count,
       createProcessDto.candidatePages,
       createProcessDto.expectedPrice,
+      createProcessDto.headless,
     );
     if (result) {
       return true;
@@ -295,6 +296,7 @@ export class ProcessService implements OnModuleInit {
     count: number,
     candidatePages: FullCandidatePageDto[],
     expectedPrice: number,
+    headless: boolean,
   ): Promise<boolean> {
     // Think the router has to be added here
     let html: string;
@@ -413,9 +415,12 @@ export class ProcessService implements OnModuleInit {
     } else {
       while (index < url.length) {
         try {
-          if (cloudflare) {
+          if (cloudflare || headless) {
             console.log('getPageInfo activated');
-            textInformation = await this.browserService.getPageInfo(url[index]);
+            textInformation = await this.browserService.getPageInfo(
+              url[index],
+              headless,
+            );
             specificUrl = url[index];
             imageData = `data:image/png;base64,${textInformation.base64Image}`;
           } else {
@@ -548,6 +553,7 @@ export class ProcessService implements OnModuleInit {
     webPageId: string,
     cloudflare: boolean,
     variantId: null | string,
+    headless: boolean,
   ): Promise<boolean> {
     // Note, the html discovery part should be it's own function
     // This is for testing for now
@@ -588,8 +594,11 @@ export class ProcessService implements OnModuleInit {
         mainText: string;
       };
       try {
-        if (cloudflare) {
-          textInformation = await this.browserService.getPageInfo(url);
+        if (cloudflare || headless) {
+          textInformation = await this.browserService.getPageInfo(
+            url,
+            headless,
+          );
         } else {
           textInformation = await this.browserService.getPageHtml(url);
         }
@@ -803,6 +812,7 @@ export class ProcessService implements OnModuleInit {
     count: number,
     candidatePages: FullCandidatePageDto[],
     expectedPrice: number,
+    headless: boolean,
   ): Promise<boolean> {
     console.log(`https://${base}${seed}`);
 
@@ -857,6 +867,7 @@ export class ProcessService implements OnModuleInit {
       count,
       candidatePages,
       expectedPrice,
+      headless,
     );
     return true;
     // if (answer) {
@@ -944,6 +955,7 @@ export class ProcessService implements OnModuleInit {
       createProcessDto.count,
       createProcessDto.candidatePages,
       createProcessDto.expectedPrice,
+      false,
     );
     if (answer) {
       console.log('Product Found');
@@ -978,6 +990,7 @@ export class ProcessService implements OnModuleInit {
       checkPageDto.webPageId,
       checkPageDto.cloudflare,
       checkPageDto.variantId,
+      checkPageDto.headless,
     );
     return result;
   }
@@ -995,7 +1008,7 @@ export class ProcessService implements OnModuleInit {
       mainText: string;
     };
     try {
-      soldEbayProductPrices = await this.browserService.getPageInfo(url);
+      soldEbayProductPrices = await this.browserService.getPageInfo(url, false);
     } catch (error) {
       throw new ServiceUnavailableException(
         `Browser session closed early for ${url}`,

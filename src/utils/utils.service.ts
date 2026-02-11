@@ -10,6 +10,8 @@ import { EbaySoldProductStrip } from '../ebay/entities/ebay.entity.js';
 import { CreateCandidatePageDto } from 'src/process/dto/create-candidate-page.dto.js';
 import { CreateProcessDto } from 'src/process/dto/create-process.dto.js';
 import { ProductInStockWithAnalysisStripped } from 'src/process/entities/process.entity.js';
+import { connect } from 'puppeteer-real-browser';
+import { XMLParser } from 'fast-xml-parser';
 
 @Injectable()
 export class UtilsService {
@@ -275,22 +277,42 @@ export class UtilsService {
         // proxyAgent: { https: agent } as unknown as any
       });
 
-      if (fast) sitemap.proxyAgent = { https: agent } as unknown as any;
+      if (fast) {
+        sitemap.proxyAgent = { https: agent } as unknown as any;
+        sitemap.requestHeaders = {
+          // Pick a normal desktop Chrome UA
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+
+          // These help with dumb WAF rules
+          Accept:
+            'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-GB,en;q=0.9',
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+        };
+      }
 
       let scannedSites: string[] = [];
 
-      try {
-        response = await sitemap.fetch();
-        console.log(
-          response.errors.length === 0 ? 'No Errors' : response.errors,
-        );
-        console.log(`Amount of pages: ${response.sites.length}`);
-        if (response.errors.length > 0)
-          await new Promise((r) => setTimeout(r, pauseTimer));
-        scannedSites = response.sites.filter((site) => site.includes(seed));
-      } catch (error) {
-        console.dir(error, { depth: 5 }); // should show a Z_DATA_ERROR or BrotliDecodeError
-        throw new Error(error);
+      if (fast) {
+        const sites = await this.fetchSitemapViaBrowser(sitemapUrl);
+        console.log(sites);
+        scannedSites = sites.urls.filter((site) => site.includes(seed));
+      } else {
+        try {
+          response = await sitemap.fetch();
+          console.log(
+            response.errors.length === 0 ? 'No Errors' : response.errors,
+          );
+          console.log(`Amount of pages: ${response.sites.length}`);
+          if (response.errors.length > 0)
+            await new Promise((r) => setTimeout(r, pauseTimer));
+          scannedSites = response.sites.filter((site) => site.includes(seed));
+        } catch (error) {
+          console.dir(error, { depth: 5 }); // should show a Z_DATA_ERROR or BrotliDecodeError
+          throw new Error(error);
+        }
       }
 
       // console.log(scannedSites)
@@ -304,7 +326,7 @@ export class UtilsService {
     const filtered = this.filterObviousNonPages(sites, seed);
     await new Promise((r) => setTimeout(r, pauseTimer));
     // console.log(filtered)
-    if (response.errors.length === 0) {
+    if (response?.errors?.length === 0) {
       return {
         websiteUrls: filtered,
         fast: fast === true ? true : false,
@@ -392,7 +414,7 @@ export class UtilsService {
     try {
       const response = await fetch(`${url}.js`);
       console.log(response.status);
-      if (response.status >= 400) throw new Error('Above 400 status');
+      if (response.status >= 400) throw new Error(`Above 400 status: ${url}`);
       const json: ShopifyProduct = (await response.json()) as ShopifyProduct;
       const title = json.title;
       const { stripHtml } = await import('string-strip-html');
@@ -525,5 +547,185 @@ export class UtilsService {
     const arrayBuffer = await res.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString('base64');
     return `data:${contentType};base64,${base64}`;
+  }
+
+  async fetchSitemapViaBrowser(indexUrl: string) {
+    const { browser, page } = await connect({
+      headless: false,
+      turnstile: true,
+      args: ['--no-sandbox', '--disable-dev-shm-usage'],
+    });
+
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      removeNSPrefix: true, // critical for xmlns
+    });
+
+    const extract = (xml: any): { urls: string[]; sitemaps: string[] } => {
+      const urlNodes = xml?.urlset?.url ?? [];
+      const urls = (Array.isArray(urlNodes) ? urlNodes : [urlNodes])
+        .map((u: any) => u?.loc)
+        .filter(Boolean);
+
+      const smNodes = xml?.sitemapindex?.sitemap ?? [];
+      const sitemaps = (Array.isArray(smNodes) ? smNodes : [smNodes])
+        .map((s: any) => s?.loc)
+        .filter(Boolean);
+
+      return { urls, sitemaps };
+    };
+
+    // --- CDP Fetch-based body capture (prevents "evicted from inspector cache") ---
+    const client = await page.target().createCDPSession();
+
+    // We will capture the next matching response body here
+    let waitingForUrl: string | null = null;
+    let waitingResolve: ((body: string) => void) | null = null;
+    let waitingReject: ((err: any) => void) | null = null;
+
+    const waitForBody = (url: string, timeoutMs = 60_000) =>
+      new Promise<string>((resolve, reject) => {
+        waitingForUrl = url;
+        waitingResolve = resolve;
+        waitingReject = reject;
+
+        const t = setTimeout(() => {
+          if (waitingReject)
+            waitingReject(new Error(`Timed out waiting for body: ${url}`));
+          waitingForUrl = null;
+          waitingResolve = null;
+          waitingReject = null;
+        }, timeoutMs);
+
+        // wrap resolve/reject to clear timeout
+        const origResolve = resolve;
+        const origReject = reject;
+        waitingResolve = (body: string) => {
+          clearTimeout(t);
+          origResolve(body);
+        };
+        waitingReject = (err: any) => {
+          clearTimeout(t);
+          origReject(err);
+        };
+      });
+
+    try {
+      await client.send('Fetch.enable', {
+        patterns: [
+          // We only care about main document navigations to sitemap URLs
+          { requestStage: 'Response' },
+        ],
+      });
+
+      client.on('Fetch.requestPaused', async (evt: any) => {
+        try {
+          const url: string = evt.request.url;
+
+          // Always continue unless this is the one we're waiting for
+          if (!waitingForUrl || url !== waitingForUrl) {
+            await client.send('Fetch.continueRequest', {
+              requestId: evt.requestId,
+            });
+            return;
+          }
+
+          // Get the body NOW (no eviction risk)
+          const bodyResp = await client.send('Fetch.getResponseBody', {
+            requestId: evt.requestId,
+          });
+
+          // Continue so the navigation completes
+          await client.send('Fetch.continueRequest', {
+            requestId: evt.requestId,
+          });
+
+          const raw = bodyResp.base64Encoded
+            ? Buffer.from(bodyResp.body, 'base64').toString('utf8')
+            : bodyResp.body;
+
+          // Resolve the waiter
+          waitingResolve?.(raw);
+
+          waitingForUrl = null;
+          waitingResolve = null;
+          waitingReject = null;
+        } catch (err) {
+          // Best-effort continue; then reject waiter
+          try {
+            await client.send('Fetch.continueRequest', {
+              requestId: evt.requestId,
+            });
+          } catch {}
+          waitingReject?.(err);
+          waitingForUrl = null;
+          waitingResolve = null;
+          waitingReject = null;
+        }
+      });
+
+      // Warm up the origin (helps CF)
+      try {
+        const origin = new URL(indexUrl).origin;
+        await page.goto(origin + '/', {
+          waitUntil: 'networkidle2',
+          timeout: 60_000,
+        });
+      } catch {}
+
+      const fetchXml = async (url: string): Promise<string> => {
+        await sleep(150 + Math.floor(Math.random() * 200));
+
+        // Start waiting for the body BEFORE navigating
+        const bodyPromise = waitForBody(url, 60_000);
+
+        const res = await page.goto(url, {
+          waitUntil: 'domcontentloaded',
+          timeout: 60_000,
+        });
+        if (!res) throw new Error(`No response: ${url}`);
+
+        const status = res.status();
+        if (status !== 200) {
+          // Even if status isn't 200, still try to read body for debugging
+          const body = await bodyPromise.catch(() => '');
+          throw new Error(
+            `Status ${status} for ${url} (first 200): ${body.slice(0, 200)}`,
+          );
+        }
+
+        return await bodyPromise;
+      };
+
+      const seenSitemaps = new Set<string>();
+      const allUrls: string[] = [];
+      const queue: string[] = [indexUrl];
+
+      while (queue.length) {
+        const smUrl = queue.shift()!;
+        if (seenSitemaps.has(smUrl)) continue;
+        seenSitemaps.add(smUrl);
+
+        const xmlText = await fetchXml(smUrl);
+        const xml = parser.parse(xmlText);
+        const { urls, sitemaps } = extract(xml);
+
+        if (urls.length) allUrls.push(...urls);
+        if (sitemaps.length) queue.push(...sitemaps);
+      }
+
+      return {
+        urls: allUrls,
+        sitemapsVisited: Array.from(seenSitemaps),
+        errors: ['none'],
+      };
+    } finally {
+      try {
+        await client.send('Fetch.disable');
+      } catch {}
+      await browser.close();
+    }
   }
 }

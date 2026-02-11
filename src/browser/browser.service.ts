@@ -9,11 +9,34 @@ import { JSDOM } from 'jsdom';
 import { UtilsService } from '../utils/utils.service.js';
 import { ShopifyProductCollectionsFullCall } from '../utils/utils.type.js';
 import sanitizeHtml from 'sanitize-html';
-import puppeteer, { HTTPResponse } from 'puppeteer';
+import puppeteer, { HTTPResponse, Browser } from 'puppeteer';
 
 @Injectable()
 export class BrowserService {
+  private browser: any;
+
   constructor(private utilService: UtilsService) {}
+
+  async onModuleInit() {
+    const { browser } = await connect({
+      headless: true,
+      args: [
+        // '--window-position=-99999,-99999',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-features=CalculateNativeWinOcclusion',
+        '--no-sandbox',
+        '--disable-dev-shm-usage',
+      ],
+      customConfig: {},
+      turnstile: true,
+      connectOption: {},
+      disableXvfb: false,
+      ignoreAllFlags: false,
+    });
+
+    this.browser = browser;
+    console.log(this.browser);
+  }
 
   async manualSitemapSearch(manualSitemapUrl: string) {
     console.log(manualSitemapUrl);
@@ -33,7 +56,7 @@ export class BrowserService {
     // const { items } = await dataset.getData();
     // console.log(items);
 
-    const result = await this.getPageInfo(manualSitemapUrl);
+    const result = await this.getPageInfo(manualSitemapUrl, false);
     return result;
   }
 
@@ -155,27 +178,45 @@ export class BrowserService {
 
   getPageInfo = async (
     url: string,
+    headless: boolean,
   ): Promise<{
     html: string;
     mainText: string;
     shopyifySite: boolean;
     base64Image: string;
   }> => {
-    const { browser, page } = await connect({
-      headless: false,
-      args: [
-        // '--window-position=-99999,-99999',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-features=CalculateNativeWinOcclusion',
-        '--no-sandbox',
-        '--disable-dev-shm-usage',
-      ],
-      customConfig: {},
-      turnstile: true,
-      connectOption: {},
-      disableXvfb: false,
-      ignoreAllFlags: false,
-    });
+    let page;
+    let browser;
+
+    if (headless === true) {
+      browser = this.browser;
+      console.log('hi alan');
+      console.log(browser);
+      try {
+        page = await browser.newPage();
+      } catch (error) {
+        console.log('error found');
+        console.log(error);
+      }
+    } else {
+      const { browser: headfulBrowser, page: headfulPage } = await connect({
+        headless: headless,
+        args: [
+          // '--window-position=-99999,-99999',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-features=CalculateNativeWinOcclusion',
+          '--no-sandbox',
+          '--disable-dev-shm-usage',
+        ],
+        customConfig: {},
+        turnstile: true,
+        connectOption: {},
+        disableXvfb: false,
+        ignoreAllFlags: false,
+      });
+      page = headfulPage;
+      browser = headfulBrowser;
+    }
 
     await page.setViewport({
       width: 1366,
@@ -300,7 +341,7 @@ export class BrowserService {
     } finally {
       // Always clean up: cancel the timer and kill the browser exactly once
       if (timer) clearTimeout(timer);
-      await browser.close().catch(() => {}); // now safe to close browser
+      await page.close().catch(() => {}); // now safe to close browser
     }
   };
 
@@ -351,12 +392,12 @@ export class BrowserService {
     } finally {
       // Always clean up: cancel the timer and kill the browser exactly once
       if (timer) clearTimeout(timer);
-      await browser.close().catch(() => {}); // now safe to close browser
+      await page.close().catch(() => {}); // now safe to close browser
     }
   };
 
   getLinksFromPage = async (url: string) => {
-    const { html } = await this.getPageInfo(url);
+    const { html } = await this.getPageInfo(url, false);
 
     const dom = new JSDOM(html);
     const document = dom.window.document;
