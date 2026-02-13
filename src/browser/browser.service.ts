@@ -188,13 +188,14 @@ export class BrowserService {
     let page;
     let browser;
 
-    if (headless === true) {
+    if (headless) {
       browser = this.browser;
       try {
         page = await browser.newPage();
       } catch (error) {
         console.log('error found');
         console.log(error);
+        throw new ConflictException('browser_did_not_load');
       }
     } else {
       const { browser: headfulBrowser, page: headfulPage } = await connect({
@@ -241,13 +242,17 @@ export class BrowserService {
       try {
         testPage = await page.goto(url, {
           waitUntil: ['networkidle2'],
-          timeout: 15000,
-        });
-      } catch (error) {
-        testPage = await page.reload({
-          waitUntil: ['domcontentloaded'],
           timeout: 60000,
         });
+      } catch (error) {
+        try {
+          testPage = await page.goto({
+            waitUntil: ['domcontentloaded'],
+            timeout: 60000,
+          });
+        } catch (error) {
+          throw new Error('it_really_did_not_want_to_load');
+        }
       }
 
       // const testPage = await page.goto(url, {
@@ -267,10 +272,12 @@ export class BrowserService {
           console.log('403 or 429 detected, reloading page');
           const finalResponse = await page.reload({
             waitUntil: 'networkidle2',
-            timeout: 60000,
+            timeout: 10000,
           });
           status = finalResponse?.status();
-        } else {
+        }
+        if (status > 399) throw new Error('400+ error');
+        else {
           console.log(`Passed: Status ${status} is OK`);
         }
       } catch (e) {
@@ -289,7 +296,14 @@ export class BrowserService {
         throw new ConflictException(`Error: ${status} on ${url}`);
       }
 
-      const html = await page.content();
+      let html;
+
+      try {
+        html = await page.content();
+      } catch (error) {
+        throw new NotFoundException(`Page_is_broken: ${url}`);
+      }
+
       const mainText = await page.evaluate(() => {
         document
           .querySelectorAll('header, footer, nav, aside')

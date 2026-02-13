@@ -30,6 +30,21 @@ async function bootstrap() {
     },
   });
 
+  const headfulSlowQueue = app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
+      queue: `headful_slow_queue`,
+      queueOptions: {
+        durable: false,
+        exclusive: false,
+        autoDelete: false, // <-- add this
+      },
+      noAck: false, // <-- manual ack mode
+      prefetchCount: 3, // <-- cap concurrency
+    },
+  });
+
   const headlessBrowser = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
@@ -41,7 +56,7 @@ async function bootstrap() {
         autoDelete: false, // <-- add this
       },
       noAck: false, // <-- manual ack mode
-      prefetchCount: 15, // <-- cap concurrency
+      prefetchCount: 3, // <-- cap concurrency
     },
   });
 
@@ -56,7 +71,7 @@ async function bootstrap() {
         autoDelete: false, // <-- add this
       },
       noAck: false, // <-- manual ack mode
-      prefetchCount: 20, // <-- cap concurrency
+      prefetchCount: 4, // <-- cap concurrency
     },
   });
 
