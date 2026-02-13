@@ -30,6 +30,21 @@ async function bootstrap() {
     },
   });
 
+  const headlessBrowser = app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
+      queue: `headless_browser_queue`,
+      queueOptions: {
+        durable: false,
+        exclusive: false,
+        autoDelete: false, // <-- add this
+      },
+      noAck: false, // <-- manual ack mode
+      prefetchCount: 15, // <-- cap concurrency
+    },
+  });
+
   const miscQueue = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {

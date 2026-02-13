@@ -8,6 +8,7 @@ import {
 } from '../ebay/entities/ebay.entity.js';
 import { ProductDto } from '../process/dto/product.dto.js';
 import { ShopifyVariant } from 'src/utils/utils.type.js';
+import { writeFileSync } from 'node:fs';
 
 @Injectable()
 export class OpenaiService {
@@ -26,120 +27,11 @@ export class OpenaiService {
       maxRetries: 2,
     });
 
-    if (process.env.LOCAL_LLM === 'true')
-      // openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
-      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:8000/v1`;
-
-    // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
-
-    //     const schema = {
-    //       name: 'product_in_stock_with_analysis',
-    //       strict: true,
-    //       schema: {
-    //         type: 'object',
-    //         properties: {
-    //           analysis: {
-    //             type: 'string',
-    //             description:
-    //               'Very Concisely, use this field to reason about what the product fundamentally is, based on all available evidence. Analyze the product title, description, and any contextual information to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked "Add to Cart", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”) \n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching.'
-    //           },
-    //           justifications: {
-    //             type: 'object',
-    //             description:
-    //               'For every flag below, very concisely quote or paraphrase the page snippet that proves it.',
-    //             properties: {
-    //               inStock: { type: 'string' },
-    //               price: { type: 'string' },
-    //               currencyCode: { type: 'string' },
-    //               isMainProductPage: { type: 'string' },
-    //               isNamedProduct: { type: 'string' },
-    //               packagingTypeMatch: { type: 'string' },
-    //               editionMatch: { type: 'string' }
-    //             },
-    //             required: [
-    //               'inStock',
-    //               'price',
-    //               'currencyCode',
-    //               'isMainProductPage',
-    //               'isNamedProduct',
-    //               'packagingTypeMatch',
-    //               'editionMatch'
-    //             ],
-    //             additionalProperties: false
-    //           },
-
-    //           inStock: {
-    //             type: 'boolean',
-    //             description: 'True if the item is currently in stock and available for purchase.'
-    //           },
-    //           isMainProductPage: {
-    //             type: 'boolean',
-    //             description: `True only if the page is exclusively or primarily about the single target product, without listing multiple products, variants, bundles, or related items.
-    //     If the page shows a category, collection, or multiple different products—even if related—this must be false.`
-    //           },
-    //           isNamedProduct: {
-    //             type: 'boolean',
-    //             description: 'True if the exact product name appears in the page title or description.'
-    //           },
-    //           packagingTypeMatch: {
-    //             type: 'boolean',
-    //             description:
-    //               `True only if the sales unit the customer receives matches the expected product type exactly, or qualifies as a close equivalent (e.g., a box containing multiple units of the expected type).
-    // The product type should reflect the actual item sold to the customer, not merely its contents or components.`
-    //           },
-    //           price: {
-    //             type: 'number',
-    //             description: 'The numeric price of the product, without currency symbol.'
-    //           },
-    //           currencyCode: {
-    //             type: 'string',
-    //             description: 'The 3-letter ISO currency code (e.g., GBP, USD, EUR).'
-    //           },
-    //           conciseReason: {
-    //             type: 'string',
-    //             description: 'Short justification (≤ 160 chars) summarizing the match outcome.'
-    //           },
-    //           detectedVariant: {
-    //             type: 'string',
-    //             description: 'Short identifier for the detected product variant (e.g., Collector, English, 2025).'
-    //           },
-    //           detectedFullName: {
-    //             type: 'string',
-    //             description: 'The full product name as listed on the page.'
-    //           },
-    //           editionMatch: {
-    //             type: 'boolean',
-    //             description: 'True if all variant tokens match and no conflicting variants are present.'
-    //           }
-    //         },
-    //         required: [
-    //           'analysis',
-    //           'inStock',
-    //           'isMainProductPage',
-    //           'isNamedProduct',
-    //           'packagingTypeMatch',
-    //           'price',
-    //           'currencyCode',
-    //           'conciseReason',
-    //           'detectedVariant',
-    //           'detectedFullName',
-    //           'editionMatch',
-    //           'justifications'
-    //         ],
-    //         additionalProperties: false
-    //       }
-    //     };
-
-    // const messagesForPrompt = [];
-
-    // if (imageUrl !== 'data:image/png;base64,') {
-    //   messagesForPrompt.push({
-    //     type: 'image_url',
-    //     image_url: {
-    //       url: imageUrl,
-    //     },
-    //   });
-    // }
+    if (process.env.LOCAL_LLM === 'true') {
+      openai.baseURL = process.env.LOCAL_LMM_URL;
+      openai.apiKey = process.env.OPEN_ROUTER_KEY;
+    }
+    // openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
 
     const assuredMessage = {
       type: 'text',
@@ -307,8 +199,8 @@ export class OpenaiService {
 `,
     };
 
-    // console.log(assuredMessage);
-    // writeFileSync('./output.txt', assuredMessage.text, 'utf8');
+    console.log(assuredMessage);
+    writeFileSync('./output.txt', assuredMessage.text, 'utf8');
 
     // await new Promise((r) => setTimeout(r, 2000000));
 
@@ -527,9 +419,10 @@ export class OpenaiService {
       maxRetries: 2,
     });
 
-    if (process.env.LOCAL_LLM === 'true')
-      // openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
-      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:8000/v1`;
+    if (process.env.LOCAL_LLM === 'true') {
+      openai.baseURL = process.env.LOCAL_LMM_URL;
+      openai.apiKey = process.env.OPEN_ROUTER_KEY;
+    }
 
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
@@ -562,7 +455,7 @@ Return only valid JSON.
 No markdown, no explanations, no extra text.
 
 Rules:
-- If the page has "Out of Stock", "Sold Out", "Currently Unavailable",
+- If the page has "Out of Stock", "Sold Out", "Currently Unavailable", "Page not found", 404,
   "Request notification", or "Notify me when available" → OUT OF STOCK.
 - Preorders are only classified as IN STOCK if the text of the page contains explicit checkout phrases such as ‘Add to cart’, ‘Add to basket’, ‘Buy now’, ‘Pre-order now’, or ‘Reserve now’, which confirm the product can be actively ordered; if the text merely mentions ‘pre-order’ without including one of these checkout phrases, or if it instead shows wording like ‘Request notification’, ‘Notify me when available’, ‘Out of stock’, or similar, then the product must be treated as OUT OF STOCK.
 - If unclear, default to OUT OF STOCK. Price should be with vat and if two prices are right beside each other, it'll usually be the higher of the two
@@ -917,9 +810,10 @@ current date: ${new Date().toISOString()}
       // maxRetries: 2,
     });
 
-    if (process.env.LOCAL_LLM === 'true')
-      // openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
-      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:8000/v1`;
+    if (process.env.LOCAL_LLM === 'true') {
+      openai.baseURL = process.env.LOCAL_LMM_URL;
+      openai.apiKey = process.env.OPEN_ROUTER_KEY;
+    }
 
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
@@ -1021,9 +915,10 @@ current date: ${new Date().toISOString()}
       // maxRetries: 2,
     });
 
-    if (process.env.LOCAL_LLM === 'true')
-      // openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
-      openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:8000/v1`;
+    if (process.env.LOCAL_LLM === 'true') {
+      openai.baseURL = process.env.LOCAL_LMM_URL;
+      openai.apiKey = process.env.OPEN_ROUTER_KEY;
+    }
 
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
