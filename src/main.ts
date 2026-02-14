@@ -49,35 +49,38 @@ async function bootstrap() {
     });
   }
 
-  const headlessBrowser = app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
-      queue: `headless_browser_queue`,
-      queueOptions: {
-        durable: false,
-        exclusive: false,
-        autoDelete: false, // <-- add this
+  if (+process.env.HEADLESS_BROWSER_QUEUE > 0) {
+    const headlessBrowser = app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.RMQ,
+      options: {
+        urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
+        queue: `headless_browser_queue`,
+        queueOptions: {
+          durable: false,
+          exclusive: false,
+          autoDelete: false, // <-- add this
+        },
+        noAck: false, // <-- manual ack mode
+        prefetchCount: +process.env.HEADLESS_BROWSER_QUEUE, // <-- cap concurrency
       },
-      noAck: false, // <-- manual ack mode
-      prefetchCount: 3, // <-- cap concurrency
-    },
-  });
-
-  const miscQueue = app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
-      queue: `headless_queue`,
-      queueOptions: {
-        durable: false,
-        exclusive: false,
-        autoDelete: false, // <-- add this
+    });
+  }
+  if (+process.env.HEADLESS_QUEUE > 0) {
+    const miscQueue = app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.RMQ,
+      options: {
+        urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
+        queue: `headless_queue`,
+        queueOptions: {
+          durable: false,
+          exclusive: false,
+          autoDelete: false, // <-- add this
+        },
+        noAck: false, // <-- manual ack mode
+        prefetchCount: +process.env.HEADLESS_QUEUE, // <-- cap concurrency
       },
-      noAck: false, // <-- manual ack mode
-      prefetchCount: 4, // <-- cap concurrency
-    },
-  });
+    });
+  }
 
   const sitemapQueue = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,

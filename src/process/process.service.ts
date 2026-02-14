@@ -347,9 +347,7 @@ export class ProcessService implements OnModuleInit {
             title = info.title;
             allText = `${textInformation.mainText}. Price is ${info.shopifyProduct.price / 100}, InStock Status: ${info.shopifyProduct.available}`;
             variantId = String(info.shopifyProduct.variants[0].id);
-            imageData = await this.utilService.imageUrlToDataUrl(
-              `https:${info.shopifyProduct.featured_image}`,
-            );
+            imageData = '';
           } else {
             // We need to make an immediate LLM Call and we need the state.
             const test = await this.openaiService.whichVariant(
@@ -404,8 +402,7 @@ export class ProcessService implements OnModuleInit {
 
             const determinedImageUrl = featuredImageUrl(info.shopifyProduct);
 
-            imageData =
-              await this.utilService.imageUrlToDataUrl(determinedImageUrl);
+            imageData = '';
           }
 
           candidatePage = candidatePages.find(
@@ -430,14 +427,14 @@ export class ProcessService implements OnModuleInit {
               headless,
             );
             specificUrl = url[index];
-            imageData = `data:image/png;base64,${textInformation.base64Image}`;
+            imageData = ``;
           } else {
             console.log('getPageInfo activated');
             const testInformation = await this.browserService.getPageHtml(
               url[index],
             );
             textInformation = { ...testInformation, base64Image: '' };
-            imageData = `data:image/png;base64,${textInformation.base64Image}`;
+            imageData = ``;
             specificUrl = url[index];
           }
           success = true;

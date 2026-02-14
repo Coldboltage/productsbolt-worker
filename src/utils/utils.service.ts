@@ -415,7 +415,8 @@ export class UtilsService {
     try {
       const response = await fetch(`${url}.js`);
       console.log(response.status);
-      if (response.status >= 400) throw new Error(`Above 400 status: ${url}`);
+      if (response.status >= 400)
+        throw new Error(`Above 400 status: ${url} with ${response.status}`);
       const json: ShopifyProduct = (await response.json()) as ShopifyProduct;
       const title = json.title;
       const { stripHtml } = await import('string-strip-html');

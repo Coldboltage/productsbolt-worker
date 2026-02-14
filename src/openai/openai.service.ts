@@ -12,6 +12,9 @@ import { writeFileSync } from 'node:fs';
 
 @Injectable()
 export class OpenaiService {
+  inputTokens = 0;
+  outputTokens = 0;
+
   productInStock = async (
     title: string,
     content: string,
@@ -310,6 +313,26 @@ export class OpenaiService {
     });
 
     const json = JSON.parse(response.choices[0].message?.content || '{}');
+
+    this.inputTokens += +response.usage.prompt_tokens;
+    this.outputTokens += +response.usage.completion_tokens;
+
+    console.log('asdsadsa');
+    console.log(response.usage);
+    console.log('asdsadsa');
+
+    console.log({
+      message: 'Tokens currently',
+      input: this.inputTokens,
+      output: this.outputTokens,
+    });
+
+    writeFileSync(
+      './tokens.txt',
+      JSON.stringify({ input: this.inputTokens, output: this.outputTokens }),
+      'utf8',
+    );
+
     console.log(json);
     return json;
   };
@@ -587,11 +610,30 @@ current date: ${new Date().toISOString()}
     //       ],
     //     });
 
-    console.log(openAiResponse.choices[0].message?.content || '{}');
+    // console.log(openAiResponse.choices[0].message?.content || '{}');
 
     const productResponse = JSON.parse(
       openAiResponse.choices[0].message?.content || '{}',
     );
+    console.log('asdsadsa');
+    console.log(openAiResponse.usage);
+    console.log('asdsadsa');
+
+    this.inputTokens += +openAiResponse.usage.prompt_tokens;
+    this.outputTokens += +openAiResponse.usage.completion_tokens;
+
+    console.log({
+      message: 'Tokens currently',
+      input: this.inputTokens,
+      output: this.outputTokens,
+    });
+
+    writeFileSync(
+      './tokens.txt',
+      JSON.stringify({ input: this.inputTokens, output: this.outputTokens }),
+      'utf8',
+    );
+
     return productResponse;
   };
 

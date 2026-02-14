@@ -276,7 +276,7 @@ export class BrowserService {
           });
           status = finalResponse?.status();
         }
-        if (status > 399) throw new Error('400+ error');
+        if (status > 404) throw new Error('400+ error');
         else {
           console.log(`Passed: Status ${status} is OK`);
         }
