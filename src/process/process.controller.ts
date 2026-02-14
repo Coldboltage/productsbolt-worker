@@ -55,7 +55,10 @@ export class ProcessController {
         `http://${process.env.API_IP}:3000/sitemap/update-from-shopify-collection-test/${shopDto.sitemapEntity.id}`,
         {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+          },
           body: JSON.stringify({ collections: result }),
         },
       );
@@ -84,7 +87,10 @@ export class ProcessController {
         `http://${process.env.API_IP}:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
         {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+          },
           body: JSON.stringify({
             sitemapUrls: result.websiteUrls,
             error: result.error,
@@ -119,7 +125,10 @@ export class ProcessController {
         `http://${process.env.API_IP}:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
         {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+          },
           body: JSON.stringify({ sitemapUrls: result, scannedAt: new Date() }),
         },
       );

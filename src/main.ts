@@ -15,35 +15,39 @@ async function bootstrap() {
 
   await app.init();
 
-  const processQueue = app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
-      queue: `headful_queue`,
-      queueOptions: {
-        durable: false,
-        exclusive: false,
-        autoDelete: false, // <-- add this
+  if (+process.env.HEADFUL_QUEUE > 0) {
+    const processQueue = app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.RMQ,
+      options: {
+        urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
+        queue: `headful_queue`,
+        queueOptions: {
+          durable: false,
+          exclusive: false,
+          autoDelete: false, // <-- add this
+        },
+        noAck: false, // <-- manual ack mode
+        prefetchCount: +process.env.HEADFUL_QUEUE, // <-- cap concurrency
       },
-      noAck: false, // <-- manual ack mode
-      prefetchCount: +process.env.HEADFUL_CONCURRENNCY, // <-- cap concurrency
-    },
-  });
+    });
+  }
 
-  const headfulSlowQueue = app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
-      queue: `headful_slow_queue`,
-      queueOptions: {
-        durable: false,
-        exclusive: false,
-        autoDelete: false, // <-- add this
+  if (+process.env.HEADFUL_SLOW_QUEUE > 0) {
+    const headfulSlowQueue = app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.RMQ,
+      options: {
+        urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
+        queue: `headful_slow_queue`,
+        queueOptions: {
+          durable: false,
+          exclusive: false,
+          autoDelete: false, // <-- add this
+        },
+        noAck: false, // <-- manual ack mode
+        prefetchCount: 3, // <-- cap concurrency
       },
-      noAck: false, // <-- manual ack mode
-      prefetchCount: 3, // <-- cap concurrency
-    },
-  });
+    });
+  }
 
   const headlessBrowser = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,

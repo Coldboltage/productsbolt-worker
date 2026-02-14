@@ -79,7 +79,7 @@ export class BrowserService {
     base64Image: string;
   }> {
     const browser = await puppeteer.connect({
-      browserWSEndpoint: 'ws://localhost:4000?token=change_me',
+      browserWSEndpoint: `ws://localhost:4000?token=change_me`,
     });
 
     const page = await browser.newPage();

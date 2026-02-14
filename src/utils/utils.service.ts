@@ -487,7 +487,10 @@ export class UtilsService {
     try {
       await fetch(`http://${process.env.API_IP}:3000/webpage/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+        },
         body: JSON.stringify(webPage),
       });
     } catch (error) {
@@ -526,7 +529,10 @@ export class UtilsService {
     try {
       await fetch(`http://${process.env.API_IP}:3000/candidate-page/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+        },
         body: JSON.stringify(webPage),
       });
     } catch (error) {

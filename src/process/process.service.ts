@@ -62,7 +62,10 @@ export class ProcessService implements OnModuleInit {
       `http://${process.env.API_IP}:3000/sitemap/shopify-or-not/${shopDto.sitemapEntity.id}`,
       {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+        },
         body: JSON.stringify({ isShopifySite: result }),
       },
     );
@@ -84,7 +87,10 @@ export class ProcessService implements OnModuleInit {
     if (etag) headers['If-None-Match'] = etag;
     const sitemapStatus = await fetch(sitemapUrl, {
       method: 'HEAD',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+      },
     });
 
     const status = sitemapStatus.status;
@@ -726,7 +732,10 @@ export class ProcessService implements OnModuleInit {
         `http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${updatePackage.webPageId}`,
         {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+          },
           body: JSON.stringify(updatePackage),
         },
       );
@@ -1142,7 +1151,10 @@ export class ProcessService implements OnModuleInit {
         `http://${process.env.API_IP}:3000/ebay-stats/patch-and-update-price-points/${product.ebayStat.id}`,
         {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+          },
           body: JSON.stringify(pricePointTest),
         },
       );
@@ -1158,7 +1170,10 @@ export class ProcessService implements OnModuleInit {
     );
     await fetch(`http://${process.env.API_IP}:3000/shop/${shopDto.id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+      },
       body: JSON.stringify({ cloudflare: cloudflareStatusResult }),
     });
     // Is the website able to load
@@ -1257,7 +1272,10 @@ export class ProcessService implements OnModuleInit {
         `http://${process.env.API_IP}:3000/shop-listing/add-product-listing/${shopId}`,
         {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+          },
           body: JSON.stringify({ newListing }),
         },
       );

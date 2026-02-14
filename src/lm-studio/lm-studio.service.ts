@@ -144,7 +144,10 @@ export class LmStudioService {
       `http://${process.env.API_IP}:3000/shop-product/shop-product-links/${shopProductId}`,
       {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+        },
         body: JSON.stringify({ links: strippedResult }),
       },
     );
