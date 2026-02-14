@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import OpenAI from 'openai';
 import { ProductType, BestSitesInterface, ParsedLinks } from '../app.type.js';
 import { ProductInStockWithAnalysis } from '../process/entities/process.entity.js';
@@ -12,6 +12,8 @@ import { writeFileSync } from 'node:fs';
 
 @Injectable()
 export class OpenaiService {
+  private readonly logger = new Logger(OpenaiService.name);
+
   inputTokens = 0;
   outputTokens = 0;
 
@@ -202,7 +204,7 @@ export class OpenaiService {
 `,
     };
 
-    console.log(assuredMessage);
+    this.logger.log(assuredMessage);
     writeFileSync('./output.txt', assuredMessage.text, 'utf8');
 
     // await new Promise((r) => setTimeout(r, 2000000));
@@ -317,11 +319,11 @@ export class OpenaiService {
     this.inputTokens += +response.usage.prompt_tokens;
     this.outputTokens += +response.usage.completion_tokens;
 
-    console.log('asdsadsa');
-    console.log(response.usage);
-    console.log('asdsadsa');
+    this.logger.log('asdsadsa');
+    this.logger.log(response.usage);
+    this.logger.log('asdsadsa');
 
-    console.log({
+    this.logger.log({
       message: 'Tokens currently',
       input: this.inputTokens,
       output: this.outputTokens,
@@ -333,7 +335,7 @@ export class OpenaiService {
       'utf8',
     );
 
-    console.log(json);
+    this.logger.log(json);
     return json;
   };
 
@@ -610,19 +612,19 @@ current date: ${new Date().toISOString()}
     //       ],
     //     });
 
-    // console.log(openAiResponse.choices[0].message?.content || '{}');
+    // this.logger.log(openAiResponse.choices[0].message?.content || '{}');
 
     const productResponse = JSON.parse(
       openAiResponse.choices[0].message?.content || '{}',
     );
-    console.log('asdsadsa');
-    console.log(openAiResponse.usage);
-    console.log('asdsadsa');
+    this.logger.log('asdsadsa');
+    this.logger.log(openAiResponse.usage);
+    this.logger.log('asdsadsa');
 
     this.inputTokens += +openAiResponse.usage.prompt_tokens;
     this.outputTokens += +openAiResponse.usage.completion_tokens;
 
-    console.log({
+    this.logger.log({
       message: 'Tokens currently',
       input: this.inputTokens,
       output: this.outputTokens,
@@ -641,7 +643,7 @@ current date: ${new Date().toISOString()}
     ebayProductPrices: EbayProductStrip[],
     product: ProductDto,
   ) {
-    console.log(product.name);
+    this.logger.log(product.name);
     const ebayProductPricesJson = JSON.stringify(ebayProductPrices);
 
     const openai = new OpenAI({
@@ -728,7 +730,7 @@ current date: ${new Date().toISOString()}
       ],
     });
 
-    // console.log(openAiResponse.choices[0].message?.content || '{}')
+    // this.logger.log(openAiResponse.choices[0].message?.content || '{}')
 
     const productResponse: {
       minPrice: number;
@@ -740,7 +742,7 @@ current date: ${new Date().toISOString()}
   }
 
   async ebaySoldPricePoint(ebayProductPrices: string, product: ProductDto) {
-    console.log(product.name);
+    this.logger.log(product.name);
     const ebayProductPricesJson = JSON.stringify(ebayProductPrices);
 
     const openai = new OpenAI({
@@ -830,7 +832,7 @@ current date: ${new Date().toISOString()}
       ],
     });
 
-    console.log(openAiResponse.choices[0].message?.content || '{}');
+    this.logger.log(openAiResponse.choices[0].message?.content || '{}');
 
     const productResponse: EbaySoldProductStrip[] = JSON.parse(
       openAiResponse.choices[0].message?.content || '{}',
@@ -845,7 +847,7 @@ current date: ${new Date().toISOString()}
     mainUrl: string,
     context,
   ): Promise<ParsedLinks[]> => {
-    // console.log({ sitemapUrls, query, version, mainUrl, context });
+    // this.logger.log({ sitemapUrls, query, version, mainUrl, context });
 
     const openai = new OpenAI({
       timeout: 3600000,
@@ -925,7 +927,7 @@ current date: ${new Date().toISOString()}
         // },
       });
     } catch (error) {
-      console.log('Error with openai', error);
+      this.logger.log('Error with openai', error);
     }
 
     // if (!openAiResponse.output_parsed) throw new Error('crawlError');
@@ -938,8 +940,8 @@ current date: ${new Date().toISOString()}
     const linksResponse = JSON.parse(
       openAiResponse.choices[0].message?.content,
     ) as ParsedLinks[];
-    console.log(openAiResponse);
-    console.log(linksResponse);
+    this.logger.log(openAiResponse);
+    this.logger.log(linksResponse);
 
     return linksResponse;
   };
@@ -950,7 +952,7 @@ current date: ${new Date().toISOString()}
     variants: ShopifyVariant[],
     type: ProductType,
   ): Promise<{ index: number; justification: string }> => {
-    // console.log({ sitemapUrls, query, version, mainUrl, context });
+    // this.logger.log({ sitemapUrls, query, version, mainUrl, context });
 
     const openai = new OpenAI({
       timeout: 3600000,
@@ -1024,7 +1026,7 @@ current date: ${new Date().toISOString()}
         // },
       });
     } catch (error) {
-      console.log('Error with openai', error);
+      this.logger.log('Error with openai', error);
     }
 
     // if (!openAiResponse.output_parsed) throw new Error('crawlError');
@@ -1037,7 +1039,7 @@ current date: ${new Date().toISOString()}
     const linksResponse = JSON.parse(
       openAiResponse.choices[0].message?.content,
     ) as { index: number; justification: string };
-    console.log(linksResponse);
+    this.logger.log(linksResponse);
 
     return linksResponse;
   };

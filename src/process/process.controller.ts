@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Controller,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -21,6 +22,7 @@ import { LmStudioCheckProductDto } from './dto/lm-studio-check-product.dto.js';
 
 @Controller()
 export class ProcessController {
+  private readonly logger = new Logger(ProcessController.name);
   constructor(private readonly processService: ProcessService) {}
 
   @EventPattern('shopifyCheck')
@@ -269,6 +271,8 @@ export class ProcessController {
     const originalMsg = context.getMessage();
 
     try {
+      this.logger.log('updatePage message captured');
+      console.log(`updatePage message captured`);
       const result = await this.processService.updatePage(checkPageDto);
       // const { query, shopWebsite, webPageId } = checkPageDto;
       // console.log(result);

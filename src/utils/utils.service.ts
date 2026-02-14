@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { HttpsProxyAgent } from 'hpagent';
 import {
   ShopifyProduct,
-  ShopifyProductCollections,
   ShopifyProductCollectionsFullCall,
 } from './utils.type.js';
 // import { stripHtml } from 'string-strip-html';
@@ -15,6 +14,7 @@ import { XMLParser } from 'fast-xml-parser';
 
 @Injectable()
 export class UtilsService {
+  private readonly logger = new Logger(UtilsService.name);
   constructor() {}
   gatherLinks = (urls: string[]): string[] => {
     // Remove duplicates
@@ -85,8 +85,8 @@ export class UtilsService {
       }));
       const queryKeys = extractKeywords(query);
       const minMatches = requiredMatches(queryKeys.length);
-      console.log(queryKeys);
-      console.log(minMatches);
+      this.logger.log(queryKeys);
+      this.logger.log(minMatches);
       return products
         .filter((p) => countMatches(p.keywords, queryKeys) >= minMatches)
         .map((p) => p.url);
@@ -138,25 +138,25 @@ export class UtilsService {
       '.xml',
     ];
 
-    console.log(`Amount of URLs before vetted: ${urls.length}`);
+    this.logger.log(`Amount of URLs before vetted: ${urls.length}`);
 
     // Step 1: Filter URLs that start with the prefix
-    console.log(`Before startsWith: ${urls.length}`);
+    this.logger.log(`Before startsWith: ${urls.length}`);
     const filteredByPrefix = urls.filter((url) => {
       // return url.startsWith(prefix)
       return url.startsWith(prefix);
     });
-    console.log(`prefix is: ${prefix}`);
-    console.log('After prefix filter:', filteredByPrefix.length);
+    this.logger.log(`prefix is: ${prefix}`);
+    this.logger.log('After prefix filter:', filteredByPrefix.length);
 
     // Step 2: Filter out URLs ending with excluded extensions
     const vettedUrls = filteredByPrefix.filter((url) => {
       const bare = url.split('?')[0].toLowerCase();
       return !EXCLUDED_EXT.some((ext) => bare.endsWith(ext));
     });
-    console.log('After extension filter:', vettedUrls.length);
-    // console.log(urls)
-    console.log(`Amount of URLs after vetted ${vettedUrls.length}`);
+    this.logger.log('After extension filter:', vettedUrls.length);
+    // this.logger.log(urls)
+    this.logger.log(`Amount of URLs after vetted ${vettedUrls.length}`);
     return vettedUrls;
   };
 
@@ -173,8 +173,8 @@ export class UtilsService {
 
     // const res = await fetch(target, { agent });
     // if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    // console.log(res.statusText)
-    // console.log('response via proxy:', await res.text());
+    // this.logger.log(res.statusText)
+    // this.logger.log('response via proxy:', await res.text());
     return agent;
   }
 
@@ -183,7 +183,7 @@ export class UtilsService {
       `${websiteUrl}collections/all/products.json?limit=250`,
     );
     const status = response.status;
-    console.log({
+    this.logger.log({
       status,
       websiteUrl,
     });
@@ -207,7 +207,7 @@ export class UtilsService {
         response = await fetch(
           `${websiteUrl}/collections/all/products.json?limit=250&page=${index}`,
         );
-        console.log({
+        this.logger.log({
           status: response.status,
           website: websiteUrl,
           page: index,
@@ -223,7 +223,7 @@ export class UtilsService {
       );
       await new Promise((r) => setTimeout(r, 350));
     }
-    // console.log(websiteUrls)
+    // this.logger.log(websiteUrls)
     return websiteUrls;
   }
 
@@ -235,19 +235,19 @@ export class UtilsService {
     cloudflare: boolean,
     importSites?: string[],
   ): Promise<{ websiteUrls: string[]; fast: boolean }> {
-    console.log(`fast state: ${fast}`);
+    this.logger.log(`fast state: ${fast}`);
     if (importSites && importSites.length > 0) {
       const filtered = this.filterObviousNonPages(importSites, seed);
-      // console.log(filtered)
+      // this.logger.log(filtered)
       return {
         websiteUrls: filtered,
         fast,
       };
     }
 
-    console.log(
+    this.logger.log(
       `Crawling sitemap: ${sitemapUrl} for the last ${crawlAmount} days`,
-      console.log({
+      this.logger.log({
         importSites,
         importSitesLength: importSites?.length,
       }),
@@ -265,7 +265,7 @@ export class UtilsService {
       const crawlAmountDaysAgo = new Date();
       crawlAmountDaysAgo.setDate(now.getDate() - days);
 
-      console.log(crawlAmountDaysAgo);
+      this.logger.log(crawlAmountDaysAgo);
 
       const { default: Sitemapper } = await import('sitemapper');
 
@@ -298,15 +298,15 @@ export class UtilsService {
 
       if (fast && cloudflare) {
         const sites = await this.fetchSitemapViaBrowser(sitemapUrl);
-        console.log(sites);
+        this.logger.log(sites);
         scannedSites = sites.urls.filter((site) => site.includes(seed));
       } else {
         try {
           response = await sitemap.fetch();
-          console.log(
+          this.logger.log(
             response.errors.length === 0 ? 'No Errors' : response.errors,
           );
-          console.log(`Amount of pages: ${response.sites.length}`);
+          this.logger.log(`Amount of pages: ${response.sites.length}`);
           if (response.errors.length > 0)
             await new Promise((r) => setTimeout(r, pauseTimer));
           scannedSites = response.sites.filter((site) => site.includes(seed));
@@ -316,8 +316,8 @@ export class UtilsService {
         }
       }
 
-      // console.log(scannedSites)
-      console.log(scannedSites.length);
+      // this.logger.log(scannedSites)
+      this.logger.log(scannedSites.length);
 
       sites = scannedSites;
       siteMapAmount = scannedSites.length;
@@ -326,7 +326,7 @@ export class UtilsService {
 
     const filtered = this.filterObviousNonPages(sites, seed);
     await new Promise((r) => setTimeout(r, pauseTimer));
-    // console.log(filtered)
+    // this.logger.log(filtered)
     if (response?.errors?.length === 0) {
       return {
         websiteUrls: filtered,
@@ -342,7 +342,7 @@ export class UtilsService {
 
   getUrlsList = (sites: string[], seed: string): string[] => {
     const filtered = this.filterObviousNonPages(sites, seed);
-    // console.log(filtered)
+    // this.logger.log(filtered)
     return filtered;
   };
 
@@ -353,14 +353,14 @@ export class UtilsService {
     waitingTimeout = 2000,
     resolveTimeout = 10000,
   ) {
-    console.log('cloudflare protection waitForCloudflareBypass fired');
+    this.logger.log('cloudflare protection waitForCloudflareBypass fired');
 
     if (url.includes('games-island')) {
-      console.log('passed');
+      this.logger.log('passed');
       let finishedLoading = false;
       while (finishedLoading === false) {
         try {
-          console.log(`waiting for ${url} to load`);
+          this.logger.log(`waiting for ${url} to load`);
           await new Promise((resolve) => setTimeout(resolve, 1000));
           const bodyText = await page.evaluate(
             () => document.body?.innerText ?? '',
@@ -372,36 +372,36 @@ export class UtilsService {
             finishedLoading = true;
           }
         } catch (error) {
-          console.log(error);
+          this.logger.log(error);
           await new Promise((resolve) => setTimeout(resolve, 2000));
 
-          console.log('retrying');
+          this.logger.log('retrying');
         }
       }
 
-      console.log('all good');
+      this.logger.log('all good');
       return;
     }
 
     const start = Date.now();
 
     const firstTitle = await page.title();
-    console.log(firstTitle);
+    this.logger.log(firstTitle);
 
     if (!firstTitle.includes('...') && !firstTitle.includes('pardon')) {
-      console.log('no cloudflare');
+      this.logger.log('no cloudflare');
       return;
     }
 
     while (Date.now() - start < timeout) {
       const title = await page.title();
-      console.log(title);
+      this.logger.log(title);
 
       if (title.includes('...') || title.includes('pardon')) {
-        console.log('waiting');
+        this.logger.log('waiting');
         await new Promise((r) => setTimeout(r, waitingTimeout));
       } else {
-        console.log('passed');
+        this.logger.log('passed');
         await new Promise((r) => setTimeout(r, resolveTimeout));
         return;
       }
@@ -411,12 +411,14 @@ export class UtilsService {
   }
 
   extractShopifyWebsite = async (url: string) => {
-    console.log(url);
+    this.logger.log(url);
     try {
       const response = await fetch(`${url}.js`);
-      console.log(response.status);
+      this.logger.log(response.status);
       if (response.status >= 400)
-        throw new Error(`Above 400 status: ${url} with ${response.status}`);
+        throw new ConflictException(
+          `Above 400 status: ${url} with ${response.status}`,
+        );
       const json: ShopifyProduct = (await response.json()) as ShopifyProduct;
       const title = json.title;
       const { stripHtml } = await import('string-strip-html');
@@ -425,10 +427,10 @@ export class UtilsService {
       // mainText = `${mainText}. Price is ${json.price / 100}, InStock Status: ${json.available}`;
       mainText = `${mainText}`;
 
-      console.log({ title, mainText });
+      this.logger.log({ title, mainText });
       return { title, mainText, shopifyProduct: json };
     } catch (error) {
-      console.log(error);
+      this.logger.log(error);
       throw new Error('Could not fetch Shopify product');
       return {
         url,
@@ -483,8 +485,8 @@ export class UtilsService {
       loadedData: webpage.loadedData,
       hasMixedSignals: webpage.hasMixedSignals,
     };
-    console.log(webPage);
-    console.log('webDiscoverySend called');
+    this.logger.log(webPage);
+    this.logger.log('webDiscoverySend called');
     try {
       await fetch(`http://${process.env.API_IP}:3000/webpage/`, {
         method: 'POST',
@@ -495,7 +497,7 @@ export class UtilsService {
         body: JSON.stringify(webPage),
       });
     } catch (error) {
-      console.log(error);
+      this.logger.log(error);
     }
   }
 
@@ -526,7 +528,7 @@ export class UtilsService {
       loadedData: webpage.loadedData,
       hasMixedSignals: webpage.hasMixedSignals,
     };
-    console.log(webPage);
+    this.logger.log(webPage);
     try {
       await fetch(`http://${process.env.API_IP}:3000/candidate-page/`, {
         method: 'POST',
@@ -537,12 +539,12 @@ export class UtilsService {
         body: JSON.stringify(webPage),
       });
     } catch (error) {
-      console.log(error);
+      this.logger.log(error);
     }
   }
 
   async imageUrlToDataUrl(imageUrl: string) {
-    console.log(imageUrl);
+    this.logger.log(imageUrl);
 
     if (imageUrl === null) return `data:image/png;base64,`;
 

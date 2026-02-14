@@ -2,6 +2,7 @@ import {
   HttpException,
   Inject,
   Injectable,
+  Logger,
   OnModuleInit,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -39,6 +40,8 @@ import { LmStudioCheckProductDto } from './dto/lm-studio-check-product.dto.js';
 
 @Injectable()
 export class ProcessService implements OnModuleInit {
+  private readonly logger = new Logger(ProcessService.name);
+
   constructor(
     @Inject('LM_STUDIO_CLIENT') private lmStudioClient: ClientProxy,
     private utilService: UtilsService,
@@ -57,7 +60,7 @@ export class ProcessService implements OnModuleInit {
     const result = await this.browserService.isShopifySite(
       `${shopDto.protocol}${shopDto.website}`,
     );
-    console.log(`shopifySearch Result: ${result}`);
+    this.logger.log(`shopifySearch Result: ${result}`);
     const setup = await fetch(
       `http://${process.env.API_IP}:3000/sitemap/shopify-or-not/${shopDto.sitemapEntity.id}`,
       {
@@ -113,7 +116,7 @@ export class ProcessService implements OnModuleInit {
       newEtag = sitemapStatus.headers.get('etag');
       lastMod = sitemapStatus.headers.get('last-modified');
       contentLength = sitemapStatus.headers.get('content-length');
-      console.log(`header change: ${newEtag} ${lastMod} ${contentLength}`);
+      this.logger.log(`header change: ${newEtag} ${lastMod} ${contentLength}`);
     }
 
     if (!newEtag && !lastMod && !contentLength) {
@@ -138,7 +141,7 @@ export class ProcessService implements OnModuleInit {
       `https://${shopDto.website}`,
       shopDto.category,
     );
-    // console.log(test)
+    // this.logger.log(test)
     return test;
   }
 
@@ -146,7 +149,7 @@ export class ProcessService implements OnModuleInit {
     const checkSitemapUrlsCombined: string[] = [shopDto.sitemapEntity.sitemap];
     const urls: string[] = [];
 
-    console.log(shopDto.sitemapEntity);
+    this.logger.log(shopDto.sitemapEntity);
 
     if (
       shopDto.sitemapEntity.additionalSitemaps &&
@@ -159,13 +162,15 @@ export class ProcessService implements OnModuleInit {
 
     for (const sitemapUrl of checkSitemapUrlsCombined) {
       const links = await this.browserService.getLinksFromPage(sitemapUrl);
-      console.log(shopDto.website);
+      this.logger.log(shopDto.website);
       const cleanLinks = this.utilService.filterObviousNonPages(
         links,
         `https://${shopDto.website}`,
       );
-      console.log(`Found ${cleanLinks.length} links in sitemap ${sitemapUrl}`);
-      console.log(cleanLinks);
+      this.logger.log(
+        `Found ${cleanLinks.length} links in sitemap ${sitemapUrl}`,
+      );
+      this.logger.log(cleanLinks);
       urls.push(...cleanLinks);
     }
 
@@ -173,7 +178,7 @@ export class ProcessService implements OnModuleInit {
   }
 
   async sitemapSearch(shopDto: ShopDto) {
-    console.log(shopDto.sitemapEntity);
+    this.logger.log(shopDto.sitemapEntity);
     // await this.hasSitemapChanged(shopDto.sitemap, shopDto.etag)
     let sitemapUrls: {
       websiteUrls: string[];
@@ -188,7 +193,7 @@ export class ProcessService implements OnModuleInit {
         shopDto.cloudflare,
       );
     } catch (error) {
-      console.log(error);
+      this.logger.log(error);
       sitemapUrls = {
         websiteUrls: [''],
         fast: true,
@@ -310,7 +315,7 @@ export class ProcessService implements OnModuleInit {
     let html: string;
     let mainText: string;
 
-    console.log(`shopifySite: ${shopifySite}`);
+    this.logger.log(`shopifySite: ${shopifySite}`);
     let title: string;
     let allText: string;
     let success = false;
@@ -331,7 +336,7 @@ export class ProcessService implements OnModuleInit {
     let imageData: string;
 
     if (shopifySite) {
-      console.log('extractShopifyWebsite activated');
+      this.logger.log('extractShopifyWebsite activated');
       while (index < url.length) {
         try {
           info = await this.utilService.extractShopifyWebsite(url[index]);
@@ -408,7 +413,7 @@ export class ProcessService implements OnModuleInit {
           candidatePage = candidatePages.find(
             (page) => page.url === specificUrl,
           );
-          console.log(candidatePage);
+          this.logger.log(candidatePage);
 
           break;
         } catch (error) {
@@ -416,12 +421,12 @@ export class ProcessService implements OnModuleInit {
           index++;
         }
       }
-      console.log(variantId);
+      this.logger.log(variantId);
     } else {
       while (index < url.length) {
         try {
           if (cloudflare || headless) {
-            console.log('getPageInfo activated');
+            this.logger.log('getPageInfo activated');
             textInformation = await this.browserService.getPageInfo(
               url[index],
               headless,
@@ -429,7 +434,7 @@ export class ProcessService implements OnModuleInit {
             specificUrl = url[index];
             imageData = ``;
           } else {
-            console.log('getPageInfo activated');
+            this.logger.log('getPageInfo activated');
             const testInformation = await this.browserService.getPageHtml(
               url[index],
             );
@@ -455,21 +460,21 @@ export class ProcessService implements OnModuleInit {
       }
 
       candidatePage = candidatePages.find((page) => page.url === specificUrl);
-      console.log(candidatePage);
+      this.logger.log(candidatePage);
 
       const html = textInformation.html;
       mainText = textInformation.mainText;
       const dom = new JSDOM(html);
       const document = dom.window.document;
       title = document.title;
-      console.log('Page title:', title);
+      this.logger.log('Page title:', title);
 
       allText = htmlToText(mainText, {
         wordwrap: false,
       });
     }
 
-    console.log({
+    this.logger.log({
       title,
       allText,
       query,
@@ -488,7 +493,7 @@ export class ProcessService implements OnModuleInit {
       currentHash === candidatePage?.candidatePageCache?.hash &&
       candidatePage?.candidatePageCache?.confirmed === true
     ) {
-      console.log({
+      this.logger.log({
         message: 'no-need-to-continue',
         webpage: url,
       });
@@ -497,7 +502,7 @@ export class ProcessService implements OnModuleInit {
     hash = currentHash;
     const countIteration = candidatePage?.candidatePageCache?.count || 0;
 
-    console.log(`countIteration = ${countIteration}`);
+    this.logger.log(`countIteration = ${countIteration}`);
 
     const lmStudioWebDiscoveryPayload: LmStudioWebDiscoveryPayload = {
       title,
@@ -539,7 +544,7 @@ export class ProcessService implements OnModuleInit {
     //   answer?.editionMatch === true
 
     // ) {
-    //   console.log(answer)
+    //   this.logger.log(answer)
     //   return { ...answer, specificUrl: url };
     // }
     // console.error(answer)
@@ -566,12 +571,13 @@ export class ProcessService implements OnModuleInit {
     let html: string;
     let mainText: string;
 
-    console.log(`shopifySite: ${shopifySite}`);
+    this.logger.log(`shopifySite: ${shopifySite}`);
     let title: string;
     let allText: string;
 
     if (shopifySite) {
-      console.log('extractShopifyWebsite activated');
+      this.logger.log('extractShopifyWebsite activated');
+      this.logger.log(`extractShopifyWebsite activated`);
       await new Promise((r) => setTimeout(r, 50));
       const result = await this.utilService.extractShopifyWebsite(url);
       const variantProduct = result.shopifyProduct.variants.find(
@@ -593,7 +599,7 @@ export class ProcessService implements OnModuleInit {
       });
       return true;
     } else {
-      console.log('getPageInfo activated');
+      this.logger.log('getPageInfo activated');
       let textInformation: {
         html: string;
         mainText: string;
@@ -617,14 +623,14 @@ export class ProcessService implements OnModuleInit {
       const dom = new JSDOM(html);
       const document = dom.window.document;
       title = document.title;
-      console.log('Page title:', title);
+      this.logger.log('Page title:', title);
 
       allText = htmlToText(mainText, {
         wordwrap: false,
       });
     }
 
-    console.log({
+    this.logger.log({
       title,
       allText,
       query,
@@ -640,7 +646,7 @@ export class ProcessService implements OnModuleInit {
       .digest('hex');
 
     if (currentHash === hash && confirmed === true) {
-      console.log({
+      this.logger.log({
         message: 'no-need-to-continue',
         webpage: url,
       });
@@ -674,7 +680,7 @@ export class ProcessService implements OnModuleInit {
     //   mode,
     // );
 
-    // console.log(answer)
+    // this.logger.log(answer)
 
     // if (url.includes('games-island')) answer.price = Math.round(answer.price * 0.81)
 
@@ -723,7 +729,7 @@ export class ProcessService implements OnModuleInit {
   async updateWebpageSend(
     updatePackage: UpdatePagePayloadInterface,
   ): Promise<void> {
-    console.log(updatePackage);
+    this.logger.log(updatePackage);
     try {
       await fetch(
         `http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${updatePackage.webPageId}`,
@@ -754,7 +760,7 @@ export class ProcessService implements OnModuleInit {
     createProcessDto: CreateProcessDto,
     cloudflare: boolean,
   ): Promise<boolean> {
-    console.log(`https://${base}${seed}`);
+    this.logger.log(`https://${base}${seed}`);
 
     let foundSitemapUrls: {
       websiteUrls: string[];
@@ -775,13 +781,13 @@ export class ProcessService implements OnModuleInit {
       query,
     );
 
-    console.log(`ReducedUrls: ${reducedUrls.length}`);
+    this.logger.log(`ReducedUrls: ${reducedUrls.length}`);
 
     // const momentOfTruth = foundSitemapUrls.websiteUrls.includes(
     //   'https://bossminis.co.uk/products/magic-the-gathering-edge-of-eternities-collector-booster-pack-releases-01-08-20205',
     // );
 
-    // console.log(momentOfTruth);
+    // this.logger.log(momentOfTruth);
 
     // await new Promise((r) => setTimeout(r, 20000000));
 
@@ -794,7 +800,7 @@ export class ProcessService implements OnModuleInit {
       shopProductId: createProcessDto.shopProductId,
     };
 
-    console.log(
+    this.logger.log(
       `Sending to LM Studio Reduce Links: ${lmStudioReduceLinksPayload.shopProductId}}`,
     );
 
@@ -825,7 +831,7 @@ export class ProcessService implements OnModuleInit {
     expectedPrice: number,
     headless: boolean,
   ): Promise<boolean> {
-    console.log(`https://${base}${seed}`);
+    this.logger.log(`https://${base}${seed}`);
 
     const urls = links;
     let bestSites: ParsedLinks[];
@@ -850,7 +856,7 @@ export class ProcessService implements OnModuleInit {
       //   query,
       // );
 
-      // console.log(`ReducedUrls: ${reducedUrls.length}`);
+      // this.logger.log(`ReducedUrls: ${reducedUrls.length}`);
 
       // bestSites = await this.openaiService.crawlFromSitemap(
       //   reducedUrls,
@@ -863,7 +869,7 @@ export class ProcessService implements OnModuleInit {
       // urls = bestSites.map((site) => site.url);
     }
 
-    console.log(urls);
+    this.logger.log(urls);
     await this.test(
       urls,
       query,
@@ -882,9 +888,9 @@ export class ProcessService implements OnModuleInit {
     );
     return true;
     // if (answer) {
-    //   console.log('Product Found');
+    //   this.logger.log('Product Found');
     //   // foundProducts.push({ ...answer, website: `${singleUrl.url}` });
-    //   // console.log(foundProducts);
+    //   // this.logger.log(foundProducts);
     //   return answer;
     // }
 
@@ -894,7 +900,7 @@ export class ProcessService implements OnModuleInit {
 
     const bestSitesAllLinks = [];
 
-    console.log(bestSites.length > 0);
+    this.logger.log(bestSites.length > 0);
 
     if (bestSites.length > 0) {
       for (const site of bestSites) {
@@ -902,7 +908,7 @@ export class ProcessService implements OnModuleInit {
         bestSitesAllLinks.push(
           ...(await this.browserService.getLinksFromPage(site.url)),
         );
-        console.log(bestSitesAllLinks.length);
+        this.logger.log(bestSitesAllLinks.length);
       }
     }
     // else {
@@ -921,10 +927,10 @@ export class ProcessService implements OnModuleInit {
       query,
     );
 
-    console.log(reducedUrlsbestSitesAllLinks);
+    this.logger.log(reducedUrlsbestSitesAllLinks);
 
     const uniqueBestSitesAllLinks = [...new Set(reducedUrlsbestSitesAllLinks)];
-    console.log(uniqueBestSitesAllLinks.length);
+    this.logger.log(uniqueBestSitesAllLinks.length);
 
     if (uniqueBestSitesAllLinks.length === 0)
       throw new Error('No links found to process');
@@ -951,7 +957,7 @@ export class ProcessService implements OnModuleInit {
 
     if (allUrls[0]) throw new Error('no link found');
 
-    console.log(`https://${base}${allUrls[0]}`);
+    this.logger.log(`https://${base}${allUrls[0]}`);
     const answer = await this.test(
       allUrls,
       query,
@@ -969,22 +975,22 @@ export class ProcessService implements OnModuleInit {
       false,
     );
     if (answer) {
-      console.log('Product Found');
+      this.logger.log('Product Found');
       // foundProducts.push({ ...answer, website: `${base}${singleUrl}` });
       return true;
     }
 
     // for (const singleUrl of allUrls) {
-    //   console.log(`https://${base}${singleUrl}`);
+    //   this.logger.log(`https://${base}${singleUrl}`);
     //   const answer = await this.test(`https://${base}${singleUrl}`, query, type);
     //   if (answer) {
-    //     console.log('Product Found');
+    //     this.logger.log('Product Found');
     //     // foundProducts.push({ ...answer, website: `${base}${singleUrl}` });
     //     return answer;
     //   }
     // }
 
-    // console.log(foundProducts);
+    // this.logger.log(foundProducts);
   }
 
   async updatePage(checkPageDto: CheckPageDto): Promise<boolean> {
@@ -1026,7 +1032,7 @@ export class ProcessService implements OnModuleInit {
       );
     }
 
-    console.log(soldEbayProductPrices.mainText);
+    this.logger.log(soldEbayProductPrices.mainText);
 
     // const soldEbayProductPrices: EbaySoldProductStrip[] = await this.ebayService.soldProductPrice(product)
 
@@ -1034,13 +1040,13 @@ export class ProcessService implements OnModuleInit {
       ebayProductPrices,
       product,
     );
-    console.log(pricePoints);
+    this.logger.log(pricePoints);
 
     const soldPricePoints = await this.openaiService.ebaySoldPricePoint(
       soldEbayProductPrices.mainText,
       product,
     );
-    console.log(soldPricePoints);
+    this.logger.log(soldPricePoints);
 
     const soldPricePointsLastSevenDays = this.utilService.datesBetween(
       soldPricePoints,
@@ -1139,8 +1145,8 @@ export class ProcessService implements OnModuleInit {
       ...twentyEightDays,
     };
 
-    console.log(soldPricePointsLastSevenDays);
-    console.log(pricePointTest);
+    this.logger.log(soldPricePointsLastSevenDays);
+    this.logger.log(pricePointTest);
 
     // Temp for test
     try {
@@ -1219,7 +1225,7 @@ export class ProcessService implements OnModuleInit {
       linkListing: string;
     }[] = [];
 
-    console.log(urls);
+    this.logger.log(urls);
     for (const url of urls) {
       let response: Response;
 
@@ -1231,12 +1237,12 @@ export class ProcessService implements OnModuleInit {
 
       const html = await response.text();
 
-      console.log('Fetched HTML length:', html.length);
+      this.logger.log('Fetched HTML length:', html.length);
 
       const $ = cheerio.load(html);
       const items = $(selectors.listSelector);
-      console.log(selectors.listSelector);
-      console.log(`Found ${items.length} items`);
+      this.logger.log(selectors.listSelector);
+      this.logger.log(`Found ${items.length} items`);
       for (const el of items) {
         const listingName = $(el).find(selectors.listItemNameSelector).text();
         const listingPrice = $(el)
@@ -1262,7 +1268,7 @@ export class ProcessService implements OnModuleInit {
       return !existingUrls.includes(listing.linkListing);
     });
 
-    console.log(newListing);
+    this.logger.log(newListing);
 
     if (newListing.length > 0) {
       await fetch(
