@@ -97,20 +97,22 @@ async function bootstrap() {
     },
   });
 
-  const slowSitemapQueue = app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
-      queue: `slow_sitemap_queue`,
-      queueOptions: {
-        durable: false,
-        exclusive: false,
-        autoDelete: false, // <-- add this
+  if (+process.env.SLOW_SITEMAP_QUEUE > 0) {
+    const slowSitemapQueue = app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.RMQ,
+      options: {
+        urls: [`amqp://${process.env.RABBITMQ_IP}:5672`],
+        queue: `slow_sitemap_queue`,
+        queueOptions: {
+          durable: false,
+          exclusive: false,
+          autoDelete: false, // <-- add this
+        },
+        noAck: false, // <-- manual ack mode
+        prefetchCount: +process.env.SLOW_SITEMAP_QUEUE, // <-- cap concurrency
       },
-      noAck: false, // <-- manual ack mode
-      prefetchCount: 1, // <-- cap concurrency
-    },
-  });
+    });
+  }
 
   if (+process.env.LM_QUEUE > 0) {
     console.log('created');
