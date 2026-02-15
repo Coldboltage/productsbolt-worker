@@ -349,7 +349,7 @@ export class UtilsService {
   async waitForCloudflareBypass(
     page: any,
     url: string,
-    timeout = 16000,
+    timeout = 60000,
     waitingTimeout = 2000,
     resolveTimeout = 10000,
   ) {
@@ -398,7 +398,7 @@ export class UtilsService {
       this.logger.log(title);
 
       if (title.includes('...') || title.includes('pardon')) {
-        this.logger.log('waiting');
+        this.logger.log(`waiting on ${url}`);
         await new Promise((r) => setTimeout(r, waitingTimeout));
       } else {
         this.logger.log('passed');
@@ -407,6 +407,7 @@ export class UtilsService {
       }
     }
 
+    this.logger.error('Timed out waiting for Cloudflare challenge');
     throw new Error('Timed out waiting for Cloudflare challenge');
   }
 

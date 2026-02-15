@@ -2,6 +2,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { connect } from 'puppeteer-real-browser';
@@ -13,6 +14,8 @@ import puppeteer, { HTTPResponse, Browser } from 'puppeteer';
 
 @Injectable()
 export class BrowserService {
+  private readonly logger = new Logger(BrowserService.name);
+
   private browser: any;
 
   constructor(private utilService: UtilsService) {}
@@ -35,26 +38,26 @@ export class BrowserService {
     });
 
     this.browser = browser;
-    console.log(this.browser);
+    this.logger.log(this.browser);
   }
 
   async manualSitemapSearch(manualSitemapUrl: string) {
-    console.log(manualSitemapUrl);
+    this.logger.log(manualSitemapUrl);
     // const crawler = new PlaywrightCrawler({
     //   async requestHandler({ page, pushData }) {
-    //     console.log('fired')
+    //     this.logger.log('fired')
     //     const links: string[] = await page.$$eval('a', (anchor: Element[]) => {
     //       return anchor.map(anchor => (anchor as HTMLAnchorElement).href);
     //     });
     //     for (const url of links) await pushData({ url })
     //   }
     // })
-    // console.log("hmm")
+    // this.logger.log("hmm")
     // await crawler.run([manualSitemapUrl])
 
     // const dataset = await Dataset.open();
     // const { items } = await dataset.getData();
-    // console.log(items);
+    // this.logger.log(items);
 
     const result = await this.getPageInfo(manualSitemapUrl, false);
     return result;
@@ -68,7 +71,7 @@ export class BrowserService {
       console.error(`URL ${url} will be blocked by Cloudflare: ${status}`);
       return true;
     }
-    console.log(`URL ${url} is accessible with status code: ${status}`);
+    this.logger.log(`URL ${url} is accessible with status code: ${status}`);
     // Cloudflare or other fetch blocking thing doesn't exist
     return false;
   }
@@ -102,7 +105,7 @@ export class BrowserService {
       encoding: 'base64',
     });
 
-    console.log(base64Image);
+    this.logger.log(base64Image);
     return { html, mainText, base64Image };
   }
 
@@ -111,13 +114,13 @@ export class BrowserService {
     try {
       res = await fetch(url);
     } catch (error) {
-      console.log(
+      this.logger.log(
         `Fetch error, possibly blocked by Cloudflare or invalid URL: ${error}`,
       );
     }
     const status = res.status;
 
-    console.log(`Fetched ${url} with status ${status}`);
+    this.logger.log(`Fetched ${url} with status ${status}`);
 
     if (status >= 400)
       throw new Error(`Failed to load page, status code: ${status}`);
@@ -169,7 +172,7 @@ export class BrowserService {
     }
 
     const tester = htmlToPlainText(html);
-    console.log(tester);
+    this.logger.log(tester);
     return {
       html,
       mainText: tester,
@@ -193,8 +196,8 @@ export class BrowserService {
       try {
         page = await browser.newPage();
       } catch (error) {
-        console.log('error found');
-        console.log(error);
+        this.logger.log('error found');
+        this.logger.log(error);
         throw new ConflictException('browser_did_not_load');
       }
     } else {
@@ -269,7 +272,7 @@ export class BrowserService {
         await this.utilService.waitForCloudflareBypass(page, url);
         if (status === 404) throw new NotFoundException(`404 Not Found`);
         if (status === 403 || status === 429) {
-          console.log('403 or 429 detected, reloading page');
+          this.logger.log('403 or 429 detected, reloading page');
           const finalResponse = await page.reload({
             waitUntil: 'networkidle2',
             timeout: 10000,
@@ -278,15 +281,15 @@ export class BrowserService {
         }
         if (status > 404) throw new Error('400+ error');
         else {
-          console.log(`Passed: Status ${status} is OK`);
+          this.logger.log(`Passed: Status ${status} is OK`);
         }
       } catch (e) {
-        console.log(`Error during Cloudflare bypass, continuing anyway`);
-        console.log(e);
+        this.logger.error(`Error during Cloudflare bypass, continuing anyway`);
+        this.logger.log(e);
         await new Promise((r) => setTimeout(r, 10000));
       }
 
-      console.log(`Navigated to ${url} with status ${status}`);
+      this.logger.log(`Navigated to ${url} with status ${status}`);
 
       if (status === 404) {
         throw new NotFoundException(`404 Not Found: ${url}`);
@@ -339,7 +342,7 @@ export class BrowserService {
     let timer: ReturnType<typeof setTimeout>;
     const timeoutPromise = new Promise<never>((_, reject) => {
       timer = setTimeout(async () => {
-        console.log('⏱️ Timeout hit, closing page...');
+        this.logger.log('⏱️ Timeout hit, closing page...');
         try {
           await page.close(); // 🔑 stop pageTask work first
         } catch {}
@@ -374,7 +377,7 @@ export class BrowserService {
       try {
         await this.utilService.waitForCloudflareBypass(page, url);
       } catch (e) {
-        console.log('Error during Cloudflare bypass, continuing anyway');
+        this.logger.log('Error during Cloudflare bypass, continuing anyway');
       }
 
       const shopyifySite = await page.evaluate(() => {
@@ -390,7 +393,7 @@ export class BrowserService {
     let timer: ReturnType<typeof setTimeout>;
     const timeoutPromise = new Promise<never>((_, reject) => {
       timer = setTimeout(async () => {
-        console.log('⏱️ Timeout hit, closing page...');
+        this.logger.log('⏱️ Timeout hit, closing page...');
         try {
           await page.close(); // 🔑 stop pageTask work first
         } catch {}
@@ -448,10 +451,10 @@ export class BrowserService {
           await this.utilService.waitForCloudflareBypass(page, url, 10000);
           response = await page.goto(url);
         } catch (e) {
-          console.log('Error during Cloudflare bypass, continuing anyway');
+          this.logger.log('Error during Cloudflare bypass, continuing anyway');
         }
         const status = await response.status();
-        console.log({
+        this.logger.log({
           // title: await response.title(),
           status,
           website: websiteUrl,
@@ -459,7 +462,7 @@ export class BrowserService {
         });
 
         if (status === 429) {
-          console.log({
+          this.logger.log({
             status: response.status(),
             website: websiteUrl,
             page: index,
@@ -479,7 +482,7 @@ export class BrowserService {
         json = (await response.json()) as ShopifyProductCollectionsFullCall;
       } catch (error) {
         pageLength = 0;
-        console.log({
+        this.logger.log({
           status: response.status(),
           website: websiteUrl,
           page: index,
@@ -512,7 +515,7 @@ export class BrowserService {
       );
     }
     await browser.close();
-    // console.log(websiteUrls)
+    // this.logger.log(websiteUrls)
     return {
       websiteUrls: websiteUrls,
       error: false,
