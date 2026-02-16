@@ -311,7 +311,7 @@ export class UtilsService {
             await new Promise((r) => setTimeout(r, pauseTimer));
           scannedSites = response.sites.filter((site) => site.includes(seed));
         } catch (error) {
-          console.dir(error, { depth: 5 }); // should show a Z_DATA_ERROR or BrotliDecodeError
+          this.logger.error({ error, url: sitemapUrl }, { depth: 5 }); // should show a Z_DATA_ERROR or BrotliDecodeError
           throw new Error(error);
         }
       }
