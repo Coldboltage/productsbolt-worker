@@ -618,7 +618,7 @@ current date: ${new Date().toISOString()}
       openAiResponse.choices[0].message?.content || '{}',
     );
     this.logger.log('asdsadsa');
-    this.logger.log(openAiResponse.usage);
+    this.logger.log(productResponse);
     this.logger.log('asdsadsa');
 
     this.inputTokens += +openAiResponse.usage.prompt_tokens;
