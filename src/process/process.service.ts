@@ -723,15 +723,19 @@ export class ProcessService implements OnModuleInit {
       pageTitle: title,
       lastScanned: new Date(),
     };
+    this.logger.log(`firing updateWebpageSend`);
     await this.updateWebpageSend(updatePackage);
   }
 
   async updateWebpageSend(
     updatePackage: UpdatePagePayloadInterface,
   ): Promise<void> {
+    this.logger.log(
+      `fired updateWebpageSend going to: http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${updatePackage.webPageId}`,
+    );
     this.logger.log(updatePackage);
     try {
-      await fetch(
+      const response = await fetch(
         `http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${updatePackage.webPageId}`,
         {
           method: 'PATCH',
@@ -742,7 +746,13 @@ export class ProcessService implements OnModuleInit {
           body: JSON.stringify(updatePackage),
         },
       );
-    } catch (error) {}
+      this.logger.log({
+        responseCode: response.status,
+        url: updatePackage.url,
+      });
+    } catch (error) {
+      this.logger.error({ error, url: updatePackage.url });
+    }
   }
 
   async reduceLinks(
