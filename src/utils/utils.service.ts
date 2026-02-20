@@ -358,7 +358,9 @@ export class UtilsService {
     if (url.includes('games-island')) {
       this.logger.log('passed');
       let finishedLoading = false;
-      while (finishedLoading === false) {
+      const start = Date.now();
+
+      while (finishedLoading === false && Date.now() - start < timeout) {
         try {
           this.logger.log(`waiting for ${url} to load`);
           await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -366,7 +368,7 @@ export class UtilsService {
             () => document.body?.innerText ?? '',
           );
           if (
-            !bodyText.includes('Validating') &&
+            !bodyText.includes('Validating') ||
             !bodyText.includes('please wait')
           ) {
             finishedLoading = true;
