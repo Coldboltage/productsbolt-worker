@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { HttpsProxyAgent } from 'hpagent';
 import {
   ShopifyProduct,
@@ -356,7 +361,6 @@ export class UtilsService {
     this.logger.log('cloudflare protection waitForCloudflareBypass fired');
 
     if (url.includes('games-island')) {
-      this.logger.log('passed');
       let finishedLoading = false;
       const start = Date.now();
 
@@ -375,10 +379,18 @@ export class UtilsService {
           }
         } catch (error) {
           this.logger.log(error);
+          const status = await page.staus();
+          if (status > 399) {
+            throw new NotFoundException(`Status of ${status} for ${url}`);
+          }
           await new Promise((resolve) => setTimeout(resolve, 2000));
 
           this.logger.log('retrying');
         }
+      }
+
+      if (finishedLoading === false && Date.now() - start < timeout) {
+        throw new NotFoundException(`${url}_did_not_pass_test`);
       }
 
       this.logger.log('all good');
