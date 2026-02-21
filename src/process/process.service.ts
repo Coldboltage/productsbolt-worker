@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
   OnModuleInit,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -579,24 +580,52 @@ export class ProcessService implements OnModuleInit {
       this.logger.log('extractShopifyWebsite activated');
       this.logger.log(`extractShopifyWebsite activated`);
       await new Promise((r) => setTimeout(r, 50));
-      const result = await this.utilService.extractShopifyWebsite(url);
-      const variantProduct = result.shopifyProduct.variants.find(
-        (v) => String(v.id) === variantId,
-      );
-      this.updateWebpageSend({
-        url,
-        inStock: variantProduct.available ? variantProduct.available : false,
-        price: variantProduct.price / 100,
-        productName: query,
-        hash: 'shopify',
-        count: 0,
-        shopifySite,
-        shopWebsite,
-        webPageId,
-        pageAllText: result.mainText,
-        pageTitle: result.title,
-        lastScanned: new Date(),
-      });
+      try {
+        const result = await this.utilService.extractShopifyWebsite(url);
+        const variantProduct = result.shopifyProduct.variants.find(
+          (v) => String(v.id) === variantId,
+        );
+        this.updateWebpageSend({
+          url,
+          inStock: variantProduct.available ? variantProduct.available : false,
+          price: variantProduct.price / 100,
+          productName: query,
+          hash: 'shopify',
+          count: 0,
+          shopifySite,
+          shopWebsite,
+          webPageId,
+          pageAllText: result.mainText,
+          pageTitle: result.title,
+          lastScanned: new Date(),
+        });
+      } catch (error) {
+        this.logger.log('extractShopifyWebsite failed');
+        if (error instanceof NotFoundException) {
+          try {
+            const response = await fetch(
+              `http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${webPageId}`,
+              {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+                },
+                body: JSON.stringify({ inStock: false }),
+              },
+            );
+            this.logger.log({
+              responseCode: response.status,
+              url: url,
+            });
+          } catch (error) {
+            this.logger.error({ error, url: url });
+          }
+        } else {
+          throw new Error(`could_not_fetch_shopify_product: ${url}`);
+        }
+      }
+
       return true;
     } else {
       this.logger.log('getPageInfo activated');
@@ -614,6 +643,28 @@ export class ProcessService implements OnModuleInit {
           textInformation = await this.browserService.getPageHtml(url);
         }
       } catch (error) {
+        if (error instanceof NotFoundException) {
+          try {
+            const response = await fetch(
+              `http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${webPageId}`,
+              {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+                },
+                body: JSON.stringify({ inStock: false }),
+              },
+            );
+            this.logger.log({
+              responseCode: response.status,
+              url: url,
+            });
+          } catch (error) {
+            this.logger.error({ error, url: url });
+          }
+        }
+
         throw new ServiceUnavailableException(
           `Browser session closed early for ${url}`,
         );

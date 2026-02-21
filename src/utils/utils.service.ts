@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -430,10 +431,13 @@ export class UtilsService {
     try {
       const response = await fetch(`${url}.js`);
       this.logger.log(response.status);
-      if (response.status >= 400)
-        throw new ConflictException(
-          `Above 400 status: ${url} with ${response.status}`,
-        );
+      if (response.status === 403) {
+        throw new ForbiddenException(`403 status: ${url}`);
+      } else if (response.status === 404) {
+        throw new NotFoundException(`404 status: ${url}`);
+      }
+      if (response.status > 404)
+        throw new Error(`Above 404+ status: ${url} with ${response.status}`);
       const json: ShopifyProduct = (await response.json()) as ShopifyProduct;
       const title = json.title;
       const { stripHtml } = await import('string-strip-html');
@@ -444,17 +448,7 @@ export class UtilsService {
 
       this.logger.log({ title, mainText });
       return { title, mainText, shopifyProduct: json };
-    } catch (error) {
-      this.logger.log(error);
-      throw new Error('Could not fetch Shopify product');
-      return {
-        url,
-        inStock: false,
-        price: 0,
-        available: false,
-        title: 'default',
-        mainText: 'default',
-      };
+    } finally {
     }
   };
 
