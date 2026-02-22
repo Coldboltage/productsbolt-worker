@@ -6,6 +6,7 @@ import {
   NotFoundException,
   OnModuleInit,
   ServiceUnavailableException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JSDOM } from 'jsdom';
 import { htmlToText } from 'html-to-text';
@@ -601,7 +602,10 @@ export class ProcessService implements OnModuleInit {
         });
       } catch (error) {
         this.logger.log('extractShopifyWebsite failed');
-        if (error instanceof NotFoundException) {
+        if (
+          error instanceof NotFoundException ||
+          error instanceof UnauthorizedException
+        ) {
           try {
             const response = await fetch(
               `http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${webPageId}`,
@@ -643,7 +647,10 @@ export class ProcessService implements OnModuleInit {
           textInformation = await this.browserService.getPageHtml(url);
         }
       } catch (error) {
-        if (error instanceof NotFoundException) {
+        if (
+          error instanceof NotFoundException ||
+          error instanceof UnauthorizedException
+        ) {
           try {
             const response = await fetch(
               `http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${webPageId}`,
