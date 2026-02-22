@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { HttpsProxyAgent } from 'hpagent';
 import {
@@ -435,6 +436,8 @@ export class UtilsService {
         throw new ForbiddenException(`403 status: ${url}`);
       } else if (response.status === 404) {
         throw new NotFoundException(`404 status: ${url}`);
+      } else if (response.status === 401) {
+        throw new UnauthorizedException(`401 status: ${url}`);
       }
       if (response.status > 404)
         throw new Error(`Above 404+ status: ${url} with ${response.status}`);
