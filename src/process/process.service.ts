@@ -615,7 +615,7 @@ export class ProcessService implements OnModuleInit {
                   'Content-Type': 'application/json',
                   Authorization: `Bearer ${process.env.JWT_TOKEN}`,
                 },
-                body: JSON.stringify({ inStock: false }),
+                body: JSON.stringify({ price: 0, inStock: false }),
               },
             );
             this.logger.log({
@@ -660,7 +660,7 @@ export class ProcessService implements OnModuleInit {
                   'Content-Type': 'application/json',
                   Authorization: `Bearer ${process.env.JWT_TOKEN}`,
                 },
-                body: JSON.stringify({ inStock: false }),
+                body: JSON.stringify({ price: 0, inStock: false }),
               },
             );
             this.logger.log({
