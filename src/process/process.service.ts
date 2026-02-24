@@ -1368,7 +1368,7 @@ export class ProcessService implements OnModuleInit {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${process.env.JWT_TOKEN}`,
           },
-          body: JSON.stringify({ ...metaInformation }),
+          body: JSON.stringify({ ...metaInformation, id: shopifyMetaDto.id }),
         },
       );
     } catch (error) {
