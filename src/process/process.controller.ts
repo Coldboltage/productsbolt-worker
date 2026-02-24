@@ -19,6 +19,7 @@ import { ShopDto } from './dto/shop.dto.js';
 import { ProductDto } from './dto/product.dto.js';
 import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
 import { LmStudioCheckProductDto } from './dto/lm-studio-check-product.dto.js';
+import { ShopifyMetaDto } from './dto/shopify-meta.dto.js';
 
 @Controller()
 export class ProcessController {
@@ -49,9 +50,9 @@ export class ProcessController {
 
     try {
       await new Promise((r) => setTimeout(r, 750));
-      console.log(`shopifyCollectionsTest called`);
+      this.logger.log(`shopifyCollectionsTest called`);
       const result = await this.processService.shopifyCollectionsTest(shopDto);
-      console.log(result);
+      this.logger.log(result);
       // if (result.length === 0) throw new NotFoundException(`No sitemap URLs found for shop ${shopDto.id}`);
       await fetch(
         `http://${process.env.API_IP}:3000/sitemap/update-from-shopify-collection-test/${shopDto.sitemapEntity.id}`,
@@ -116,7 +117,7 @@ export class ProcessController {
     @Payload() shopDto: ShopDto,
     @Ctx() context: RmqContext,
   ) {
-    console.log('manualSitemapSearch');
+    this.logger.log('manualSitemapSearch');
     const channel = context.getChannelRef();
     const originalMsg = context.getMessage();
 
@@ -272,10 +273,10 @@ export class ProcessController {
 
     try {
       this.logger.log('updatePage message captured');
-      console.log(`updatePage message captured`);
+      this.logger.log(`updatePage message captured`);
       const result = await this.processService.updatePage(checkPageDto);
       // const { query, shopWebsite, webPageId } = checkPageDto;
-      // console.log(result);
+      // this.logger.log(result);
       // if (!result) {
       //   channel.ack(originalMsg);
       //   return false;
@@ -291,17 +292,17 @@ export class ProcessController {
       //   count: result.count,
       //   shopifySite: result.shopifySite
       // };
-      // console.log(webPage);
+      // this.logger.log(webPage);
       // await fetch(`http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${webPage.webPageId}`, {
       //   method: 'PATCH',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify(webPage),
       // });
-      // console.log("Ending");
+      // this.logger.log("Ending");
 
       // ACK message on success
-      console.log('Acknowledging message');
-      console.log(result);
+      this.logger.log('Acknowledging message');
+      this.logger.log(result);
       channel.ack(originalMsg);
     } catch (error) {
       console.error(error);
@@ -320,9 +321,9 @@ export class ProcessController {
     const originalMsg = context.getMessage();
 
     try {
-      // console.log(productDto)
+      // this.logger.log(productDto)
       const result = await this.processService.ebayStatCalc(productDto);
-      console.log(result);
+      this.logger.log(result);
       channel.ack(originalMsg);
     } catch (error) {
       channel.nack(originalMsg, false, false);
@@ -353,12 +354,31 @@ export class ProcessController {
     const channel = context.getChannelRef();
     const originalMsg = context.getMessage();
 
-    console.log('Received product-listings-check event:', shopDto);
+    this.logger.log('Received product-listings-check event:', shopDto);
 
     try {
       await this.processService.checkShopProductListings(shopDto);
       channel.ack(originalMsg);
     } catch (error) {
+      channel.nack(originalMsg, false, false);
+    }
+  }
+
+  @EventPattern('shopifyMeta')
+  async shopifyMeta(
+    @Payload() shopifyMetPayload: ShopifyMetaDto,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    this.logger.log(`shopifyMeta with ${shopifyMetPayload.url}`);
+
+    try {
+      await this.processService.shopifyMeta(shopifyMetPayload);
+      channel.ack(originalMsg);
+    } catch (error) {
+      this.logger.error(error);
       channel.nack(originalMsg, false, false);
     }
   }

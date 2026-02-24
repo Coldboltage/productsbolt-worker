@@ -10,6 +10,7 @@ import { HttpsProxyAgent } from 'hpagent';
 import {
   ShopifyProduct,
   ShopifyProductCollectionsFullCall,
+  ShopifyShopMeta,
 } from './utils.type.js';
 // import { stripHtml } from 'string-strip-html';
 import { EbaySoldProductStrip } from '../ebay/entities/ebay.entity.js';
@@ -454,6 +455,36 @@ export class UtilsService {
     } finally {
     }
   };
+
+  async extractShopifyMeta(url: string): Promise<{
+    city: string;
+    province: string;
+    country: string;
+    currency: string;
+  }> {
+    this.logger.log(url);
+    try {
+      const response = await fetch(`https://${url}meta.json`);
+      this.logger.log(response.status);
+      if (response.status === 403) {
+        throw new ForbiddenException(`403 status: ${url}`);
+      } else if (response.status === 404) {
+        throw new NotFoundException(`404 status: ${url}`);
+      } else if (response.status === 401) {
+        throw new UnauthorizedException(`401 status: ${url}`);
+      }
+      if (response.status > 404)
+        throw new Error(`Above 404+ status: ${url} with ${response.status}`);
+      const json: ShopifyShopMeta = (await response.json()) as ShopifyShopMeta;
+
+      const { city, province, country, currency } = json;
+
+      console.log({ city, province, country, currency });
+
+      return { city, province, country, currency };
+    } finally {
+    }
+  }
 
   datesBetween(
     soldPricePoints: EbaySoldProductStrip[],

@@ -14,6 +14,30 @@ export interface ShopifyProduct {
   featured_image: string | null;
 }
 
+export interface ShopifyShopMeta {
+  id: number;
+  name: string;
+  city: string;
+  province: string;
+  country: string; // ISO 2-letter (e.g. "GB")
+  currency: string; // ISO 3-letter (e.g. "GBP")
+  domain: string;
+  url: string;
+  myshopify_domain: string;
+  description: string;
+
+  ships_to_countries: string[]; // ISO 2-letter codes or "*"
+
+  money_format: string; // e.g. "£{{amount}}"
+
+  published_collections_count: number;
+  published_products_count: number;
+
+  shopify_pay_enabled_card_brands: string[];
+
+  offers_shop_pay_installments: boolean;
+}
+
 export interface ShopifyVariant {
   id: number;
   title: string;

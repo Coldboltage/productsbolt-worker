@@ -39,6 +39,7 @@ import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
 import { FullCandidatePageDto } from './dto/candidate-page.dto.js';
 import { ShopifyProduct } from 'src/utils/utils.type.js';
 import { LmStudioCheckProductDto } from './dto/lm-studio-check-product.dto.js';
+import { ShopifyMetaDto } from './dto/shopify-meta.dto.js';
 
 @Injectable()
 export class ProcessService implements OnModuleInit {
@@ -1350,6 +1351,28 @@ export class ProcessService implements OnModuleInit {
           body: JSON.stringify({ newListing }),
         },
       );
+    }
+  }
+
+  async shopifyMeta(shopifyMetaDto: ShopifyMetaDto) {
+    try {
+      const metaInformation = await this.utilService.extractShopifyMeta(
+        shopifyMetaDto.url,
+      );
+      this.logger.log({ ...metaInformation });
+      await fetch(
+        `http://${process.env.API_IP}:3000/shop/${shopifyMetaDto.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+          },
+          body: JSON.stringify({ ...metaInformation }),
+        },
+      );
+    } catch (error) {
+      this.logger.error(error);
     }
   }
 
