@@ -166,8 +166,8 @@ export class ProcessService implements OnModuleInit {
     for (const sitemapUrl of checkSitemapUrlsCombined) {
       const links = await this.browserService.getLinksFromPage(
         sitemapUrl,
-        'fix',
-        'fix',
+        shopDto.country,
+        shopDto.currency,
         false,
       );
       this.logger.log(shopDto.website);

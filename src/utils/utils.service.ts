@@ -440,7 +440,6 @@ export class UtilsService {
           Cookie: `cart_currency=${currency}; localization=${country}`,
         },
       });
-      this.logger.log(response.headers);
       this.logger.log(response.status);
       if (response.status === 403) {
         throw new ForbiddenException(`403 status: ${url}`);

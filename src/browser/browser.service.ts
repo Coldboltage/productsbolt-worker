@@ -21,24 +21,23 @@ export class BrowserService {
   constructor(private utilService: UtilsService) {}
 
   async onModuleInit() {
-    const { browser } = await connect({
-      headless: true,
-      args: [
-        // '--window-position=-99999,-99999',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-features=CalculateNativeWinOcclusion',
-        '--no-sandbox',
-        '--disable-dev-shm-usage',
-      ],
-      customConfig: {},
-      turnstile: true,
-      connectOption: {},
-      disableXvfb: false,
-      ignoreAllFlags: false,
-    });
-
-    this.browser = browser;
-    this.logger.log(this.browser);
+    // const { browser } = await connect({
+    //   headless: true,
+    //   args: [
+    //     // '--window-position=-99999,-99999',
+    //     '--disable-backgrounding-occluded-windows',
+    //     '--disable-features=CalculateNativeWinOcclusion',
+    //     '--no-sandbox',
+    //     '--disable-dev-shm-usage',
+    //   ],
+    //   customConfig: {},
+    //   turnstile: true,
+    //   connectOption: {},
+    //   disableXvfb: false,
+    //   ignoreAllFlags: false,
+    // });
+    // this.browser = browser;
+    // this.logger.log(this.browser);
   }
 
   async manualSitemapSearch(manualSitemapUrl: string) {
@@ -186,7 +185,6 @@ export class BrowserService {
     }
 
     const tester = htmlToPlainText(html);
-    this.logger.log(tester);
     return {
       html,
       mainText: tester,
@@ -208,7 +206,7 @@ export class BrowserService {
     let page;
     let browser;
 
-    if (headless) {
+    if (false) {
       browser = this.browser;
       try {
         page = await browser.newPage();
@@ -279,8 +277,8 @@ export class BrowserService {
 
       try {
         testPage = await page.goto(shopifySite ? `${url}.js` : url, {
-          waitUntil: ['networkloadidle2'],
-          timeout: 20000,
+          waitUntil: ['networkidle2'],
+          timeout: 60000,
         });
       } catch (error) {
         try {
@@ -292,6 +290,22 @@ export class BrowserService {
           throw new Error('it_really_did_not_want_to_load');
         }
       }
+
+      // try {
+      //   testPage = await page.goto(shopifySite ? `${url}.js` : url, {
+      //     waitUntil: ['networkidle2'],
+      //     timeout: 60000,
+      //   });
+      // } catch (error) {
+      //   try {
+      //     testPage = await page.goto(shopifySite ? `${url}.js` : url, {
+      //       waitUntil: ['domcontentloaded'],
+      //       timeout: 60000,
+      //     });
+      //   } catch (error) {
+      //     throw new Error('it_really_did_not_want_to_load');
+      //   }
+      // }
 
       // const testPage = await page.goto(url, {
       //   waitUntil: 'domcontentloaded',

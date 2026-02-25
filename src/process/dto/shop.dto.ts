@@ -33,6 +33,12 @@ export class ShopDto {
   @IsBoolean()
   cloudflare: boolean;
 
+  @IsString()
+  country: string;
+
+  @IsString()
+  currency: string;
+
   @ValidateNested()
   @Type(() => SitemapDto)
   sitemapEntity: SitemapDto;
