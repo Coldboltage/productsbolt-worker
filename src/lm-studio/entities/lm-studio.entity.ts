@@ -20,6 +20,7 @@ export interface LmStudioWebDiscoveryPayload {
   variantId: null | string;
   imageData: string;
   expectedPrice: number;
+  cloudflare: boolean;
 }
 
 export interface LmStudioReduceLinksPayload {

@@ -428,10 +428,19 @@ export class UtilsService {
     throw new Error('Timed out waiting for Cloudflare challenge');
   }
 
-  extractShopifyWebsite = async (url: string) => {
+  extractShopifyWebsite = async (
+    url: string,
+    country: string,
+    currency: string,
+  ) => {
     this.logger.log(url);
     try {
-      const response = await fetch(`${url}.js`);
+      const response = await fetch(`${url}.js`, {
+        headers: {
+          Cookie: `cart_currency=${currency}; localization=${country}`,
+        },
+      });
+      this.logger.log(response.headers);
       this.logger.log(response.status);
       if (response.status === 403) {
         throw new ForbiddenException(`403 status: ${url}`);

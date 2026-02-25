@@ -38,6 +38,8 @@ export class LmStudioController {
       variantId,
       imageData,
       expectedPrice,
+      candidatePage,
+      cloudflare,
     } = lmStudioWebDiscoveryPayloadDto;
 
     console.log(`count is: ${countIteration}`);
@@ -58,6 +60,7 @@ export class LmStudioController {
         variantId,
         imageData,
         expectedPrice,
+        cloudflare,
       );
       channel.ack(originalMsg);
     } catch (error) {

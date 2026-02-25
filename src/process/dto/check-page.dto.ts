@@ -45,4 +45,10 @@ export class CheckPageDto {
   headless: boolean;
 
   variantId: null | string;
+
+  @IsString()
+  country: string;
+
+  @IsString()
+  currency: string;
 }

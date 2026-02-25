@@ -27,6 +27,7 @@ export class LmStudioService {
     variantId: null | string,
     imageData: string,
     expectedPrice = 0,
+    cloudflare: boolean,
   ): Promise<void> {
     let openaiAnswer: boolean;
     const answer = await this.openaiService.productInStock(
@@ -40,7 +41,14 @@ export class LmStudioService {
       specificUrl,
     );
 
-    const price = answer.price;
+    let price: number;
+
+    if (shopifySite && cloudflare === true) {
+      price = answer.price / 100;
+    } else {
+      price = answer.price;
+    }
+
     const tolerance = 0.45;
 
     console.log({ price, tolerance, expectedPrice });
@@ -70,6 +78,7 @@ export class LmStudioService {
       await this.utilsService.webDiscoverySend(
         {
           ...answer,
+          price: shopifySite && cloudflare === true ? price : answer.price,
           specificUrl,
           pageAllText: allText,
           pageTitle: title,
@@ -90,6 +99,7 @@ export class LmStudioService {
       await this.utilsService.candidatePageDiscoverySend(
         {
           ...answer,
+          price: shopifySite && cloudflare === true ? price : answer.price,
           specificUrl,
           pageAllText: allText,
           pageTitle: title,

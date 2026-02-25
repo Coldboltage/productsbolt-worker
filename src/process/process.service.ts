@@ -164,7 +164,12 @@ export class ProcessService implements OnModuleInit {
     }
 
     for (const sitemapUrl of checkSitemapUrlsCombined) {
-      const links = await this.browserService.getLinksFromPage(sitemapUrl);
+      const links = await this.browserService.getLinksFromPage(
+        sitemapUrl,
+        'fix',
+        'fix',
+        false,
+      );
       this.logger.log(shopDto.website);
       const cleanLinks = this.utilService.filterObviousNonPages(
         links,
@@ -291,6 +296,8 @@ export class ProcessService implements OnModuleInit {
       createProcessDto.candidatePages,
       createProcessDto.expectedPrice,
       createProcessDto.headless,
+      createProcessDto.country,
+      createProcessDto.currency,
     );
     if (result) {
       return true;
@@ -313,6 +320,8 @@ export class ProcessService implements OnModuleInit {
     candidatePages: FullCandidatePageDto[],
     expectedPrice: number,
     headless: boolean,
+    country: string,
+    currency: string,
   ): Promise<boolean> {
     // Think the router has to be added here
     let html: string;
@@ -338,11 +347,15 @@ export class ProcessService implements OnModuleInit {
     let variantId: null | string = null;
     let imageData: string;
 
-    if (shopifySite) {
+    if (shopifySite && cloudflare === false) {
       this.logger.log('extractShopifyWebsite activated');
       while (index < url.length) {
         try {
-          info = await this.utilService.extractShopifyWebsite(url[index]);
+          info = await this.utilService.extractShopifyWebsite(
+            url[index],
+            country,
+            currency,
+          );
           textInformation = {
             html: info.title,
             mainText: info.mainText,
@@ -433,6 +446,9 @@ export class ProcessService implements OnModuleInit {
             textInformation = await this.browserService.getPageInfo(
               url[index],
               headless,
+              country,
+              currency,
+              shopifySite,
             );
             specificUrl = url[index];
             imageData = ``;
@@ -440,6 +456,8 @@ export class ProcessService implements OnModuleInit {
             this.logger.log('getPageInfo activated');
             const testInformation = await this.browserService.getPageHtml(
               url[index],
+              country,
+              currency,
             );
             textInformation = { ...testInformation, base64Image: '' };
             imageData = ``;
@@ -523,6 +541,7 @@ export class ProcessService implements OnModuleInit {
       variantId,
       imageData,
       expectedPrice,
+      cloudflare,
     };
 
     this.lmStudioClient.emit(
@@ -567,6 +586,8 @@ export class ProcessService implements OnModuleInit {
     cloudflare: boolean,
     variantId: null | string,
     headless: boolean,
+    country: string,
+    currency: string,
   ): Promise<boolean> {
     // Note, the html discovery part should be it's own function
     // This is for testing for now
@@ -578,12 +599,16 @@ export class ProcessService implements OnModuleInit {
     let title: string;
     let allText: string;
 
-    if (shopifySite) {
+    if (shopifySite && cloudflare === false) {
       this.logger.log('extractShopifyWebsite activated');
       this.logger.log(`extractShopifyWebsite activated`);
       await new Promise((r) => setTimeout(r, 50));
       try {
-        const result = await this.utilService.extractShopifyWebsite(url);
+        const result = await this.utilService.extractShopifyWebsite(
+          url,
+          country,
+          currency,
+        );
         const variantProduct = result.shopifyProduct.variants.find(
           (v) => String(v.id) === variantId,
         );
@@ -643,9 +668,16 @@ export class ProcessService implements OnModuleInit {
           textInformation = await this.browserService.getPageInfo(
             url,
             headless,
+            country,
+            currency,
+            shopifySite,
           );
         } else {
-          textInformation = await this.browserService.getPageHtml(url);
+          textInformation = await this.browserService.getPageHtml(
+            url,
+            country,
+            currency,
+          );
         }
       } catch (error) {
         if (
@@ -725,6 +757,7 @@ export class ProcessService implements OnModuleInit {
       shopifySite,
       shopWebsite,
       webPageId,
+      cloudflare,
     };
 
     this.lmStudioClient.emit('lmStudioCheckProduct', payload);
@@ -758,6 +791,7 @@ export class ProcessService implements OnModuleInit {
     shopifySite: boolean,
     shopWebsite: string,
     webPageId: string,
+    cloudflare: boolean,
   ): Promise<void> {
     const answer = await this.openaiService.checkProduct(
       title,
@@ -768,11 +802,20 @@ export class ProcessService implements OnModuleInit {
     );
     if (url.includes('games-island'))
       answer.price = Math.round(answer.price * 0.81);
+
+    let price: number;
+
+    if (shopifySite && cloudflare === true) {
+      price = answer.price / 100;
+    } else {
+      price = answer.price;
+    }
+
     const updatePackage: UpdatePagePayloadInterface = {
       url,
       shopWebsite,
       inStock: answer.inStock,
-      price: answer.price,
+      price: shopifySite && cloudflare === true ? price : answer.price,
       productName: query,
       webPageId: webPageId,
       hash: hash,
@@ -899,6 +942,8 @@ export class ProcessService implements OnModuleInit {
     candidatePages: FullCandidatePageDto[],
     expectedPrice: number,
     headless: boolean,
+    country: string,
+    currency: string,
   ): Promise<boolean> {
     this.logger.log(`https://${base}${seed}`);
 
@@ -954,6 +999,8 @@ export class ProcessService implements OnModuleInit {
       candidatePages,
       expectedPrice,
       headless,
+      country,
+      currency,
     );
     return true;
     // if (answer) {
@@ -975,7 +1022,12 @@ export class ProcessService implements OnModuleInit {
       for (const site of bestSites) {
         if (site.score < 0.8 || shopifySite === true) continue;
         bestSitesAllLinks.push(
-          ...(await this.browserService.getLinksFromPage(site.url)),
+          ...(await this.browserService.getLinksFromPage(
+            site.url,
+            country,
+            currency,
+            shopifySite,
+          )),
         );
         this.logger.log(bestSitesAllLinks.length);
       }
@@ -1042,6 +1094,8 @@ export class ProcessService implements OnModuleInit {
       createProcessDto.candidatePages,
       createProcessDto.expectedPrice,
       false,
+      'abc',
+      'abc',
     );
     if (answer) {
       this.logger.log('Product Found');
@@ -1077,6 +1131,8 @@ export class ProcessService implements OnModuleInit {
       checkPageDto.cloudflare,
       checkPageDto.variantId,
       checkPageDto.headless,
+      checkPageDto.country,
+      checkPageDto.currency,
     );
     return result;
   }
@@ -1094,7 +1150,13 @@ export class ProcessService implements OnModuleInit {
       mainText: string;
     };
     try {
-      soldEbayProductPrices = await this.browserService.getPageInfo(url, false);
+      soldEbayProductPrices = await this.browserService.getPageInfo(
+        url,
+        false,
+        'fix',
+        'fix',
+        false,
+      );
     } catch (error) {
       throw new ServiceUnavailableException(
         `Browser session closed early for ${url}`,

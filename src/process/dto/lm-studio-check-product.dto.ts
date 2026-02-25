@@ -67,4 +67,8 @@ export class LmStudioCheckProductDto {
   @IsString()
   @IsNotEmpty()
   webPageId!: string;
+
+  @IsBoolean()
+  @IsNotEmpty()
+  cloudflare: boolean;
 }

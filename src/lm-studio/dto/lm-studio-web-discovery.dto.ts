@@ -52,4 +52,7 @@ export class LmStudioWebDiscoveryDto implements LmStudioWebDiscoveryDto {
 
   @IsNumber()
   expectedPrice: number;
+
+  @IsBoolean()
+  cloudflare: boolean;
 }

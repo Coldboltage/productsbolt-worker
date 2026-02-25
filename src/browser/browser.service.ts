@@ -59,7 +59,13 @@ export class BrowserService {
     // const { items } = await dataset.getData();
     // this.logger.log(items);
 
-    const result = await this.getPageInfo(manualSitemapUrl, false);
+    const result = await this.getPageInfo(
+      manualSitemapUrl,
+      false,
+      '',
+      '',
+      false,
+    );
     return result;
   }
 
@@ -109,10 +115,18 @@ export class BrowserService {
     return { html, mainText, base64Image };
   }
 
-  async getPageHtml(url: string): Promise<{ html: string; mainText: string }> {
+  async getPageHtml(
+    url: string,
+    country: string,
+    currency: string,
+  ): Promise<{ html: string; mainText: string }> {
     let res;
     try {
-      res = await fetch(url);
+      res = await fetch(url, {
+        headers: {
+          Cookie: `cart_currency=${currency}; localization=${country}`,
+        },
+      });
     } catch (error) {
       this.logger.log(
         `Fetch error, possibly blocked by Cloudflare or invalid URL: ${error}`,
@@ -182,6 +196,9 @@ export class BrowserService {
   getPageInfo = async (
     url: string,
     headless: boolean,
+    country: string,
+    currency: string,
+    shopifySite: boolean,
   ): Promise<{
     html: string;
     mainText: string;
@@ -220,6 +237,24 @@ export class BrowserService {
       browser = headfulBrowser;
     }
 
+    const hostname = new URL(url).hostname;
+    this.logger.log('browser_loaded');
+
+    await page.setCookie(
+      {
+        name: 'cart_currency',
+        value: currency,
+        domain: `.${hostname}`,
+        path: '/',
+      },
+      {
+        name: 'localization',
+        value: country,
+        domain: `.${hostname}`,
+        path: '/',
+      },
+    );
+
     await page.setViewport({
       width: 1366,
       height: 768,
@@ -243,13 +278,13 @@ export class BrowserService {
       let testPage;
 
       try {
-        testPage = await page.goto(url, {
-          waitUntil: ['networkidle2'],
-          timeout: 60000,
+        testPage = await page.goto(shopifySite ? `${url}.js` : url, {
+          waitUntil: ['networkloadidle2'],
+          timeout: 20000,
         });
       } catch (error) {
         try {
-          testPage = await page.goto({
+          testPage = await page.goto(shopifySite ? `${url}.js` : url, {
             waitUntil: ['domcontentloaded'],
             timeout: 60000,
           });
@@ -411,8 +446,19 @@ export class BrowserService {
     }
   };
 
-  getLinksFromPage = async (url: string) => {
-    const { html } = await this.getPageInfo(url, false);
+  getLinksFromPage = async (
+    url: string,
+    country: string,
+    currency: string,
+    isShopifySite: boolean,
+  ) => {
+    const { html } = await this.getPageInfo(
+      url,
+      false,
+      country,
+      currency,
+      isShopifySite,
+    );
 
     const dom = new JSDOM(html);
     const document = dom.window.document;
