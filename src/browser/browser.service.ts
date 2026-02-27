@@ -206,8 +206,10 @@ export class BrowserService {
     let page;
     let browser;
 
+    let hostname: string;
+
     try {
-      new URL(url).hostname;
+      hostname = new URL(url).hostname;
     } catch {
       this.logger.warn(`Skipping ${url}: Invalid URL`);
       return;
@@ -249,17 +251,16 @@ export class BrowserService {
       {
         name: 'cart_currency',
         value: currency,
-        url: url,
+        domain: `.${hostname}`,
+        path: '/',
       },
       {
         name: 'localization',
         value: country,
-        url: url,
+        domain: `.${hostname}`,
+        path: '/',
       },
     );
-
-    const cookies = await page.cookies();
-    this.logger.verbose(`COOKIES IN JAR: ${JSON.stringify(cookies, null, 2)}`);
 
     await page.setViewport({
       width: 1366,
