@@ -441,8 +441,9 @@ export class ProcessService implements OnModuleInit {
     } else {
       while (index < url.length) {
         try {
-          if (cloudflare || headless) {
+          if (cloudflare && headless === false) {
             this.logger.log('getPageInfo activated');
+            // throw new Error('testing');
             textInformation = await this.browserService.getPageInfo(
               url[index],
               headless,
@@ -452,7 +453,7 @@ export class ProcessService implements OnModuleInit {
             );
             specificUrl = url[index];
             imageData = ``;
-          } else {
+          } else if (headless === true) {
             this.logger.log('getPageInfo activated');
             const testInformation = await this.browserService.getPageHtml(
               url[index],
@@ -472,6 +473,7 @@ export class ProcessService implements OnModuleInit {
           console.error(`Skipping ${url[index]}: ${error.message}`);
           index++;
         }
+        throw new Error('no_get_page_method_avaiable');
       }
 
       if (!success) {
@@ -609,10 +611,31 @@ export class ProcessService implements OnModuleInit {
           country,
           currency,
         );
+        this.logger.log('before variantProduct');
         const variantProduct = result.shopifyProduct.variants.find(
           (v) => String(v.id) === variantId,
         );
-        this.updateWebpageSend({
+
+        this.logger.log(variantProduct);
+        this.logger.log(
+          `http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${webPageId}`,
+        );
+        this.logger.log({
+          url,
+          inStock: variantProduct.available ? variantProduct.available : false,
+          price: variantProduct.price / 100,
+          productName: query,
+          hash: 'shopify',
+          count: 0,
+          shopifySite,
+          shopWebsite,
+          webPageId,
+          pageAllText: result.mainText,
+          pageTitle: result.title,
+          lastScanned: new Date(),
+        });
+
+        await this.updateWebpageSend({
           url,
           inStock: variantProduct.available ? variantProduct.available : false,
           price: variantProduct.price / 100,

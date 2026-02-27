@@ -206,6 +206,13 @@ export class BrowserService {
     let page;
     let browser;
 
+    try {
+      new URL(url).hostname;
+    } catch {
+      this.logger.warn(`Skipping ${url}: Invalid URL`);
+      return;
+    }
+
     if (false) {
       browser = this.browser;
       try {
@@ -216,8 +223,10 @@ export class BrowserService {
         throw new ConflictException('browser_did_not_load');
       }
     } else {
+      if (url.length === 0) throw new Error(`no_url_suppled`);
+
       const { browser: headfulBrowser, page: headfulPage } = await connect({
-        headless: headless,
+        headless: false,
         args: [
           // '--window-position=-99999,-99999',
           '--disable-backgrounding-occluded-windows',
@@ -234,24 +243,23 @@ export class BrowserService {
       page = headfulPage;
       browser = headfulBrowser;
     }
-
-    const hostname = new URL(url).hostname;
     this.logger.log('browser_loaded');
 
     await page.setCookie(
       {
         name: 'cart_currency',
         value: currency,
-        domain: `.${hostname}`,
-        path: '/',
+        url: url,
       },
       {
         name: 'localization',
         value: country,
-        domain: `.${hostname}`,
-        path: '/',
+        url: url,
       },
     );
+
+    const cookies = await page.cookies();
+    this.logger.verbose(`COOKIES IN JAR: ${JSON.stringify(cookies, null, 2)}`);
 
     await page.setViewport({
       width: 1366,
@@ -259,16 +267,21 @@ export class BrowserService {
       deviceScaleFactor: 1,
     });
 
-    await page.setRequestInterception(true);
-
-    page.on('request', (req) => {
-      const block = ['image', 'font', 'media'];
-      if (block.includes(req.resourceType())) {
-        req.abort();
-      } else {
-        req.continue();
-      }
+    page.on('request', (request) => {
+      const headers = request.headers();
+      this.logger.verbose(headers.cookie);
     });
+
+    // await page.setRequestInterception(true);
+
+    // page.on('request', (req) => {
+    //   const block = ['image', 'font', 'media'];
+    //   if (block.includes(req.resourceType())) {
+    //     req.abort();
+    //   } else {
+    //     req.continue();
+    //   }
+    // });
 
     // Promise that resolves with the page content and mainText
 
