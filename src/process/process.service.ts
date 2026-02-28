@@ -655,24 +655,45 @@ export class ProcessService implements OnModuleInit {
           error instanceof NotFoundException ||
           error instanceof UnauthorizedException
         ) {
-          try {
-            const response = await fetch(
-              `http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${webPageId}`,
-              {
-                method: 'PATCH',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+          if (error instanceof NotFoundException) {
+            try {
+              const response = await fetch(
+                `http://${process.env.API_IP}:3000/webpage/delete-and-update-shop-product-page/${webPageId}`,
+                {
+                  method: 'DELETE',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+                  },
                 },
-                body: JSON.stringify({ price: 0, inStock: false }),
-              },
-            );
-            this.logger.log({
-              responseCode: response.status,
-              url: url,
-            });
-          } catch (error) {
-            this.logger.error({ error, url: url });
+              );
+              this.logger.log({
+                responseCode: response.status,
+                url: url,
+              });
+            } catch (error) {
+              this.logger.error({ error, url: url });
+            }
+          } else {
+            try {
+              const response = await fetch(
+                `http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${webPageId}`,
+                {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+                  },
+                  body: JSON.stringify({ price: 0, inStock: false }),
+                },
+              );
+              this.logger.log({
+                responseCode: response.status,
+                url: url,
+              });
+            } catch (error) {
+              this.logger.error({ error, url: url });
+            }
           }
         } else {
           throw new Error(`could_not_fetch_shopify_product: ${url}`);
@@ -707,24 +728,45 @@ export class ProcessService implements OnModuleInit {
           error instanceof NotFoundException ||
           error instanceof UnauthorizedException
         ) {
-          try {
-            const response = await fetch(
-              `http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${webPageId}`,
-              {
-                method: 'PATCH',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+          if (error instanceof NotFoundException) {
+            try {
+              const response = await fetch(
+                `http://${process.env.API_IP}:3000/webpage/delete-and-update-shop-product-page/${webPageId}`,
+                {
+                  method: 'DELETE',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+                  },
                 },
-                body: JSON.stringify({ price: 0, inStock: false }),
-              },
-            );
-            this.logger.log({
-              responseCode: response.status,
-              url: url,
-            });
-          } catch (error) {
-            this.logger.error({ error, url: url });
+              );
+              this.logger.log({
+                responseCode: response.status,
+                url: url,
+              });
+            } catch (error) {
+              this.logger.error({ error, url: url });
+            }
+          } else {
+            try {
+              const response = await fetch(
+                `http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${webPageId}`,
+                {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+                  },
+                  body: JSON.stringify({ price: 0, inStock: false }),
+                },
+              );
+              this.logger.log({
+                responseCode: response.status,
+                url: url,
+              });
+            } catch (error) {
+              this.logger.error({ error, url: url });
+            }
           }
         }
 
@@ -823,6 +865,30 @@ export class ProcessService implements OnModuleInit {
       type,
       mode,
     );
+
+    if (answer.soft404 === true) {
+      try {
+        const response = await fetch(
+          `http://${process.env.API_IP}:3000/webpage/delete-and-update-shop-product-page/${webPageId}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+            },
+          },
+        );
+        this.logger.log({
+          responseCode: response.status,
+          url: url,
+        });
+        return;
+      } catch (error) {
+        this.logger.error({ error, url: url });
+        return;
+      }
+    }
+
     if (url.includes('games-island'))
       answer.price = Math.round(answer.price * 0.81);
 

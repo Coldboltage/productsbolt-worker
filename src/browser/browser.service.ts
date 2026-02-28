@@ -260,6 +260,20 @@ export class BrowserService {
         domain: `.${hostname}`,
         path: '/',
       },
+      {
+        name: 'GlobalE_Data',
+        value: encodeURIComponent(
+          JSON.stringify({
+            countryISO: country, // "US"
+            currencyCode: currency, // "USD"
+            cultureCode: `en-${country}`,
+            isOperatedByGlobalE: false,
+            isSupportsFixedPrice: false,
+          }),
+        ),
+        domain: `.${hostname}`,
+        path: '/',
+      },
     );
 
     await page.setViewport({

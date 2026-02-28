@@ -347,6 +347,7 @@ export class OpenaiService {
     mode: string,
   ): Promise<{
     analysis: string;
+    soft404: boolean;
     inStock: boolean;
     price: number;
   }> => {
@@ -404,6 +405,8 @@ Note: Some sites have a regular price and a sale price. Always use the sale pric
 Output schema:
 {
   "analysis": "tiny reason",
+  "soft404Description": {'description': "is the page a soft404 which is indicating the page was not corret found"},
+  "soft404": boolean,
   "inStock": true/false,
   "price": number
 }

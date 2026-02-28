@@ -1,0 +1,11 @@
+node_modules
+dist
+*.log
+*.md
+.git
+backups
+db_backup
+diagnostics
+
+docker service update --force productsbolt_worker
+docker service update --force productsbolt_headful-worker

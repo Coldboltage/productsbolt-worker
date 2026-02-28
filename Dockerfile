@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV CHROME_PATH=/usr/bin/chromium
 # Avoid puppeteer trying to download its own chrome during npm install
 ENV PUPPETEER_SKIP_DOWNLOAD=true
-ENV NODE_ENV=production
+
 
 COPY package*.json ./
 RUN npm ci
@@ -33,7 +33,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-EXPOSE 3000
+ENV NODE_ENV=production
 
 # Run your Nest app with a virtual X display
 CMD ["sh", "-c", "xvfb-run -a -s '-screen 0 1920x1080x24' node dist/main.js"]
