@@ -367,6 +367,8 @@ export class UtilsService {
       let finishedLoading = false;
       const start = Date.now();
 
+      // await new Promise((r) => setTimeout(r, 20000000));
+
       while (finishedLoading === false && Date.now() - start < timeout) {
         try {
           this.logger.log(`waiting for ${url} to load`);
@@ -379,6 +381,7 @@ export class UtilsService {
             !bodyText.includes('please wait')
           ) {
             finishedLoading = true;
+            await new Promise((resolve) => setTimeout(resolve, 1000));
           }
         } catch (error) {
           this.logger.log(error);

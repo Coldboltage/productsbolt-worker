@@ -268,11 +268,6 @@ export class BrowserService {
       deviceScaleFactor: 1,
     });
 
-    page.on('request', (request) => {
-      const headers = request.headers();
-      this.logger.verbose(headers.cookie);
-    });
-
     // await page.setRequestInterception(true);
 
     // page.on('request', (req) => {
