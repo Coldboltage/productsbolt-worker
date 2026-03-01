@@ -44,7 +44,7 @@ async function bootstrap() {
           autoDelete: false, // <-- add this
         },
         noAck: false, // <-- manual ack mode
-        prefetchCount: 3, // <-- cap concurrency
+        prefetchCount: +process.env.HEADFUL_SLOW_QUEUE, // <-- cap concurrency
       },
     });
   }
