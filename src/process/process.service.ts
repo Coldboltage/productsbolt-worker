@@ -40,6 +40,8 @@ import { FullCandidatePageDto } from './dto/candidate-page.dto.js';
 import { ShopifyProduct } from 'src/utils/utils.type.js';
 import { LmStudioCheckProductDto } from './dto/lm-studio-check-product.dto.js';
 import { ShopifyMetaDto } from './dto/shopify-meta.dto.js';
+import { lastValueFrom } from 'rxjs';
+import { VariantDto } from './dto/variant.dto.js';
 
 @Injectable()
 export class ProcessService implements OnModuleInit {
@@ -371,12 +373,28 @@ export class ProcessService implements OnModuleInit {
             imageData = '';
           } else {
             // We need to make an immediate LLM Call and we need the state.
-            const test = await this.openaiService.whichVariant(
+            let test;
+
+            const variantPayload = {
               query,
               context,
-              info.shopifyProduct.variants,
+              variants: info.shopifyProduct.variants,
               type,
-            );
+            };
+
+            if (+process.env.LM_QUEUE === 0) {
+              test = await lastValueFrom(
+                this.lmStudioClient.send('whichVariant', variantPayload),
+              );
+            } else {
+              test = await this.openaiService.whichVariant(
+                query,
+                context,
+                info.shopifyProduct.variants,
+                type,
+              );
+            }
+
             title = info.title;
             allText = `${textInformation.mainText}. Price is ${info.shopifyProduct.variants[test.index].price / 100}, InStock Status: ${info.shopifyProduct.variants[test.index].available}`;
             variantId = String(info.shopifyProduct.variants[test.index].id);
@@ -1522,6 +1540,20 @@ export class ProcessService implements OnModuleInit {
           body: JSON.stringify({ ...metaInformation, id: shopifyMetaDto.id }),
         },
       );
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  async whichVariant(variantDto: VariantDto) {
+    try {
+      const response = await this.openaiService.whichVariant(
+        variantDto.query,
+        variantDto.context,
+        variantDto.variants,
+        variantDto.type,
+      );
+      return response;
     } catch (error) {
       this.logger.error(error);
     }

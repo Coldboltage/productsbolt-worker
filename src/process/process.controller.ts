@@ -20,6 +20,7 @@ import { ProductDto } from './dto/product.dto.js';
 import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
 import { LmStudioCheckProductDto } from './dto/lm-studio-check-product.dto.js';
 import { ShopifyMetaDto } from './dto/shopify-meta.dto.js';
+import { VariantDto } from './dto/variant.dto.js';
 
 @Controller()
 export class ProcessController {
@@ -383,6 +384,13 @@ export class ProcessController {
       this.logger.error(error);
       channel.nack(originalMsg, false, false);
     }
+  }
+
+  @MessagePattern('whichVariant')
+  async whichVariant(@Payload() variantDto: VariantDto) {
+    this.logger.log(`whichVariant with ${variantDto.query}`);
+
+    return await this.processService.whichVariant(variantDto);
   }
 
   @EventPattern('createProcess')
