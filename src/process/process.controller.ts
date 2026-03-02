@@ -387,10 +387,23 @@ export class ProcessController {
   }
 
   @MessagePattern('whichVariant')
-  async whichVariant(@Payload() variantDto: VariantDto) {
-    this.logger.log(`whichVariant with ${variantDto.query}`);
+  async whichVariant(
+    @Payload() variantDto: VariantDto,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
 
-    return await this.processService.whichVariant(variantDto);
+    try {
+      const result = await this.processService.whichVariant(variantDto);
+
+      channel.ack(originalMsg);
+
+      return result;
+    } catch (error) {
+      channel.nack(originalMsg, false, false); // drop message
+      throw error; // important so RPC caller gets error
+    }
   }
 
   @EventPattern('createProcess')
