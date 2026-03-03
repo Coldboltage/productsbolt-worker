@@ -33,9 +33,11 @@ export class ShopDto {
   @IsBoolean()
   cloudflare: boolean;
 
+  // Country Code
   @IsString()
   country: string;
 
+  // Currency Code
   @IsString()
   currency: string;
 
