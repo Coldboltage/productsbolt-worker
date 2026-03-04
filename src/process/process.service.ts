@@ -907,8 +907,8 @@ export class ProcessService implements OnModuleInit {
       }
     }
 
-    if (url.includes('games-island'))
-      answer.price = Math.round(answer.price * 0.81);
+    // if (url.includes('games-island'))
+    //   answer.price = Math.round(answer.price * 0.81);
 
     let price: number;
 
