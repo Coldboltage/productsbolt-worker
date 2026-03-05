@@ -333,7 +333,7 @@ export class UtilsService {
     } while (siteMapAmount > 100000000000);
 
     const filtered = this.filterObviousNonPages(sites, seed);
-    // await new Promise((r) => setTimeout(r, pauseTimer));
+    await new Promise((r) => setTimeout(r, pauseTimer));
     // this.logger.log(filtered)
     if (response?.errors?.length === 0) {
       this.logger.log(`No errors getting sitemap: ${sitemapUrl}`);
