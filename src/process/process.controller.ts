@@ -152,22 +152,35 @@ export class ProcessController {
 
     try {
       const result = await this.processService.sitemapSearch(shopDto);
-      if (result.websiteUrls.length === 0)
+      if (result.websiteUrls.length === 0) {
         throw new NotFoundException(
           `No sitemap URLs found for shop ${shopDto.id}`,
         );
-      fetch(
-        `http://${process.env.API_IP}:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sitemapUrls: result.websiteUrls,
-            fast: result.fast,
-            scannedAt: new Date(),
-          }),
-        },
-      );
+      }
+      this.logger.log({
+        url: `http://${process.env.API_IP}:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
+        result: result.websiteUrls.length,
+      });
+      try {
+        await fetch(
+          `http://${process.env.API_IP}:3000/sitemap/check-site-map/${shopDto.sitemapEntity.id}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+            },
+            body: JSON.stringify({
+              sitemapUrls: result.websiteUrls,
+              fast: result.fast,
+              scannedAt: new Date(),
+            }),
+          },
+        );
+      } catch (error) {
+        this.logger.error(error);
+      }
+
       // ACK message on success
       channel.ack(originalMsg);
     } catch (error) {

@@ -471,7 +471,7 @@ export class ProcessService implements OnModuleInit {
             );
             specificUrl = url[index];
             imageData = ``;
-          } else if (headless === true) {
+          } else {
             this.logger.log('getPageInfo activated');
             const testInformation = await this.browserService.getPageHtml(
               url[index],
