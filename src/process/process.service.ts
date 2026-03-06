@@ -173,6 +173,7 @@ export class ProcessService implements OnModuleInit {
         false,
       );
       this.logger.log(shopDto.website);
+      this.logger.log(links);
       const cleanLinks = this.utilService.filterObviousNonPages(
         links,
         `https://${shopDto.website}`,
@@ -472,7 +473,7 @@ export class ProcessService implements OnModuleInit {
             specificUrl = url[index];
             imageData = ``;
           } else {
-            this.logger.log('getPageInfo activated');
+            this.logger.log('getPageHtml activated');
             const testInformation = await this.browserService.getPageHtml(
               url[index],
               country,

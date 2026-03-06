@@ -151,8 +151,8 @@ export class UtilsService {
     // Step 1: Filter URLs that start with the prefix
     this.logger.log(`Before startsWith: ${urls.length}`);
     const filteredByPrefix = urls.filter((url) => {
-      // return url.startsWith(prefix)
-      return url.startsWith(prefix);
+      const test = new URL(url, prefix).href;
+      return test.startsWith(prefix);
     });
     this.logger.log(`prefix is: ${prefix}`);
     this.logger.log('After prefix filter:', filteredByPrefix.length);
