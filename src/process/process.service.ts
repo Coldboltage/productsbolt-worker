@@ -42,6 +42,7 @@ import { LmStudioCheckProductDto } from './dto/lm-studio-check-product.dto.js';
 import { ShopifyMetaDto } from './dto/shopify-meta.dto.js';
 import { lastValueFrom } from 'rxjs';
 import { VariantDto } from './dto/variant.dto.js';
+import { ApiService } from './../api/api.service.js';
 
 @Injectable()
 export class ProcessService implements OnModuleInit {
@@ -53,6 +54,7 @@ export class ProcessService implements OnModuleInit {
     private browserService: BrowserService,
     private openaiService: OpenaiService,
     private ebayService: EbayService,
+    private apiSerice: ApiService,
   ) {}
 
   async shopifyCollectionsTest(shopDto: ShopDto) {
@@ -189,12 +191,13 @@ export class ProcessService implements OnModuleInit {
   }
 
   async sitemapSearch(shopDto: ShopDto) {
-    this.logger.log(shopDto.sitemapEntity);
     // await this.hasSitemapChanged(shopDto.sitemap, shopDto.etag)
     let sitemapUrls: {
       websiteUrls: string[];
       fast: boolean;
     };
+    this.logger.log(shopDto.sitemapEntity);
+
     try {
       sitemapUrls = await this.utilService.getUrlsFromSitemap(
         shopDto.sitemapEntity.sitemap,

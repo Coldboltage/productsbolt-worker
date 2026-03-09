@@ -8,6 +8,7 @@ import { ProcessModule } from './process/process.module.js';
 import { EbayModule } from './ebay/ebay.module.js';
 import { RabbitmqModule } from './rabbitmq/rabbitmq.module.js';
 import { LmStudioModule } from './lm-studio/lm-studio.module.js';
+import { ApiModule } from './api/api.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { LmStudioModule } from './lm-studio/lm-studio.module.js';
     EbayModule,
     RabbitmqModule,
     LmStudioModule,
+    ApiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
