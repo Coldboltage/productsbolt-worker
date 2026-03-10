@@ -38,7 +38,6 @@ export class LmStudioController {
       variantId,
       imageData,
       expectedPrice,
-      candidatePage,
       cloudflare,
     } = lmStudioWebDiscoveryPayloadDto;
 

@@ -15,7 +15,7 @@ import { BrowserService } from '../browser/browser.service.js';
 import { UtilsService } from '../utils/utils.service.js';
 import {
   CreateProcessDto,
-  CreateProcessDtoArrayDto,
+  CreateProcessDtoAfterDiscovery,
 } from './dto/create-process.dto.js';
 import { UpdateProcessDto } from './dto/update-process.dto.js';
 import { CheckPageDto } from './dto/check-page.dto.js';
@@ -262,12 +262,29 @@ export class ProcessService implements OnModuleInit {
     return false;
   }
 
-  async webpageDiscoveryBatch(
-    createProcessDtoArrayDto: CreateProcessDtoArrayDto,
-  ) {
-    for (const createProcessDto of createProcessDtoArrayDto.createProcessDtoArrayDto) {
-      await this.webpageDiscovery(createProcessDto, 'nano');
+  async webpageDiscoveryBatch(createProcessDtoArray: CreateProcessDto[]) {
+    // Get through rotateTest implementation
+
+    this.logger.debug(createProcessDtoArray);
+
+    const shopProductsWithLinks = createProcessDtoArray.filter((sp) => {
+      return sp.links.length > 0;
+    });
+
+    const shopProductPageInfos = await this.browserService.getPageInfoBatch(
+      shopProductsWithLinks,
+    );
+
+    this.logger.debug({
+      shopProductPageInfos,
+      length: shopProductPageInfos.length,
+    });
+
+    for (const sp of shopProductPageInfos) {
+      this.afterPageDiscovery(sp);
     }
+
+    return true;
   }
 
   async webpageDiscovery(createProcessDto: CreateProcessDto, mode: string) {
@@ -572,7 +589,7 @@ export class ProcessService implements OnModuleInit {
       hash,
       countIteration,
       shopifySite,
-      candidatePage,
+      // candidatePage,
       variantId,
       imageData,
       expectedPrice,
@@ -1573,6 +1590,115 @@ export class ProcessService implements OnModuleInit {
       this.logger.error(error);
     }
   }
+
+  async afterPageDiscovery(shopProduct: CreateProcessDtoAfterDiscovery) {
+    const candidatePage = shopProduct.candidatePages.find(
+      (page) => page.url === shopProduct.url,
+    );
+    this.logger.log(candidatePage);
+
+    const html = shopProduct.html;
+    const mainText = shopProduct.mainText;
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+    const title = document.title;
+    const query = shopProduct.name;
+    const type = shopProduct.type;
+    const mode = 'nano';
+    const context = shopProduct.context;
+    const specificUrl = shopProduct.specificUrl;
+    const shopifySite = shopProduct.shopifySite;
+    let hash = shopProduct.hash;
+    const variantId = null;
+    const imageData = '';
+    const expectedPrice = shopProduct.expectedPrice;
+    const cloudflare = shopProduct.cloudflare;
+
+    const createProcessDto: CreateProcessDto = {
+      ...shopProduct,
+    };
+
+    this.logger.log('Page title:', title);
+
+    const allText = htmlToText(mainText, {
+      wordwrap: false,
+    });
+
+    this.logger.log({
+      title,
+      allText,
+      query,
+      type,
+      mode,
+      context,
+    });
+
+    // Create Hash from maintext. We shall assume this text must change if something has changed
+    const currentHash = crypto
+      .createHash('sha256')
+      .update(allText)
+      .digest('hex');
+
+    if (
+      currentHash === candidatePage?.candidatePageCache?.hash &&
+      candidatePage?.candidatePageCache?.confirmed === true
+    ) {
+      this.logger.log({
+        message: 'no-need-to-continue',
+        webpage: specificUrl,
+      });
+      throw new Error('no-need-to-continue');
+    }
+    hash = currentHash;
+    const countIteration = candidatePage?.candidatePageCache?.count || 0;
+
+    this.logger.log(`countIteration = ${countIteration}`);
+
+    const lmStudioWebDiscoveryPayload: LmStudioWebDiscoveryPayload = {
+      title,
+      allText,
+      query,
+      type,
+      mode,
+      context,
+      createProcessDto,
+      specificUrl,
+      hash,
+      countIteration,
+      shopifySite,
+      variantId,
+      imageData,
+      expectedPrice,
+      cloudflare,
+    };
+
+    this.lmStudioClient.emit(
+      'lmStudioWebDiscovery',
+      lmStudioWebDiscoveryPayload,
+    );
+    return true;
+  }
+
+  // const answer = await this.openaiService.productInStock(
+  //   title,
+  //   allText,
+  //   query,
+  //   type,
+  //   mode,
+  //   context
+  // );
+
+  // if (
+  //   answer?.isNamedProduct === true &&
+  //   answer?.packagingTypeMatch === true &&
+  //   answer?.isMainProductPage === true &&
+  //   answer?.editionMatch === true
+
+  // ) {
+  //   this.logger.log(answer)
+  //   return { ...answer, specificUrl: url };
+  // }
+  // console.error(answer)
 
   create(createProcessDto: CreateProcessDto) {}
 

@@ -16,7 +16,7 @@ export interface LmStudioWebDiscoveryPayload {
   hash: string;
   countIteration: number;
   shopifySite: boolean;
-  candidatePage: CandidatePageCacheDto;
+  // candidatePage: CandidatePageCacheDto;
   variantId: null | string;
   imageData: string;
   expectedPrice: number;

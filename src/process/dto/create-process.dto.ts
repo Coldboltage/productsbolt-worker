@@ -16,11 +16,6 @@ import { Type } from 'class-transformer';
 import { SitemapDto } from './sitemap-dto.js';
 import { FullCandidatePageDto } from './candidate-page.dto.js';
 
-export class CreateProcessDtoArrayDto {
-  @IsArray()
-  createProcessDtoArrayDto: CreateProcessDto[];
-}
-
 export class CreateProcessDto {
   @IsUrl()
   sitemap: string;
@@ -92,6 +87,108 @@ export class CreateProcessDto {
   @IsArray()
   @IsString()
   links: string[];
+
+  @ValidateNested()
+  @Type(() => EbayProductDetailDto)
+  @IsOptional()
+  ebayProductDetail?: EbayProductDetailDto;
+
+  @ValidateNested()
+  @Type(() => SitemapDto)
+  sitemapEntity: SitemapDto;
+
+  @IsArray()
+  @ValidateNested()
+  @Type(() => FullCandidatePageDto)
+  candidatePages: FullCandidatePageDto[];
+}
+
+export class CreateProcessDtoAfterDiscovery {
+  @IsUrl()
+  sitemap: string;
+
+  @IsUrl()
+  url: string;
+
+  @IsString()
+  category: string;
+
+  @IsString()
+  name: string;
+
+  @IsUUID()
+  shopProductId: string;
+
+  @IsString()
+  shopWebsite: string;
+
+  @IsEnum(ProductType)
+  type: ProductType;
+
+  @IsString()
+  context: string;
+
+  @IsNumber()
+  crawlAmount: number;
+
+  @IsUUID()
+  productId: string;
+
+  @IsUUID()
+  shopId: string;
+
+  @IsBoolean()
+  shopifySite: boolean;
+
+  @IsEnum(UniqueShopType)
+  shopType: UniqueShopType;
+
+  @IsBoolean()
+  cloudflare: boolean;
+
+  @IsBoolean()
+  headless: boolean;
+
+  @IsString()
+  hash: string;
+
+  @IsBoolean()
+  confirmed: boolean;
+
+  @IsNumber()
+  count: number;
+
+  @IsNumber()
+  expectedPrice: number;
+
+  @IsString()
+  country: string;
+
+  @IsString()
+  currency: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  sitemapUrls: string[];
+
+  @IsArray()
+  @IsString()
+  links: string[];
+
+  @IsString()
+  html: string;
+
+  @IsString()
+  mainText: string;
+
+  @IsString()
+  shopyifySite: boolean;
+
+  @IsString()
+  base64Image: string;
+
+  @IsString()
+  specificUrl: string;
 
   @ValidateNested()
   @Type(() => EbayProductDetailDto)

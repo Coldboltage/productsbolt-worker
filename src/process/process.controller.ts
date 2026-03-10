@@ -11,10 +11,7 @@ import {
   Payload,
   RmqContext,
 } from '@nestjs/microservices';
-import {
-  CreateProcessDto,
-  CreateProcessDtoArrayDto,
-} from './dto/create-process.dto.js';
+import { CreateProcessDto } from './dto/create-process.dto.js';
 import { UpdateProcessDto } from './dto/update-process.dto.js';
 import { ProcessService } from './process.service.js';
 import { CheckPageDto } from './dto/check-page.dto.js';
@@ -282,9 +279,10 @@ export class ProcessController {
     }
   }
 
+  // Batch jobs for headful workflows
   @EventPattern('webpageDiscoveryHeadful')
   async webpageDiscoveryHeadful(
-    @Payload() createProcessDtoArrayDto: CreateProcessDtoArrayDto,
+    @Payload() createProcessDtoArrayDto: CreateProcessDto[],
     @Ctx() context: RmqContext,
   ) {
     const channel = context.getChannelRef();
