@@ -11,7 +11,10 @@ import {
   Payload,
   RmqContext,
 } from '@nestjs/microservices';
-import { CreateProcessDto } from './dto/create-process.dto.js';
+import {
+  CreateProcessDto,
+  CreateProcessDtoArrayDto,
+} from './dto/create-process.dto.js';
 import { UpdateProcessDto } from './dto/update-process.dto.js';
 import { ProcessService } from './process.service.js';
 import { CheckPageDto } from './dto/check-page.dto.js';
@@ -261,14 +264,14 @@ export class ProcessController {
 
   @EventPattern('webpageDiscovery')
   async webpageDiscovery(
-    @Payload() createProcessDto: CreateProcessDto,
+    @Payload() createProcessDtoArrayDto: CreateProcessDtoArrayDto,
     @Ctx() context: RmqContext,
   ) {
     const channel = context.getChannelRef();
     const originalMsg = context.getMessage();
 
     try {
-      await this.processService.webpageDiscovery(createProcessDto, 'nano');
+      await this.processService.webpageDiscoveryBatch(createProcessDtoArrayDto);
       // ACK message on success
       channel.ack(originalMsg);
     } catch (error) {

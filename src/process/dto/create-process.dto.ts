@@ -16,6 +16,11 @@ import { Type } from 'class-transformer';
 import { SitemapDto } from './sitemap-dto.js';
 import { FullCandidatePageDto } from './candidate-page.dto.js';
 
+export class CreateProcessDtoArrayDto {
+  @IsArray()
+  createProcessDtoArrayDto: CreateProcessDto[];
+}
+
 export class CreateProcessDto {
   @IsUrl()
   sitemap: string;

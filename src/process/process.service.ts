@@ -13,7 +13,10 @@ import { htmlToText } from 'html-to-text';
 import { ParsedLinks, ProductType } from '../app.type.js';
 import { BrowserService } from '../browser/browser.service.js';
 import { UtilsService } from '../utils/utils.service.js';
-import { CreateProcessDto } from './dto/create-process.dto.js';
+import {
+  CreateProcessDto,
+  CreateProcessDtoArrayDto,
+} from './dto/create-process.dto.js';
 import { UpdateProcessDto } from './dto/update-process.dto.js';
 import { CheckPageDto } from './dto/check-page.dto.js';
 import { ShopDto } from './dto/shop.dto.js';
@@ -257,6 +260,14 @@ export class ProcessService implements OnModuleInit {
       return true;
     }
     return false;
+  }
+
+  async webpageDiscoveryBatch(
+    createProcessDtoArrayDto: CreateProcessDtoArrayDto,
+  ) {
+    for (const createProcessDto of createProcessDtoArrayDto.createProcessDtoArrayDto) {
+      await this.webpageDiscovery(createProcessDto, 'nano');
+    }
   }
 
   async webpageDiscovery(createProcessDto: CreateProcessDto, mode: string) {
