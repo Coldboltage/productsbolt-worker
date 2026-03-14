@@ -18,9 +18,14 @@ import {
   CreateProcessDtoAfterDiscovery,
 } from './dto/create-process.dto.js';
 import { UpdateProcessDto } from './dto/update-process.dto.js';
-import { CheckPageDto } from './dto/check-page.dto.js';
+import {
+  CheckPageDto,
+  FullCheckPageDtoPayloadDto,
+} from './dto/check-page.dto.js';
 import { ShopDto } from './dto/shop.dto.js';
 import {
+  PageInfoBatchAdded,
+  PageInfoBatchInput,
   UniqueShopType,
   UpdatePagePayloadInterface,
 } from './entities/process.entity.js';
@@ -652,7 +657,6 @@ export class ProcessService implements OnModuleInit {
     let allText: string;
 
     if (shopifySite && cloudflare === false) {
-      this.logger.log('extractShopifyWebsite activated');
       this.logger.log(`extractShopifyWebsite activated`);
       await new Promise((r) => setTimeout(r, 50));
       try {
@@ -1276,6 +1280,38 @@ export class ProcessService implements OnModuleInit {
     return result;
   }
 
+  async updatePageBatch(
+    fullCheckPageDtoPayloadDto: FullCheckPageDtoPayloadDto,
+  ) {
+    // Get through rotateTest implementation
+
+    const checkPageDto = fullCheckPageDtoPayloadDto.checkPageDto;
+    const checkPageDtoWithLinksArray: Array<CheckPageDto & PageInfoBatchInput> =
+      [];
+    for (const page of checkPageDto) {
+      const checkPageDtoWithLinks: CheckPageDto & PageInfoBatchInput = {
+        ...page,
+        links: [page.url],
+        currency: page.currency,
+        country: page.country,
+        shopifySite: page.shopifySite,
+      };
+      checkPageDtoWithLinksArray.push(checkPageDtoWithLinks);
+    }
+
+    const pageInfos = await this.browserService.getPageInfoBatch(
+      checkPageDtoWithLinksArray,
+      fullCheckPageDtoPayloadDto.waitForPause,
+    );
+
+    for (const page of pageInfos) {
+      await new Promise((r) => setTimeout(r, 50));
+      this.afterPageUpdate(page);
+    }
+
+    return true;
+  }
+
   async ebayStatCalc(product: ProductDto) {
     const ebayProductPrices: EbayProductStrip[] =
       await this.ebayService.productPrices(product);
@@ -1676,6 +1712,70 @@ export class ProcessService implements OnModuleInit {
       'lmStudioWebDiscovery',
       lmStudioWebDiscoveryPayload,
     );
+    return true;
+  }
+
+  async afterPageUpdate(
+    page: PageInfoBatchInput & PageInfoBatchAdded & CheckPageDto,
+  ) {
+    const html = page.html;
+    const mainText = page.mainText;
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+    const title = document.title;
+    const count = page.count;
+    const query = page.query;
+    const type = page.type;
+    const shopWebsite = page.shopWebsite;
+    const webPageId = page.webPageId;
+
+    const url = page.specificUrl;
+    const shopifySite = page.shopifySite;
+    let hash = page.hash;
+    const cloudflare = page.cloudflare;
+    this.logger.log('Page title:', title);
+
+    const allText = htmlToText(mainText, {
+      wordwrap: false,
+    });
+
+    this.logger.log({
+      title,
+      allText,
+    });
+
+    const currentHash = crypto
+      .createHash('sha256')
+      .update(allText)
+      .digest('hex');
+
+    if (currentHash === hash && page.confirmed === true) {
+      this.logger.log({
+        message: 'no-need-to-continue',
+        webpage: page.url,
+      });
+      this.logger.error('no-need-to-continue');
+      return true;
+    }
+    hash = currentHash;
+
+    const payload: LmStudioCheckProductDto = {
+      title,
+      allText,
+      query,
+      type,
+      mode: 'nano',
+      url,
+      hash,
+      count,
+      shopifySite,
+      shopWebsite,
+      webPageId,
+      cloudflare,
+    };
+
+    this.lmStudioClient.emit('lmStudioCheckProduct', payload);
+
     return true;
   }
 

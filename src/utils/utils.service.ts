@@ -361,7 +361,7 @@ export class UtilsService {
     url: string,
     timeout = 60000,
     waitingTimeout = 2000,
-    resolveTimeout = 10000,
+    resolveTimeout = 2000,
   ) {
     this.logger.log('cloudflare protection waitForCloudflareBypass fired');
 

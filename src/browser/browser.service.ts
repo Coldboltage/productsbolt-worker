@@ -15,6 +15,10 @@ import {
   CreateProcessDto,
   CreateProcessDtoAfterDiscovery,
 } from 'src/process/dto/create-process.dto.js';
+import {
+  PageInfoBatchAdded,
+  PageInfoBatchInput,
+} from 'src/process/entities/process.entity.js';
 
 @Injectable()
 export class BrowserService {
@@ -362,7 +366,7 @@ export class BrowserService {
       } catch (e) {
         this.logger.error(`Error during Cloudflare bypass, continuing anyway`);
         this.logger.log(e);
-        await new Promise((r) => setTimeout(r, 10000));
+        await new Promise((r) => setTimeout(r, 1000));
       }
 
       this.logger.log(`Navigated to ${url} with status ${status}`);
@@ -436,9 +440,10 @@ export class BrowserService {
     }
   };
 
-  async getPageInfoBatch(
-    createProcessDto: CreateProcessDto[],
-  ): Promise<CreateProcessDtoAfterDiscovery[]> {
+  async getPageInfoBatch<T extends PageInfoBatchInput>(
+    createProcessDto: T[],
+    waitForPause = true,
+  ): Promise<Array<T & PageInfoBatchAdded>> {
     let hostname: string;
 
     const { browser, page } = await connect({
@@ -457,23 +462,23 @@ export class BrowserService {
       ignoreAllFlags: false,
     });
 
-    const afterDiscoveryList: CreateProcessDtoAfterDiscovery[] = [];
+    const afterDiscoveryList: Array<T & PageInfoBatchAdded> = [];
 
-    for (const sp of createProcessDto) {
+    for (const process of createProcessDto) {
       let index = 0;
       let finished = false;
       // Many of links within a SP that needs to be checked
-      while (sp.links.length > index && !finished) {
+      while (process.links.length > index && !finished) {
         // while (index < 100) {
-        await new Promise((r) => setTimeout(r, 1200 + Math.random() * 1000));
-        const start = Date.now();
 
         // Setup
-        const url = sp.links[0];
-        const currency = sp.currency;
-        const country = sp.country;
-        const shopifySite = sp.shopifySite;
+        const url = process.links[index];
+        const currency = process.currency;
+        const country = process.country;
+        const shopifySite = process.shopifySite;
         let timer: ReturnType<typeof setTimeout>;
+
+        const start = Date.now();
 
         try {
           hostname = new URL(url).hostname;
@@ -557,10 +562,16 @@ export class BrowserService {
           const loadTime = Date.now() - start;
           this.logger.debug(`Page load: ${loadTime} ms`);
 
+          if (waitForPause && !shopifySite) {
+            await new Promise((r) =>
+              setTimeout(r, 1200 + Math.random() * 1000),
+            );
+          }
+
           let status = testPage.status();
 
           try {
-            // await this.utilService.waitForCloudflareBypass(page, url);
+            await this.utilService.waitForCloudflareBypass(page, url);
             if (status === 404) throw new NotFoundException(`404 Not Found`);
             if (status === 403 || status === 429) {
               this.logger.log('403 or 429 detected, reloading page');
@@ -630,8 +641,8 @@ export class BrowserService {
 
           const base64Image = 'removed';
 
-          const afterDiscoveryDto: CreateProcessDtoAfterDiscovery = {
-            ...sp,
+          const afterDiscoveryDto: T & PageInfoBatchAdded = {
+            ...process,
             html,
             mainText,
             shopyifySite,

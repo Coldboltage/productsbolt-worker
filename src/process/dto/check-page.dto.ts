@@ -52,3 +52,8 @@ export class CheckPageDto {
   @IsString()
   currency: string;
 }
+
+export class FullCheckPageDtoPayloadDto {
+  waitForPause: boolean;
+  checkPageDto: CheckPageDto[];
+}
