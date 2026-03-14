@@ -14,7 +14,10 @@ import {
 import { CreateProcessDto } from './dto/create-process.dto.js';
 import { UpdateProcessDto } from './dto/update-process.dto.js';
 import { ProcessService } from './process.service.js';
-import { CheckPageDto } from './dto/check-page.dto.js';
+import {
+  CheckPageDto,
+  FullCheckPageDtoPayloadDto,
+} from './dto/check-page.dto.js';
 import { ShopDto } from './dto/shop.dto.js';
 import { ProductDto } from './dto/product.dto.js';
 import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
@@ -279,6 +282,27 @@ export class ProcessController {
     }
   }
 
+  // Batch jobs for headful workflows
+  @EventPattern('webpageDiscoveryHeadful')
+  async webpageDiscoveryHeadful(
+    @Payload() createProcessDtoArrayDto: CreateProcessDto[],
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    try {
+      await this.processService.webpageDiscoveryBatch(createProcessDtoArrayDto);
+      // ACK message on success
+      channel.ack(originalMsg);
+    } catch (error) {
+      console.error(error);
+
+      // Optionally nack with requeue false to avoid infinite retry loops
+      channel.nack(originalMsg, false, false);
+    }
+  }
+
   @EventPattern('updatePage')
   async updatePage(
     @Payload() checkPageDto: CheckPageDto,
@@ -291,30 +315,32 @@ export class ProcessController {
       this.logger.log('updatePage message captured');
       this.logger.log(`updatePage message captured`);
       const result = await this.processService.updatePage(checkPageDto);
-      // const { query, shopWebsite, webPageId } = checkPageDto;
-      // this.logger.log(result);
-      // if (!result) {
-      //   channel.ack(originalMsg);
-      //   return false;
-      // }
-      // const webPage = {
-      //   url: result.specificUrl,
-      //   shopWebsite,
-      //   inStock: result.inStock,
-      //   price: result.price,
-      //   productName: query,
-      //   webPageId: webPageId,
-      //   hash: result.hash,
-      //   count: result.count,
-      //   shopifySite: result.shopifySite
-      // };
-      // this.logger.log(webPage);
-      // await fetch(`http://${process.env.API_IP}:3000/webpage-cache/update-single-page-and-cache/${webPage.webPageId}`, {
-      //   method: 'PATCH',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(webPage),
-      // });
-      // this.logger.log("Ending");
+
+      // ACK message on success
+      this.logger.log('Acknowledging message');
+      this.logger.log(result);
+      channel.ack(originalMsg);
+    } catch (error) {
+      console.error(error);
+
+      // Optionally nack with requeue false
+      channel.nack(originalMsg, false, false);
+    }
+  }
+
+  @EventPattern('updatePageBatch')
+  async updatePageBatch(
+    @Payload() fullCheckPageDtoPayloadDto: FullCheckPageDtoPayloadDto,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    try {
+      this.logger.log(`updatePage message captured`);
+      const result = await this.processService.updatePageBatch(
+        fullCheckPageDtoPayloadDto,
+      );
 
       // ACK message on success
       this.logger.log('Acknowledging message');

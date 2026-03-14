@@ -11,6 +11,14 @@ import { UtilsService } from '../utils/utils.service.js';
 import { ShopifyProductCollectionsFullCall } from '../utils/utils.type.js';
 import sanitizeHtml from 'sanitize-html';
 import puppeteer, { HTTPResponse, Browser } from 'puppeteer';
+import {
+  CreateProcessDto,
+  CreateProcessDtoAfterDiscovery,
+} from 'src/process/dto/create-process.dto.js';
+import {
+  PageInfoBatchAdded,
+  PageInfoBatchInput,
+} from 'src/process/entities/process.entity.js';
 
 @Injectable()
 export class BrowserService {
@@ -358,7 +366,7 @@ export class BrowserService {
       } catch (e) {
         this.logger.error(`Error during Cloudflare bypass, continuing anyway`);
         this.logger.log(e);
-        await new Promise((r) => setTimeout(r, 10000));
+        await new Promise((r) => setTimeout(r, 1000));
       }
 
       this.logger.log(`Navigated to ${url} with status ${status}`);
@@ -431,6 +439,252 @@ export class BrowserService {
       await page.close().catch(() => {}); // now safe to close browser
     }
   };
+
+  async getPageInfoBatch<T extends PageInfoBatchInput>(
+    createProcessDto: T[],
+    waitForPause = true,
+  ): Promise<Array<T & PageInfoBatchAdded>> {
+    let hostname: string;
+
+    const { browser, page } = await connect({
+      headless: false,
+      args: [
+        // '--window-position=-99999,-99999',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-features=CalculateNativeWinOcclusion',
+        '--no-sandbox',
+        '--disable-dev-shm-usage',
+      ],
+      customConfig: {},
+      turnstile: true,
+      connectOption: {},
+      disableXvfb: false,
+      ignoreAllFlags: false,
+    });
+
+    const afterDiscoveryList: Array<T & PageInfoBatchAdded> = [];
+
+    for (const process of createProcessDto) {
+      let index = 0;
+      let finished = false;
+      // Many of links within a SP that needs to be checked
+      while (process.links.length > index && !finished) {
+        // while (index < 100) {
+
+        // Setup
+        const url = process.links[index];
+        const currency = process.currency;
+        const country = process.country;
+        const shopifySite = process.shopifySite;
+        let timer: ReturnType<typeof setTimeout>;
+
+        const start = Date.now();
+
+        try {
+          hostname = new URL(url).hostname;
+        } catch {
+          this.logger.warn(`Skipping ${url}: Invalid URL`);
+          index++;
+          continue;
+        }
+
+        if (url.length === 0) throw new Error(`no_url_suppled`);
+
+        this.logger.log('browser_loaded');
+
+        await page.setCookie(
+          {
+            name: 'cart_currency',
+            value: currency,
+            domain: `.${hostname}`,
+            path: '/',
+          },
+          {
+            name: 'localization',
+            value: country,
+            domain: `.${hostname}`,
+            path: '/',
+          },
+          {
+            name: 'GlobalE_Data',
+            value: encodeURIComponent(
+              JSON.stringify({
+                countryISO: country, // "US"
+                currencyCode: currency, // "USD"
+                cultureCode: `en-${country}`,
+                isOperatedByGlobalE: false,
+                isSupportsFixedPrice: false,
+              }),
+            ),
+            domain: `.${hostname}`,
+            path: '/',
+          },
+        );
+
+        await page.setViewport({
+          width: 1366,
+          height: 768,
+          deviceScaleFactor: 1,
+        });
+
+        // await page.setRequestInterception(true);
+
+        // page.on('request', (req) => {
+        //   const block = ['image', 'font', 'media'];
+        //   if (block.includes(req.resourceType())) {
+        //     req.abort();
+        //   } else {
+        //     req.continue();
+        //   }
+        // });
+
+        // Promise that resolves with the page content and mainText
+
+        const pageTask = (async () => {
+          let testPage;
+
+          try {
+            testPage = await page.goto(shopifySite ? `${url}.js` : url, {
+              waitUntil: ['networkidle2'],
+              timeout: 60000,
+            });
+          } catch (error) {
+            try {
+              testPage = await page.goto(shopifySite ? `${url}.js` : url, {
+                waitUntil: ['domcontentloaded'],
+                timeout: 60000,
+              });
+            } catch (error) {
+              throw new Error('it_really_did_not_want_to_load');
+            }
+          }
+
+          const loadTime = Date.now() - start;
+          this.logger.debug(`Page load: ${loadTime} ms`);
+
+          if (waitForPause && !shopifySite) {
+            await new Promise((r) =>
+              setTimeout(r, 1200 + Math.random() * 1000),
+            );
+          }
+
+          let status = testPage.status();
+
+          try {
+            await this.utilService.waitForCloudflareBypass(page, url);
+            if (status === 404) throw new NotFoundException(`404 Not Found`);
+            if (status === 403 || status === 429) {
+              this.logger.log('403 or 429 detected, reloading page');
+              const finalResponse = await page.reload({
+                waitUntil: 'networkidle2',
+                timeout: 10000,
+              });
+              status = finalResponse?.status();
+            }
+            if (status > 404) throw new Error('400+ error');
+            else {
+              this.logger.log(`Passed: Status ${status} is OK`);
+            }
+          } catch (e) {
+            this.logger.error(
+              `Error during Cloudflare bypass, continuing anyway`,
+            );
+            this.logger.log(e);
+            await new Promise((r) => setTimeout(r, 200));
+          }
+
+          this.logger.log(`Navigated to ${url} with status ${status}`);
+
+          try {
+            if (status === 404) {
+              throw new NotFoundException(`404 Not Found: ${url}`);
+            } else if (status === 403) {
+              throw new ForbiddenException(`403 Forbidden: ${url}`);
+            } else if (status > 404) {
+              throw new ConflictException(`Error: ${status} on ${url}`);
+            }
+          } catch (error) {}
+
+          let html;
+
+          try {
+            html = await page.content();
+          } catch (error) {
+            throw new NotFoundException(`Page_is_broken: ${url}`);
+          }
+
+          const mainText = await page.evaluate(() => {
+            document
+              .querySelectorAll('header, footer, nav, aside')
+              .forEach((el) => el.remove());
+            const main = document.querySelector('main') || document.body;
+            return main.innerText;
+          });
+
+          const shopyifySite = await page.evaluate(() => {
+            const isShopyifySite = document.querySelector(
+              'link[href="https://cdn.shopify.com"]',
+            );
+            return isShopyifySite ? true : false;
+          });
+
+          await page.addStyleTag({
+            content: `
+    header, footer, nav, aside { display: none !important; }
+  `,
+          });
+
+          // const base64Image = await page.screenshot({
+          //   type: 'png',
+          //   encoding: 'base64',
+          // });
+
+          const base64Image = 'removed';
+
+          const afterDiscoveryDto: T & PageInfoBatchAdded = {
+            ...process,
+            html,
+            mainText,
+            shopyifySite,
+            base64Image: '',
+            specificUrl: url,
+            status,
+          };
+
+          // this.logger.log(afterDiscoveryDto);
+
+          afterDiscoveryList.push(afterDiscoveryDto);
+          this.logger.debug(afterDiscoveryList.length);
+          finished = true;
+          return true;
+        })();
+
+        // Timeout promise that closes browser after 10 seconds
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timer = setTimeout(async () => {
+            this.logger.log('⏱️ Timeout hit, closing page...');
+            try {
+              await page.close(); // 🔑 stop pageTask work first
+            } catch {}
+            reject(new Error('Timeout: 60s'));
+          }, 60000);
+        });
+
+        try {
+          // Whichever finishes first wins
+          await Promise.race([pageTask, timeoutPromise]);
+        } finally {
+          // Always clean up: cancel the timer and kill the browser exactly once
+          if (timer) clearTimeout(timer);
+        }
+        index++;
+      }
+    }
+    await page.close().catch(() => {});
+    await browser.close().catch(() => {});
+    this.logger.debug(afterDiscoveryList.length);
+    return afterDiscoveryList;
+  }
 
   isShopifySite = async (url: string): Promise<boolean> => {
     const { browser, page } = await connect({

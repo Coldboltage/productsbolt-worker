@@ -79,3 +79,18 @@ export interface UpdatePagePayloadInterface {
   pageTitle: string;
   lastScanned: Date;
 }
+export type PageInfoBatchInput = {
+  links: string[];
+  currency: string;
+  country: string;
+  shopifySite: boolean;
+};
+
+export type PageInfoBatchAdded = {
+  html: string;
+  mainText: string;
+  shopyifySite: boolean;
+  base64Image: string;
+  specificUrl: string;
+  status: number;
+};
