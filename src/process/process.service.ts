@@ -286,7 +286,14 @@ export class ProcessService implements OnModuleInit {
     });
 
     for (const sp of shopProductPageInfos) {
-      this.afterPageDiscovery(sp);
+      if (sp.status >= 400) {
+        this.logger.error({
+          error: `${sp.specificUrl}_page_error`,
+          statusCode: sp.status,
+        });
+      } else {
+        this.afterPageDiscovery(sp);
+      }
     }
 
     return true;
@@ -1305,6 +1312,27 @@ export class ProcessService implements OnModuleInit {
     );
 
     for (const page of pageInfos) {
+      if (page.status === 404) {
+        try {
+          const response = await fetch(
+            `http://${process.env.API_IP}:3000/webpage/delete-and-update-shop-product-page/${page.webPageId}`,
+            {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+              },
+            },
+          );
+          this.logger.log({
+            responseCode: response.status,
+            url: page.url,
+          });
+        } catch (error) {
+          this.logger.error({ error, url: page.url });
+        }
+      } else if (page.status === 403) {
+      }
       await new Promise((r) => setTimeout(r, 50));
       this.afterPageUpdate(page);
     }

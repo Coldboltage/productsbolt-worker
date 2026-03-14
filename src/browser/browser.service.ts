@@ -648,6 +648,7 @@ export class BrowserService {
             shopyifySite,
             base64Image: '',
             specificUrl: url,
+            status,
           };
 
           // this.logger.log(afterDiscoveryDto);

@@ -92,4 +92,5 @@ export type PageInfoBatchAdded = {
   shopyifySite: boolean;
   base64Image: string;
   specificUrl: string;
+  status: number;
 };
