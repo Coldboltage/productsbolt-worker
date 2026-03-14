@@ -719,9 +719,9 @@ export class ProcessService implements OnModuleInit {
           if (error instanceof NotFoundException) {
             try {
               const response = await fetch(
-                `http://${process.env.API_IP}:3000/webpage/delete-and-update-shop-product-page/${webPageId}`,
+                `http://${process.env.API_IP}:3000/webpage/not-found-counter/${webPageId}`,
                 {
-                  method: 'DELETE',
+                  method: 'PATCH',
                   headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${process.env.JWT_TOKEN}`,
@@ -792,9 +792,9 @@ export class ProcessService implements OnModuleInit {
           if (error instanceof NotFoundException) {
             try {
               const response = await fetch(
-                `http://${process.env.API_IP}:3000/webpage/delete-and-update-shop-product-page/${webPageId}`,
+                `http://${process.env.API_IP}:3000/webpage/not-found-counter/${webPageId}`,
                 {
-                  method: 'DELETE',
+                  method: 'PATCH',
                   headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${process.env.JWT_TOKEN}`,
@@ -930,9 +930,9 @@ export class ProcessService implements OnModuleInit {
     if (answer.soft404 === true) {
       try {
         const response = await fetch(
-          `http://${process.env.API_IP}:3000/webpage/delete-and-update-shop-product-page/${webPageId}`,
+          `http://${process.env.API_IP}:3000/webpage/not-found-counter/${webPageId}`,
           {
-            method: 'DELETE',
+            method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${process.env.JWT_TOKEN}`,
@@ -1315,9 +1315,9 @@ export class ProcessService implements OnModuleInit {
       if (page.status === 404) {
         try {
           const response = await fetch(
-            `http://${process.env.API_IP}:3000/webpage/delete-and-update-shop-product-page/${page.webPageId}`,
+            `http://${process.env.API_IP}:3000/webpage/not-found-counter/${page.webPageId}`,
             {
-              method: 'DELETE',
+              method: 'PATCH',
               headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${process.env.JWT_TOKEN}`,
