@@ -283,7 +283,7 @@ export class UtilsService {
         url: sitemapUrl,
         timeout: 60000,
         concurrency: 1,
-        retries: 1,
+        retries: 0,
         debug: true,
         // proxyAgent: { https: agent } as unknown as any
       });
@@ -348,7 +348,9 @@ export class UtilsService {
         fast: fast === true ? true : false,
       };
     } else {
-      this.logger.error(`Error getting sitemap: ${sitemapUrl}`);
+      this.logger.error({
+        message: `Error occured with sitemap: ${sitemapUrl},`,
+      });
       return {
         websiteUrls: filtered,
         fast: true,
@@ -763,9 +765,10 @@ export class UtilsService {
         if (status !== 200) {
           // Even if status isn't 200, still try to read body for debugging
           const body = await bodyPromise.catch(() => '');
-          throw new Error(
-            `Status ${status} for ${url} (first 200): ${body.slice(0, 200)}`,
-          );
+          if (!body.includes('xml'))
+            throw new Error(
+              `Status ${status} for ${url} (first 200): ${body.slice(0, 200)}`,
+            );
         }
 
         return await bodyPromise;
