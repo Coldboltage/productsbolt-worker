@@ -535,7 +535,7 @@ export class ProcessService implements OnModuleInit {
           console.error(`Skipping ${url[index]}: ${error.message}`);
           index++;
         }
-        throw new Error('no_get_page_method_avaiable');
+        throw new ServiceUnavailableException('no_get_page_method_avaiable');
       }
 
       if (!success) {
