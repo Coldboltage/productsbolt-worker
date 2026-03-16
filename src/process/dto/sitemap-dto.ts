@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsOptional, IsString } from "class-validator";
+import { IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class SitemapDto {
   @IsString()
@@ -19,6 +19,9 @@ export class SitemapDto {
 
   @IsBoolean()
   fast: boolean;
+
+  @IsBoolean()
+  wordpressXml: boolean;
 
   @IsOptional()
   @IsArray()

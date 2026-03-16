@@ -213,6 +213,7 @@ export class ProcessService implements OnModuleInit {
         90,
         shopDto.sitemapEntity.fast,
         shopDto.cloudflare,
+        shopDto.sitemapEntity.wordpressXml,
       );
     } catch (error) {
       this.logger.log(error);
@@ -260,6 +261,7 @@ export class ProcessService implements OnModuleInit {
       fast,
       createProcessDto,
       createProcessDto.cloudflare,
+      createProcessDto.wordpressXml,
     );
     if (result) {
       return true;
@@ -1021,6 +1023,7 @@ export class ProcessService implements OnModuleInit {
     fast: boolean,
     createProcessDto: CreateProcessDto,
     cloudflare: boolean,
+    wordpressXml: boolean,
   ): Promise<boolean> {
     this.logger.log(`https://${base}${seed}`);
 
@@ -1035,6 +1038,7 @@ export class ProcessService implements OnModuleInit {
       crawlAmount,
       fast,
       cloudflare,
+      wordpressXml,
       sitemapUrls,
     );
 

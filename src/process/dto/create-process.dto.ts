@@ -80,6 +80,9 @@ export class CreateProcessDto {
   @IsString()
   currency: string;
 
+  @IsBoolean()
+  wordpressXml: boolean;
+
   @IsArray()
   @IsString({ each: true })
   sitemapUrls: string[];
@@ -166,6 +169,9 @@ export class CreateProcessDtoAfterDiscovery {
 
   @IsString()
   currency: string;
+
+  @IsBoolean()
+  wordpressXml: boolean;
 
   @IsArray()
   @IsString({ each: true })
