@@ -350,6 +350,7 @@ export class UtilsService {
     } else {
       this.logger.error({
         message: `Error occured with sitemap: ${sitemapUrl},`,
+        // error: response.errors,
       });
       return {
         websiteUrls: filtered,
