@@ -272,8 +272,6 @@ export class ProcessService implements OnModuleInit {
   async webpageDiscoveryBatch(createProcessDtoArray: CreateProcessDto[]) {
     // Get through rotateTest implementation
 
-    this.logger.debug(createProcessDtoArray);
-
     const shopProductsWithLinks = createProcessDtoArray.filter((sp) => {
       return sp.links.length > 0;
     });
@@ -282,7 +280,7 @@ export class ProcessService implements OnModuleInit {
       shopProductsWithLinks,
     );
 
-    this.logger.debug({
+    this.logger.log({
       shopProductPageInfos,
       length: shopProductPageInfos.length,
     });
@@ -294,6 +292,7 @@ export class ProcessService implements OnModuleInit {
           statusCode: sp.status,
         });
       } else {
+        await new Promise((r) => setTimeout(r, 25));
         this.afterPageDiscovery(sp);
       }
     }
@@ -397,9 +396,10 @@ export class ProcessService implements OnModuleInit {
 
     console.log({ shopifySite, cloudflare });
 
-    if (shopifySite && cloudflare === false) {
-      this.logger.log('extractShopifyWebsite activated');
-      while (index < url.length) {
+    while (index < url.length) {
+      if (shopifySite && cloudflare === false) {
+        this.logger.log('extractShopifyWebsite activated');
+
         try {
           info = await this.utilService.extractShopifyWebsite(
             url[index],
@@ -498,16 +498,14 @@ export class ProcessService implements OnModuleInit {
             (page) => page.url === specificUrl,
           );
           this.logger.log(candidatePage);
-
-          break;
         } catch (error) {
           console.error(`Skipping ${url[index]}: ${error.message}`);
           index++;
+          continue;
         }
-      }
-      this.logger.log(variantId);
-    } else {
-      while (index < url.length) {
+
+        this.logger.log(variantId);
+      } else {
         try {
           if (cloudflare && headless === false) {
             this.logger.log('getPageInfo activated');
@@ -533,91 +531,100 @@ export class ProcessService implements OnModuleInit {
             specificUrl = url[index];
           }
           success = true;
-          break;
         } catch (error) {
           if (error instanceof HttpException) {
-            if (error.getStatus() === 403) throw new Error('cloudflare block');
+            if (error.getStatus() === 403) {
+              index++;
+              this.logger.error('cloudflare block');
+              continue;
+            }
           }
           console.error(`Skipping ${url[index]}: ${error.message}`);
           index++;
+          continue;
         }
-        throw new ServiceUnavailableException('no_get_page_method_avaiable');
+        // throw new ServiceUnavailableException('no_get_page_method_avaiable');
+
+        if (!success) {
+          this.logger.error(
+            `Browser session closed early for all URLs: ${url}`,
+          );
+          index++;
+          continue;
+        }
+
+        candidatePage = candidatePages.find((page) => page.url === specificUrl);
+        this.logger.log(candidatePage);
+
+        const html = textInformation.html;
+        mainText = textInformation.mainText;
+        const dom = new JSDOM(html);
+        const document = dom.window.document;
+        title = document.title;
+        this.logger.log('Page title:', title);
+
+        allText = htmlToText(mainText, {
+          wordwrap: false,
+        });
       }
 
-      if (!success) {
-        throw new ServiceUnavailableException(
-          `Browser session closed early for all URLs: ${url}`,
-        );
-      }
-
-      candidatePage = candidatePages.find((page) => page.url === specificUrl);
-      this.logger.log(candidatePage);
-
-      const html = textInformation.html;
-      mainText = textInformation.mainText;
-      const dom = new JSDOM(html);
-      const document = dom.window.document;
-      title = document.title;
-      this.logger.log('Page title:', title);
-
-      allText = htmlToText(mainText, {
-        wordwrap: false,
-      });
-    }
-
-    this.logger.log({
-      title,
-      allText,
-      query,
-      type,
-      mode,
-      context,
-    });
-
-    // Create Hash from maintext. We shall assume this text must change if something has changed
-    const currentHash = crypto
-      .createHash('sha256')
-      .update(allText)
-      .digest('hex');
-
-    if (
-      currentHash === candidatePage?.candidatePageCache?.hash &&
-      candidatePage?.candidatePageCache?.confirmed === true
-    ) {
       this.logger.log({
-        message: 'no-need-to-continue',
-        webpage: url,
+        title,
+        allText,
+        query,
+        type,
+        mode,
+        context,
       });
-      throw new Error('no-need-to-continue');
+
+      // Create Hash from maintext. We shall assume this text must change if something has changed
+      const currentHash = crypto
+        .createHash('sha256')
+        .update(allText)
+        .digest('hex');
+
+      if (
+        currentHash === candidatePage?.candidatePageCache?.hash &&
+        candidatePage?.candidatePageCache?.confirmed === true
+      ) {
+        this.logger.log({
+          message: 'no-need-to-continue',
+          webpage: url,
+        });
+        index++;
+        this.logger.error('no-need-to-continue');
+        continue;
+      }
+      hash = currentHash;
+      const countIteration = candidatePage?.candidatePageCache?.count || 0;
+
+      this.logger.log(`countIteration = ${countIteration}`);
+
+      const lmStudioWebDiscoveryPayload: LmStudioWebDiscoveryPayload = {
+        title,
+        allText,
+        query,
+        type,
+        mode,
+        context,
+        createProcessDto,
+        specificUrl,
+        hash,
+        countIteration,
+        shopifySite,
+        // candidatePage,
+        variantId,
+        imageData,
+        expectedPrice,
+        cloudflare,
+      };
+
+      this.lmStudioClient.emit(
+        'lmStudioWebDiscovery',
+        lmStudioWebDiscoveryPayload,
+      );
+      index++;
     }
-    hash = currentHash;
-    const countIteration = candidatePage?.candidatePageCache?.count || 0;
-
-    this.logger.log(`countIteration = ${countIteration}`);
-
-    const lmStudioWebDiscoveryPayload: LmStudioWebDiscoveryPayload = {
-      title,
-      allText,
-      query,
-      type,
-      mode,
-      context,
-      createProcessDto,
-      specificUrl,
-      hash,
-      countIteration,
-      shopifySite,
-      // candidatePage,
-      variantId,
-      imageData,
-      expectedPrice,
-      cloudflare,
-    };
-
-    this.lmStudioClient.emit(
-      'lmStudioWebDiscovery',
-      lmStudioWebDiscoveryPayload,
-    );
     return true;
 
     // const answer = await this.openaiService.productInStock(
@@ -791,6 +798,7 @@ export class ProcessService implements OnModuleInit {
           );
         }
       } catch (error) {
+        this.logger.error(error);
         if (
           error instanceof NotFoundException ||
           error instanceof UnauthorizedException
@@ -1751,7 +1759,7 @@ export class ProcessService implements OnModuleInit {
     return true;
   }
 
-  async afterPageUpdate(
+  afterPageUpdate(
     page: PageInfoBatchInput & PageInfoBatchAdded & CheckPageDto,
   ) {
     const html = page.html;
