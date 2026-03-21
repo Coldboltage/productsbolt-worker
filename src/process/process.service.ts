@@ -272,8 +272,6 @@ export class ProcessService implements OnModuleInit {
   async webpageDiscoveryBatch(createProcessDtoArray: CreateProcessDto[]) {
     // Get through rotateTest implementation
 
-    this.logger.debug(createProcessDtoArray);
-
     const shopProductsWithLinks = createProcessDtoArray.filter((sp) => {
       return sp.links.length > 0;
     });
@@ -282,7 +280,7 @@ export class ProcessService implements OnModuleInit {
       shopProductsWithLinks,
     );
 
-    this.logger.debug({
+    this.logger.log({
       shopProductPageInfos,
       length: shopProductPageInfos.length,
     });

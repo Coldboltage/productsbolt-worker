@@ -170,8 +170,6 @@ export class LmStudioService {
 
     const strippedResult = preStrippedResult.map((site) => site.url);
 
-    this.logger.debug(preStrippedResult);
-
     const result = await this.openaiService.crawlFromSitemap(
       strippedResult,
       query,
@@ -184,8 +182,6 @@ export class LmStudioService {
     const finalStrippedResult = Array.from(
       new Set(result.map((site) => site.url)),
     );
-
-    this.logger.debug(finalStrippedResult);
 
     // await new Promise((r) => setTimeout(r, 20000000));
 

@@ -245,7 +245,6 @@ export class UtilsService {
     importSites?: string[],
   ): Promise<{ websiteUrls: string[]; fast: boolean }> {
     this.logger.log(`fast state: ${fast}`);
-    this.logger.debug(`wordpressXml: ${wordpressXml}`);
     if (importSites && importSites.length > 0) {
       const filtered = this.filterObviousNonPages(importSites, seed);
       // this.logger.log(filtered)
@@ -306,15 +305,13 @@ export class UtilsService {
 
       let scannedSites: string[] = [];
 
-      this.logger.debug(wordpressXml);
-
       if (fast && cloudflare && !wordpressXml) {
-        this.logger.debug(`sitemapper altenative used`);
+        this.logger.log(`sitemapper altenative used`);
         const sites = await this.fetchSitemapViaBrowser(sitemapUrl);
         this.logger.log(sites);
         scannedSites = sites.urls.filter((site) => site.includes(seed));
       } else {
-        this.logger.debug(`normal sitemapper used`);
+        this.logger.log(`normal sitemapper used`);
         try {
           response = await sitemap.fetch();
           this.logger.log(

@@ -573,7 +573,7 @@ export class BrowserService {
           }
 
           const loadTime = Date.now() - start;
-          this.logger.debug(`Page load: ${loadTime} ms`);
+          this.logger.log(`Page load: ${loadTime} ms`);
 
           if (waitForPause && !shopifySite) {
             await new Promise((r) =>
@@ -667,9 +667,6 @@ export class BrowserService {
           // this.logger.log(afterDiscoveryDto);
 
           afterDiscoveryList.push(afterDiscoveryDto);
-          this.logger.debug({
-            afterDiscoveryListPages: afterDiscoveryList.length,
-          });
           return true;
         })();
 
@@ -696,7 +693,6 @@ export class BrowserService {
     }
     await page.close().catch(() => {});
     await browser.close().catch(() => {});
-    this.logger.debug(afterDiscoveryList.length);
     return afterDiscoveryList;
   }
 
