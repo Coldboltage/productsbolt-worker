@@ -46,7 +46,7 @@ export class OpenaiService {
           
           Required Target product name: ${productName}
           Required Expected product type: ${type.toUpperCase()}
-          Reference Context (DO NOT USE AS EVIDENCE): ${context}
+          Reference Context with further product rules (DO NOT USE AS EVIDENCE): ${context}
 
           You must follow these rules:
           1) PAGE-ONLY EXTRACTION: First extract facts using ONLY the analysed page title/content. Ignore context completely in this step.
@@ -140,7 +140,7 @@ export class OpenaiService {
                   },
                   "packagingTypeMatch": {
                     "type": "boolean",
-                    "description": "If packaging type matches. BOOSTER = PACK, BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, BOX ≠ DISPLAY unless your BOX definition explicitly includes DISPLAY, Display should always be treated the same as a box in all circumstances. A box and collector box are both boxes. They are considered the same thing in terms of packaging. Therefore if the product being looked for is a collector box and the found product is also a box, they are considered the same packaging type. A bundle is not a box. A product including a card box is for holding individual cards, not he prdoduct, thus should not be put into consideration. If the name and description don't reflect the product, refer to the price. Named Scene boxes and game set are automatically false, we do not want to stock them, classify as Scene box and game set specifically."
+                    "description": "If packaging type matches. BOOSTER = PACK, BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, DISPLAY is BOX-equivalent when it describes the sellable qty=1 retail unit, Display should always be treated the same as a box in all circumstances. A box and collector box are both boxes. They are considered the same thing in terms of packaging. Therefore if the product being looked for is a collector box and the found product is also a box, they are considered the same packaging type. A bundle is not a box. A product including a card box is for holding individual cards, not he prdoduct, thus should not be put into consideration. If the name and description don't reflect the product, refer to the price. Named Scene boxes and game set are automatically false, we do not want to stock them, classify as Scene box and game set specifically."
                   },
                   "price": {
                     "type": "number"
@@ -173,6 +173,9 @@ export class OpenaiService {
                     "type": "boolean",
                     "description": "False if 400+ HTTP error shown or price is not shown"
                   },
+                  "soft404": {
+                    "type": "boolean",
+                  },
                   "conciseReason": {
                     "type": "string",
                     "description": "Explain what is true and false, why you've given them the designation as concise as possible."
@@ -196,6 +199,7 @@ export class OpenaiService {
                   "justifications",
                   "loadedDataExplain",
                   "loadedData",
+                  "soft404",
                   "hasMixedSignals",
                   "mixedSignalsExplain"
                 ],
@@ -761,7 +765,8 @@ current date: ${new Date().toISOString()}
     query: string,
     version: string,
     mainUrl: string,
-    context,
+    context: string,
+    amount = 4,
   ): Promise<ParsedLinks[]> => {
     // this.logger.log({ sitemapUrls, query, version, mainUrl, context });
 
@@ -780,6 +785,11 @@ current date: ${new Date().toISOString()}
     let openAiResponse;
     try {
       openAiResponse = await openai.chat.completions.create({
+        // extra_body: {
+        //   chat_template_kwargs: {
+        //     enable_thinking: false,
+        //   },
+        // },
         model:
           // process.env.LOCAL_LLM === 'true'
           //   ? 'qwen/qwen3-4b-2507'
@@ -805,11 +815,27 @@ current date: ${new Date().toISOString()}
           },
           {
             role: 'user',
-            content: `Please use the sitemap URLs and figure the best links to use for the product, ${query}. The URLs must include ${mainUrl} within the url. URL List: ${sitemapUrls.join(', ')}. Seperate each link as it's own thing to compare against. Links that are below 0.9 score will not be included. Therefore only include links with scores which are 0.9 or above. Highest score first. Only give 4 links maximum. Packing needs to be taken into consideration. Product Packaging like pack or box is very important
+            content: `Please use the sitemap URLs and figure the best links to use for the product, ${query}. The URLs must include ${mainUrl} within the url. URL List: ${sitemapUrls.join(', ')}. Seperate each link as it's own thing to compare against. Links that are below 0.9 score will be completely ignored. Therefore only include links with scores which are 0.9 or above. Highest score first. Only give ${amount} links maximum. Packing needs to be taken into consideration. Product Packaging like pack or box is very important. Each returned link must be unique, and the same URL must not appear more than once.
 
             -- Context to be used to understand what we are looking for. It is not part of the URL --
           
           To find out more about the product, here is it's description to help you. This is not part of the url. Context: ${context}.
+
+          Ranking principles for URL selection:
+          - Rank URLs by how specifically they encode the exact sellable product being searched for, not just the broader product family.
+          - Identity-defining attributes include product line, edition/set, language, and packaging/unit-of-sale.
+          - URLs that explicitly encode more matching identity-defining attributes should rank above URLs that encode fewer.
+          - Packaging/unit-of-sale is a core identity attribute. A URL that explicitly reflects the correct sellable unit should rank above one that matches the same product family but leaves the unit ambiguous or less specific.
+          - Additional words are not noise if they increase specificity and help distinguish the exact sellable unit.
+          - Do not prefer a shorter or cleaner URL over a more specific URL when the more specific URL better matches the target product.
+          - A URL must not be treated as an exact match if it is missing a key identity-defining attribute that is required by the target.
+
+        Hard exclusion rules:
+        - Any invalid URL must receive a score below 0.90.
+        - Invalid URLs must never appear in the final output.
+        - If no URLs score 0.90 or higher, return an empty array [].
+        - Do not include placeholder results, near misses, or invalid alternatives just to fill the
+        - A URL from a different set or product family is not a valid match under any circumstance and must never be treated as a strong candidate just because its packaging terms are more explicit.
           
           JSON OUTPUT with object
 
@@ -823,6 +849,9 @@ current date: ${new Date().toISOString()}
                 "url": {
                   "type": "string"
                 },
+                "smallReason": {
+                  "type": "string", "description": "using the context, determine if it's the closest match"
+                },
               "score": {
               "type": "number",
               "minimum": 0,
@@ -831,7 +860,7 @@ current date: ${new Date().toISOString()}
               "description": "A relevance score between 0 and 1 (inclusive), rounded to two decimal places. 1 = perfect match, 0 = not relevant. Each result must have a unique score so that the list forms a strict ranking with no ties."
             }
               },
-              "required": ["url", "score"],
+              "required": ["url", "score", "smallReason"],
               "additionalProperties": false
             },
       }

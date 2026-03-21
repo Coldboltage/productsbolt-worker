@@ -22,6 +22,7 @@ export interface ProductInStockWithAnalysis {
   loadedData: boolean;
   hasMixedSignals: boolean;
   hasMixedSignalsExplain: string;
+  soft404: boolean;
 }
 
 export interface ProductInStockWithAnalysisStripped {

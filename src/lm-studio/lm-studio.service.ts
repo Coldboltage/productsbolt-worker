@@ -1,13 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateLmStudioDto } from './dto/create-lm-studio.dto';
 import { UpdateLmStudioDto } from './dto/update-lm-studio.dto';
-import { ProductType } from 'src/app.type';
+import { ParsedLinks, ProductType } from 'src/app.type';
 import { CreateProcessDto } from 'src/process/dto/create-process.dto';
 import { OpenaiService } from 'src/openai/openai.service';
 import { UtilsService } from 'src/utils/utils.service';
 
 @Injectable()
 export class LmStudioService {
+  private logger = new Logger(LmStudioService.name);
   constructor(
     private openaiService: OpenaiService,
     private utilsService: UtilsService,
@@ -51,30 +52,32 @@ export class LmStudioService {
 
     const tolerance = 0.45;
 
-    console.log({ price, tolerance, expectedPrice });
+    this.logger.log({ price, tolerance, expectedPrice });
 
     const unit = Math.abs(price - expectedPrice) / expectedPrice;
     const priceInRange = unit <= tolerance;
 
-    console.log(`princeInRange = ${priceInRange}`);
+    this.logger.log(`princeInRange = ${priceInRange}`);
 
     if (
       answer?.isNamedProduct === true &&
       answer?.packagingTypeMatch === true &&
       answer?.isMainProductPage === true &&
-      answer?.editionMatch === true
+      answer?.editionMatch === true &&
+      answer?.soft404 === false &&
+      answer?.loadedData === true
     ) {
-      console.log(answer);
+      this.logger.log(answer);
       openaiAnswer = true;
     } else {
       console.error(answer);
       openaiAnswer = false;
     }
 
-    console.log(hash, count);
+    this.logger.log(hash, count);
 
     if (openaiAnswer === true) {
-      console.log('Sending to webDiscoverySend');
+      this.logger.log('Sending to webDiscoverySend');
       await this.utilsService.webDiscoverySend(
         {
           ...answer,
@@ -95,7 +98,7 @@ export class LmStudioService {
         createProcessDto,
       );
     } else {
-      console.log('Sending to candidatePageDiscoverySend');
+      this.logger.log('Sending to candidatePageDiscoverySend');
       await this.utilsService.candidatePageDiscoverySend(
         {
           ...answer,
@@ -126,27 +129,68 @@ export class LmStudioService {
     context: string,
     shopProductId: string,
   ) {
-    const result = await this.openaiService.crawlFromSitemap(
-      sitemapUrls,
-      query,
-      version,
-      mainUrl,
-      context,
-    );
+    // const found = sitemapUrls.some((url) =>
+    //   url.includes(
+    //     `trading-card-game-spiritforged-sealed-booster-box-set-2-p88590`,
+    //   ),
+    // );
 
-    if (result.length === 0) {
-      console.log('No suitable links found by LM Studio');
+    // this.logger.debug(found);
+
+    console.log(context);
+
+    // await new Promise((r) => setTimeout(r, 2000000));
+
+    const singleJob: ParsedLinks[] = [];
+    const batchSize = 20;
+
+    for (let i = 0; i < sitemapUrls.length; i += batchSize) {
+      const batch = sitemapUrls.slice(i, i + batchSize);
+
+      const result = await this.openaiService.crawlFromSitemap(
+        batch,
+        query,
+        version,
+        mainUrl,
+        context,
+        4,
+      );
+
+      singleJob.push(...result);
+    }
+
+    if (singleJob.length === 0) {
+      this.logger.log('No suitable links found by LM Studio');
       throw new Error('no_site_found');
     }
 
-    const preStrippedResult = result
+    const preStrippedResult = singleJob
       .filter((site) => site.score >= 0.9)
       .sort((a, b) => b.score - a.score);
 
     const strippedResult = preStrippedResult.map((site) => site.url);
 
-    if (strippedResult.length === 0) {
-      console.log('no_links_passed_score');
+    this.logger.debug(preStrippedResult);
+
+    const result = await this.openaiService.crawlFromSitemap(
+      strippedResult,
+      query,
+      version,
+      mainUrl,
+      context,
+      4,
+    );
+
+    const finalStrippedResult = Array.from(
+      new Set(result.map((site) => site.url)),
+    );
+
+    this.logger.debug(finalStrippedResult);
+
+    // await new Promise((r) => setTimeout(r, 20000000));
+
+    if (finalStrippedResult.length === 0) {
+      this.logger.log('no_links_passed_score');
       throw new Error('no_links_passed_scor');
     }
 
@@ -158,7 +202,7 @@ export class LmStudioService {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${process.env.JWT_TOKEN}`,
         },
-        body: JSON.stringify({ links: strippedResult }),
+        body: JSON.stringify({ links: finalStrippedResult }),
       },
     );
   }

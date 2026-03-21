@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { connect } from 'puppeteer-real-browser';
 import { JSDOM } from 'jsdom';
@@ -143,8 +144,17 @@ export class BrowserService {
 
     this.logger.log(`Fetched ${url} with status ${status}`);
 
-    if (status >= 400)
+    if (status === 403) {
+      throw new UnauthorizedException(
+        `Failed to load page, UnauthorisedException: ${status}`,
+      );
+    } else if (status === 404) {
+      throw new NotFoundException(
+        `Failed to load page, NotFoundException: ${status}`,
+      );
+    } else if (status >= 404) {
       throw new Error(`Failed to load page, status code: ${status}`);
+    }
 
     const html = await res.text();
 
@@ -466,9 +476,12 @@ export class BrowserService {
 
     for (const process of createProcessDto) {
       let index = 0;
-      let finished = false;
       // Many of links within a SP that needs to be checked
-      while (process.links.length > index && !finished) {
+      while (process.links.length > index) {
+        this.logger.log({
+          current: index + 1,
+          total: process.links.length,
+        });
         // while (index < 100) {
 
         // Setup
@@ -654,8 +667,9 @@ export class BrowserService {
           // this.logger.log(afterDiscoveryDto);
 
           afterDiscoveryList.push(afterDiscoveryDto);
-          this.logger.debug(afterDiscoveryList.length);
-          finished = true;
+          this.logger.debug({
+            afterDiscoveryListPages: afterDiscoveryList.length,
+          });
           return true;
         })();
 
