@@ -23,7 +23,7 @@
     "docker:build": "docker build . -t coldbolt/productsbolt-worker:latest",
     "docker:push": "docker push coldbolt/productsbolt-worker:latest",
     "docker:combine": "npm run docker:build && npm run docker:push",
-    "llama": "~/llama.cpp/build/bin/llama-server   -m /home/coldbolt/models/Qwen_Qwen3-4B-Instruct-2507-IQ4_XS.gguf   --alias qwen   --host 0.0.0.0   --port 8080   --ctx-size 12000"
+    "llama": "~/llama.cpp/build/bin/llama-server   -m /home/coldbolt/models/Qwen_Qwen3-4B-Instruct-2507-IQ4_XS.gguf   --alias qwen   --host 0.0.0.0   --port 8080   --ctx-size 2500"
   },
   "dependencies": {
     "@dqbd/tiktoken": "^1.0.21",
