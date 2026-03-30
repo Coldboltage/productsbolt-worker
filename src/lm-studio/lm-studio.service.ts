@@ -144,18 +144,25 @@ export class LmStudioService {
     const singleJob: ParsedLinks[] = [];
     const batchSize = 20;
 
+    const promises: Promise<ParsedLinks[]>[] = [];
+
     for (let i = 0; i < sitemapUrls.length; i += batchSize) {
       const batch = sitemapUrls.slice(i, i + batchSize);
 
-      const result = await this.openaiService.crawlFromSitemap(
-        batch,
-        query,
-        version,
-        mainUrl,
-        context,
-        4,
+      promises.push(
+        this.openaiService.crawlFromSitemap(
+          batch,
+          query,
+          version,
+          mainUrl,
+          context,
+          4,
+        ),
       );
+    }
 
+    const results = await Promise.all(promises);
+    for (const result of results) {
       singleJob.push(...result);
     }
 
