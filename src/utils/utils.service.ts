@@ -281,7 +281,7 @@ export class UtilsService {
       const sitemap = new Sitemapper({
         url: sitemapUrl,
         timeout: 60000,
-        concurrency: 1z,
+        concurrency: 1,
         retries: 0,
         debug: true,
         // proxyAgent: { https: agent } as unknown as any
