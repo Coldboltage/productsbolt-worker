@@ -177,6 +177,11 @@ export class LmStudioService {
 
     const strippedResult = preStrippedResult.map((site) => site.url);
 
+    this.logger.debug({
+      message: 'Last test',
+      preStrippedResult: preStrippedResult.length,
+    });
+
     const result = await this.openaiService.crawlFromSitemap(
       strippedResult,
       query,

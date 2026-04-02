@@ -1,1 +1,1 @@
-{"input":3339,"output":732}
+{"input":3179,"output":677}

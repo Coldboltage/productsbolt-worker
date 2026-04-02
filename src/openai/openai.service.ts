@@ -833,37 +833,37 @@ current date: ${new Date().toISOString()}
         Hard exclusion rules:
         - Any invalid URL must receive a score below 0.90.
         - Invalid URLs must never appear in the final output.
-        - If no URLs score 0.90 or higher, return an empty array [].
+        - If URLs score lower than 0.90, do not mention them.
         - Do not include placeholder results, near misses, or invalid alternatives just to fill the
         - A URL from a different set or product family is not a valid match under any circumstance and must never be treated as a strong candidate just because its packaging terms are more explicit.
+        - Each Object must be unique and not repeat the same url
           
           JSON OUTPUT with object
 
-          {
-
-
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "url": {
-                  "type": "string"
-                },
-                "smallReason": {
-                  "type": "string", "description": "using the context, determine if it's the closest match"
-                },
-              "score": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1,
-              "multipleOf": 0.01,
-              "description": "A relevance score between 0 and 1 (inclusive), rounded to two decimal places. 1 = perfect match, 0 = not relevant. Each result must have a unique score so that the list forms a strict ranking with no ties."
-            }
-              },
-              "required": ["url", "score", "smallReason"],
-              "additionalProperties": false
-            },
-      }
+              {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "smallReason": {
+            "type": "string",
+            "description": "using the context, determine if it's the closest match"
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "multipleOf": 0.01,
+            "description": "A relevance score between 0 and 1 (inclusive), rounded to two decimal places. 1 = perfect match, 0 = not relevant. Each result must have a unique score so that the list forms a strict ranking with no ties."
+          }
+        },
+        "required": ["url", "score", "smallReason"],
+        "additionalProperties": false
+      },
+    }
           `,
           },
         ],
