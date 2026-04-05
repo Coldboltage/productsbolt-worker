@@ -149,6 +149,8 @@ export class LmStudioService {
     for (let i = 0; i < sitemapUrls.length; i += batchSize) {
       const batch = sitemapUrls.slice(i, i + batchSize);
 
+      this.logger.debug(batch);
+
       promises.push(
         this.openaiService.crawlFromSitemap(
           batch,
