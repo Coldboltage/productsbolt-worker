@@ -49,7 +49,7 @@ import { ShopifyProduct } from 'src/utils/utils.type.js';
 import { LmStudioCheckProductDto } from './dto/lm-studio-check-product.dto.js';
 import { ShopifyMetaDto } from './dto/shopify-meta.dto.js';
 import { lastValueFrom } from 'rxjs';
-import { VariantDto } from './dto/variant.dto.js';
+import { VariantDto, VariantNormalTextDto } from './dto/variant.dto.js';
 import { ApiService } from './../api/api.service.js';
 
 @Injectable()
@@ -426,7 +426,9 @@ export class ProcessService implements OnModuleInit {
             const variantPayload = {
               query,
               context,
-              variants: info.shopifyProduct.variants,
+              variants: info.shopifyProduct.variants.map(
+                ({ featured_image, ...rest }) => rest,
+              ),
               type,
             };
 
@@ -448,50 +450,6 @@ export class ProcessService implements OnModuleInit {
             title = info.title;
             allText = `${textInformation.mainText}. Price is ${info.shopifyProduct.variants[test.index].price / 100}, InStock Status: ${info.shopifyProduct.variants[test.index].available}`;
             variantId = String(info.shopifyProduct.variants[test.index].id);
-
-            // const featuredImageUrl = (
-            //   shopifyProduct: ShopifyProduct,
-            // ): string | null => {
-            //   // Check if variant even has a featured image
-            //   if (shopifyProduct.variants[test.index].featured_image === null) {
-            //     // Check featured image is a string or null
-            //     if (shopifyProduct.featured_image) {
-            //       if (typeof shopifyProduct.featured_image === 'string') {
-            //         // return string
-            //         return `https:${info.shopifyProduct.featured_image}`;
-            //       } else {
-            //         return `https:${info.shopifyProduct.featured_image['src']}`;
-            //       }
-            //     } else {
-            //       // return null
-            //       return null;
-            //     }
-            //     // We're using variant featured image.
-            //     // Check if featured_image a string
-            //   } else if (
-            //     typeof shopifyProduct.variants[test.index].featured_image ===
-            //     'string'
-            //   ) {
-            //     // Return string
-            //     return shopifyProduct.variants[test.index]
-            //       .featured_image as string;
-            //   } else {
-            //     // It's an object, get the src url from the object
-            //     return shopifyProduct.variants[test.index].featured_image[
-            //       'src'
-            //     ];
-            //   }
-            // };
-
-            // // imageData = await this.utilService.imageUrlToDataUrl(
-            // //   info.shopifyProduct.variants[test.index].featured_image['src']
-            // //     ? info.shopifyProduct.variants[test.index].featured_image['src']
-            // //     : `https:${info.shopifyProduct.featured_image}`,
-            // // );
-
-            // const determinedImageUrl = featuredImageUrl(info.shopifyProduct);
-
-            imageData = '';
           }
 
           candidatePage = candidatePages.find(
@@ -566,6 +524,39 @@ export class ProcessService implements OnModuleInit {
         allText = htmlToText(mainText, {
           wordwrap: false,
         });
+
+        // Add variantId code here. Will have to grab from the text so won't be structured.
+        // Might not be needed Lul.
+        // if (shopifySite) {
+        //   // Get the shopify variant
+        //   const variantPayload = {
+        //     query,
+        //     context,
+        //     variants: allText,
+        //     type,
+        //   };
+
+        //   let test: {
+        //     variantId: number;
+        //     justification: string;
+        //   };
+
+        //   if (+process.env.LM_QUEUE === 0) {
+        //     test = await lastValueFrom(
+        //       this.lmStudioClient.send(
+        //         'whichVariantNormalTextText',
+        //         variantPayload,
+        //       ),
+        //     );
+        //   } else {
+        //     test = await this.openaiService.whichVariantNormalText(
+        //       query,
+        //       context,
+        //       allText,
+        //       type,
+        //     );
+        //   }
+        // }
       }
 
       this.logger.log({
@@ -770,7 +761,11 @@ export class ProcessService implements OnModuleInit {
             }
           }
         } else {
-          throw new Error(`could_not_fetch_shopify_product: ${url}`);
+          this.logger.error({
+            error,
+            messsage: `could_not_fetch_shopify_product: ${url}`,
+          });
+          throw new Error(`could_not_fetch_shopify_product: ${url}. ${error}`);
         }
       }
 
@@ -1663,6 +1658,20 @@ export class ProcessService implements OnModuleInit {
         variantDto.query,
         variantDto.context,
         variantDto.variants,
+        variantDto.type,
+      );
+      return response;
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  async whichVariantNormalText(variantDto: VariantNormalTextDto) {
+    try {
+      const response = await this.openaiService.whichVariantNormalText(
+        variantDto.query,
+        variantDto.context,
+        variantDto.allText,
         variantDto.type,
       );
       return response;

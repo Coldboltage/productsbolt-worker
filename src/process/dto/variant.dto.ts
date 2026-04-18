@@ -7,3 +7,10 @@ export interface VariantDto {
   variants: ShopifyVariant[];
   type: ProductType;
 }
+
+export interface VariantNormalTextDto {
+  query: string;
+  context: string;
+  allText: string;
+  type: ProductType;
+}

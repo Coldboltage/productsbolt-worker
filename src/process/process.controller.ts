@@ -23,7 +23,7 @@ import { ProductDto } from './dto/product.dto.js';
 import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
 import { LmStudioCheckProductDto } from './dto/lm-studio-check-product.dto.js';
 import { ShopifyMetaDto } from './dto/shopify-meta.dto.js';
-import { VariantDto } from './dto/variant.dto.js';
+import { VariantDto, VariantNormalTextDto } from './dto/variant.dto.js';
 
 @Controller()
 export class ProcessController {
@@ -435,6 +435,27 @@ export class ProcessController {
 
     try {
       const result = await this.processService.whichVariant(variantDto);
+
+      channel.ack(originalMsg);
+
+      return result;
+    } catch (error) {
+      channel.nack(originalMsg, false, false); // drop message
+      throw error; // important so RPC caller gets error
+    }
+  }
+
+  @MessagePattern('whichVariantNormalText')
+  async whichVariantNormalText(
+    @Payload() variantDto: VariantNormalTextDto,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    try {
+      const result =
+        await this.processService.whichVariantNormalText(variantDto);
 
       channel.ack(originalMsg);
 

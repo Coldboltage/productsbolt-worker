@@ -1049,4 +1049,102 @@ current date: ${new Date().toISOString()}
 
     return linksResponse;
   };
+
+  whichVariantNormalText = async (
+    query: string,
+    context: string,
+    htmlString: string,
+    type: ProductType,
+  ): Promise<{ variantId: number; justification: string }> => {
+    // this.logger.log({ sitemapUrls, query, version, mainUrl, context });
+
+    const openai = new OpenAI({
+      timeout: 3600000,
+      // maxRetries: 2,
+    });
+
+    if (process.env.LOCAL_LLM === 'true') {
+      openai.baseURL = process.env.LOCAL_LMM_URL;
+      openai.apiKey = process.env.OPEN_ROUTER_KEY;
+    }
+
+    // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
+
+    let openAiResponse;
+    try {
+      openAiResponse = await openai.chat.completions.create({
+        model:
+          // process.env.LOCAL_LLM === 'true'
+          //   ? 'qwen/qwen3-4b-2507'
+          //   : `gpt-4.1-${version}`,
+          // process.env.LOCAL_LLM === 'true'
+          //   ? 'Qwen/Qwen3-4B-Instruct-2507'
+          //   : `gpt-4.1-mini`,
+          process.env.LOCAL_LLM === 'true'
+            ? process.env.LOCAL_MODEL_NAME
+            : `gpt-4.1-mini`,
+        messages: [
+          {
+            role: 'system',
+            content: `Extract product page information - Do not add \`\`\`json fences.
+            - Do not add explanations.
+            - Do not add extra text.
+            Just return valid JSON according to the schema.`,
+          },
+          {
+            role: 'user',
+            content: `
+            
+            Here is the shopify object: ${htmlString}. It should include the variant in question
+            
+            Here is the product in question, ${query}. Here is the product packaging type: ${type}
+
+            Here is the context to help what we are looking to buy: ${context}
+
+            -- Rules --
+
+            Your job is to give me the variantId of the which aligns with the context and justifications to why you chose it. It can only be one. Variants in this case are generally the same product but packaged in a different way. Using the type, you will be able to determine which object is the correct one to identify. The Context will help you understand what we are aiming to identify while the product is what we're aiming to buy.
+
+          
+          JSON OUTPUT with object
+
+          {
+            "type": "object",
+            "properties": {
+              "variantId": {
+                "type": "number"
+              },
+            "justification": {
+              "type": "string",
+            }
+            },
+            "required": ["variantId", "justification"],
+            "additionalProperties": false
+          },
+        }
+          `,
+          },
+        ],
+        // text: {
+        //   format: zodTextFormat(sitemapBestLinkSchema, 'links'),
+        // },
+      });
+    } catch (error) {
+      this.logger.log('Error with openai', error);
+    }
+
+    // if (!openAiResponse.output_parsed) throw new Error('crawlError');
+
+    // const linksResponse = openAiResponse.output_parsed as BestSitesInterface;
+
+    if (!openAiResponse.choices[0].message?.content)
+      throw new Error('crawlError');
+
+    const linksResponse = JSON.parse(
+      openAiResponse.choices[0].message?.content,
+    ) as { variantId: number; justification: string };
+    this.logger.log(linksResponse);
+
+    return linksResponse;
+  };
 }
