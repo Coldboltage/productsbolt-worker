@@ -81,6 +81,7 @@ export class LmStudioService {
       await this.utilsService.webDiscoverySend(
         {
           ...answer,
+          inStock: false,
           price: shopifySite && cloudflare === true ? price : answer.price,
           specificUrl,
           pageAllText: allText,
@@ -102,6 +103,7 @@ export class LmStudioService {
       await this.utilsService.candidatePageDiscoverySend(
         {
           ...answer,
+          inStock: false,
           price: shopifySite && cloudflare === true ? price : answer.price,
           specificUrl,
           pageAllText: allText,
