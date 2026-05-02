@@ -447,6 +447,7 @@ export class BrowserService {
       // Always clean up: cancel the timer and kill the browser exactly once
       if (timer) clearTimeout(timer);
       await page.close().catch(() => {}); // now safe to close browser
+      await browser.close().catch(() => {});
     }
   };
 
