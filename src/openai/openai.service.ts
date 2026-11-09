@@ -9,8 +9,7 @@ import {
 import { ProductDto } from '../process/dto/product.dto.js';
 import { ShopifyVariant } from 'src/utils/utils.type.js';
 import { writeFileSync } from 'node:fs';
-import { openaiReduceUrlGen } from './constants/openai.constants.js';
-
+import { openaiReduceUrlGen } from './constants/openai.constants';
 @Injectable()
 export class OpenaiService {
   private readonly logger = new Logger(OpenaiService.name);
@@ -109,14 +108,14 @@ export class OpenaiService {
                   },
                   "analysis": {
                     "type": "string",
-                    "description": "PAGE-ONLY reasoning: what is being sold at qty=1, using title/content evidence. If ambiguous/boilerplate, state UNKNOWN and why."
+                    "description": "PAGE-ONLY reasoning: what is being sold, using title/content evidence. If ambiguous/boilerplate, state UNKNOWN and why."
                   },
                   "justifications": {
                     "type": "object",
                     "properties": {
                       "packagingTypeMatchExplain": {
                         "type": "string",
-                        "description": "Determine packaging type based on what the customer receives when purchasing quantity=1.\n\nHard rules (override):\n- If the page explicitly uses the product term 'Deck' (e.g., 'Deck', 'Commander Deck', 'Starter Deck', 'Preconstructed Deck') as the unit-of-sale name, classify as DECK. This must override any pack-count heuristic (even if it includes a sample pack or accessories). A deck/deck box is never BOX.\n- If the page explicitly uses the product term 'Tin' (e.g., 'Tin', 'Collector Tin', 'Mini Tin') as the unit-of-sale name, classify as TIN. This must override any pack-count heuristic (even if it contains multiple packs).\n- If the page explicitly uses the product term 'Binder' (e.g., 'Binder', 'Card Binder', 'Portfolio', 'Album') as the unit-of-sale name, classify as BINDER. This must override any pack-count heuristic (even if it includes promos or packs).\n- If the page explicitly uses the product term 'Bundle' (e.g., 'Bundle', 'Gift Bundle', 'Fat Pack') as the unit-of-sale name, classify as BUNDLE. This must override any pack-count heuristic (even if it contains 8/10/12+ packs).\n\nOtherwise:\n- PACK: A single booster/pack (qty=1 is one pack).\n- BOX: A factory-sealed booster box/display where qty=1 is a box containing multiple booster packs. 'Collector box' counts as BOX. BOX does not mean a generic sealed cardboard box of cards.\n\nIgnore conditional bulk deals like 'if you buy 36 packs you receive a sealed box/case' — that does not change the unit-of-sale packaging type.\n\nPack-count heuristic (fallback only): Only if there is no explicit PACK/BOX/BUNDLE/TIN/BINDER/DECK label.\n\nComparison step: After determining the page packaging type, compare it to the target packaging implied by the Required Target product name and Reference Context; set packagingTypeMatch to true only if they match, otherwise false."
+                        "description": "Determine packaging type based on what the customer receives when purchasing.\n\nHard rules (override):\n- If the page explicitly uses the product term 'Deck' (e.g., 'Deck', 'Commander Deck', 'Starter Deck', 'Preconstructed Deck') as the unit-of-sale name, classify as DECK. This must override any pack-count heuristic (even if it includes a sample pack or accessories). A deck/deck box is never BOX.\n- If the page explicitly uses the product term 'Tin' (e.g., 'Tin', 'Collector Tin', 'Mini Tin') as the unit-of-sale name, classify as TIN. This must override any pack-count heuristic (even if it contains multiple packs).\n- If the page explicitly uses the product term 'Binder' (e.g., 'Binder', 'Card Binder', 'Portfolio', 'Album') as the unit-of-sale name, classify as BINDER. This must override any pack-count heuristic (even if it includes promos or packs).\n- If the page explicitly uses the product term 'Bundle' (e.g., 'Bundle', 'Gift Bundle', 'Fat Pack') as the unit-of-sale name, classify as BUNDLE. This must override any pack-count heuristic (even if it contains 8/10/12+ packs).\n\nOtherwise:\n- PACK: A single booster/pack (one pack).\n- BOX: A factory-sealed booster box/display where a box containing multiple booster packs. 'Collector box' counts as BOX. BOX does not mean a generic sealed cardboard box of cards.\n\nIgnore conditional bulk deals like 'if you buy 36 packs you receive a sealed box/case' — that does not change the unit-of-sale packaging type.\n\nPack-count heuristic (fallback only): Only if there is no explicit PACK/BOX/BUNDLE/TIN/BINDER/DECK label.\n\nComparison step: After determining the page packaging type, compare it to the target packaging implied by the Required Target product name and Reference Context; set packagingTypeMatch to true only if they match, otherwise false."
                       },
                       "editionMatchReasoning": {
                         "type": "string",
@@ -141,7 +140,7 @@ export class OpenaiService {
                   },
                   "packagingTypeMatch": {
                     "type": "boolean",
-                    "description": "If packaging type matches. BOOSTER = PACK, BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, DISPLAY is BOX-equivalent when it describes the sellable qty=1 retail unit, Display should always be treated the same as a box in all circumstances. A box and collector box are both boxes. They are considered the same thing in terms of packaging. Therefore if the product being looked for is a collector box and the found product is also a box, they are considered the same packaging type. A bundle is not a box. A product including a card box is for holding individual cards, not he prdoduct, thus should not be put into consideration. If the name and description don't reflect the product, refer to the price. Named Scene boxes and game set are automatically false, we do not want to stock them, classify as Scene box and game set specifically."
+                    "description": "If packaging type matches. BOOSTER = PACK, BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, DISPLAY is BOX-equivalent when it describes the sellable retail unit, Display should always be treated the same as a box in all circumstances. A box and collector box are both boxes. They are considered the same thing in terms of packaging. Therefore if the product being looked for is a collector box and the found product is also a box, they are considered the same packaging type. A bundle is not a box. A product including a card box is for holding individual cards, not he prdoduct, thus should not be put into consideration. If the name and description don't reflect the product, refer to the price. Named Scene boxes and game set are automatically false, we do not want to stock them, classify as Scene box and game set specifically."
                   },
                   "price": {
                     "type": "number"
@@ -782,6 +781,8 @@ current date: ${new Date().toISOString()}
       openai.apiKey = process.env.OPEN_ROUTER_KEY;
     }
 
+    console.log(openai);
+
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
     let openAiResponse;
@@ -837,12 +838,12 @@ current date: ${new Date().toISOString()}
       });
     } catch (error) {
       this.logger.log('Error with openai', error);
+      throw error;
     }
 
     // if (!openAiResponse.output_parsed) throw new Error('crawlError');
 
     // const linksResponse = openAiResponse.output_parsed as BestSitesInterface;
-
     if (!openAiResponse.choices[0].message?.content)
       throw new Error('crawlError');
 
