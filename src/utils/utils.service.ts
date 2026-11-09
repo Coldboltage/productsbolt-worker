@@ -696,7 +696,6 @@ export class UtilsService {
         try {
           const url: string = evt.request.url;
 
-          // Always continue unless this is the one we're waiting for
           if (!waitingForUrl || url !== waitingForUrl) {
             await client.send('Fetch.continueRequest', {
               requestId: evt.requestId,
@@ -704,12 +703,42 @@ export class UtilsService {
             return;
           }
 
-          // Get the body NOW (no eviction risk)
-          const bodyResp = await client.send('Fetch.getResponseBody', {
-            requestId: evt.requestId,
-          });
+          const isRedirect =
+            evt.responseStatusCode !== undefined &&
+            evt.responseStatusCode >= 300 &&
+            evt.responseStatusCode < 400;
 
-          // Continue so the navigation completes
+          if (evt.responseErrorReason || isRedirect) {
+            await client.send('Fetch.continueRequest', {
+              requestId: evt.requestId,
+            });
+
+            waitingReject?.(
+              new Error(
+                evt.responseErrorReason
+                  ? `Request failed: ${evt.responseErrorReason}`
+                  : `Request redirected: ${url}`,
+              ),
+            );
+
+            waitingForUrl = null;
+            waitingResolve = null;
+            waitingReject = null;
+            return;
+          }
+
+          const bodyResp = await Promise.race([
+            client.send('Fetch.getResponseBody', {
+              requestId: evt.requestId,
+            }),
+            new Promise<never>((_, reject) =>
+              setTimeout(
+                () => reject(new Error(`getResponseBody timed out: ${url}`)),
+                15_000,
+              ),
+            ),
+          ]);
+
           await client.send('Fetch.continueRequest', {
             requestId: evt.requestId,
           });
@@ -718,23 +747,27 @@ export class UtilsService {
             ? Buffer.from(bodyResp.body, 'base64').toString('utf8')
             : bodyResp.body;
 
-          // Resolve the waiter
-          waitingResolve?.(raw);
+          const resolve = waitingResolve;
 
           waitingForUrl = null;
           waitingResolve = null;
           waitingReject = null;
+
+          resolve?.(raw);
         } catch (err) {
-          // Best-effort continue; then reject waiter
           try {
             await client.send('Fetch.continueRequest', {
               requestId: evt.requestId,
             });
           } catch {}
-          waitingReject?.(err);
+
+          const reject = waitingReject;
+
           waitingForUrl = null;
           waitingResolve = null;
           waitingReject = null;
+
+          reject?.(err);
         }
       });
 
