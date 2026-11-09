@@ -144,7 +144,7 @@ export class LmStudioService {
     // await new Promise((r) => setTimeout(r, 2000000));
 
     const singleJob: ParsedLinks[] = [];
-    const batchSize = 20;
+    const batchSize = 255;
 
     const promises: Promise<ParsedLinks[]>[] = [];
 

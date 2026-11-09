@@ -10,6 +10,8 @@ import { ProductDto } from '../process/dto/product.dto.js';
 import { ShopifyVariant } from 'src/utils/utils.type.js';
 import { writeFileSync } from 'node:fs';
 import { openaiReduceUrlGen } from './constants/openai.constants';
+import { choice, TypeSafeClient } from '@typesafe-ai/sdk';
+
 @Injectable()
 export class OpenaiService {
   private readonly logger = new Logger(OpenaiService.name);
@@ -780,20 +782,43 @@ current date: ${new Date().toISOString()}
       amount,
     });
 
+    const jevClient = new TypeSafeClient({
+      baseURL: process.env.LOCAL_LMM_URL ?? '',
+      apiKey: process.env.OPEN_ROUTER_KEY ?? '',
+    });
+
     try {
+      const response = await jevClient.systemOne({
+        state: { product: query, context },
+        questions: Object.fromEntries(
+          sitemapUrls.map((url, index) => {
+            return [
+              `${index}`,
+              {
+                type: 'noul',
+                instructions: `
+Does this URL represent the exact sellable product described in the state?
+
+Candidate URL: ${url}
+
+A valid match must encode the correct product identity, product line,
+set/edition, language and packaging/unit-of-sale.
+
+Packaging is identity-defining. A Box, Pack, Bundle, Case, Deck,
+Collector Booster and Play Booster are not interchangeable.
+
+A more specific URL is stronger evidence than a broad or ambiguous URL.
+
+Return a high yes probability only when this URL is a valid match.
+      `.trim(),
+              },
+            ];
+          }),
+        ),
+      });
+
       openAiResponse = await openai.chat.completions.create({
-        // extra_body: {
-        //   chat_template_kwargs: {
-        //     enable_thinking: false,
-        //   },
-        // },
         model:
-          // process.env.LOCAL_LLM === 'true'
-          //   ? 'qwen/qwen3-4b-2507'
-          //   : `gpt-4.1-${version}`,
-          // process.env.LOCAL_LLM === 'true'
-          //   ? 'Qwen/Qwen3-4B-Instruct-2507'
-          //   : `gpt-4.1-mini`,
           process.env.LOCAL_LLM === 'true'
             ? process.env.LOCAL_MODEL_NAME
             : `gpt-4.1-mini`,
