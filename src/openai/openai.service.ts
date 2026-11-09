@@ -10,7 +10,7 @@ import { ProductDto } from '../process/dto/product.dto.js';
 import { ShopifyVariant } from 'src/utils/utils.type.js';
 import { writeFileSync } from 'node:fs';
 import { openaiReduceUrlGen } from './constants/openai.constants';
-import { choice, TypeSafeClient } from '@typesafe-ai/sdk';
+import { noul, TypeSafeClient, type SystemOneResult } from '@typesafe-ai/sdk';
 
 @Injectable()
 export class OpenaiService {
@@ -755,7 +755,7 @@ current date: ${new Date().toISOString()}
     version: string,
     mainUrl: string,
     context: string,
-    amount = 4,
+    _amount = 4,
   ): Promise<ParsedLinks[]> => {
     // this.logger.log({ sitemapUrls, query, version, mainUrl, context });
 
@@ -773,14 +773,45 @@ current date: ${new Date().toISOString()}
 
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
-    let openAiResponse;
-    const roleObject = openaiReduceUrlGen({
-      sitemapUrls,
-      query,
-      mainUrl,
-      context,
-      amount,
+    // let openAiResponse;
+    // const roleObject = openaiReduceUrlGen({
+    //   sitemapUrls,
+    //   query,
+    //   mainUrl,
+    //   context,
+    //   amount,
+    // });
+
+    const questions: Record<string, ReturnType<typeof noul>> = {};
+
+    sitemapUrls.forEach((url, index) => {
+      questions[`${index}`] = noul(
+        `
+Does this URL identify the exact sellable product described in the state?
+
+Candidate URL: ${url}
+  `.trim(),
+        {
+          true: `
+The URL matches the target product identity, product line,
+set/edition, language and packaging/unit-of-sale.
+
+URL wording may use common equivalent forms such as Display for
+a sealed retail Booster Box where appropriate.
+    `.trim(),
+
+          false: `
+The URL identifies a different product, product line, set,
+language, packaging/unit-of-sale, accessory, bundle, case,
+deck, individual booster, or otherwise conflicts with the target.
+    `.trim(),
+        },
+      );
     });
+
+    type JevQuestions = typeof questions;
+
+    let jevResponse: SystemOneResult<JevQuestions>;
 
     const jevClient = new TypeSafeClient({
       baseURL: process.env.LOCAL_LMM_URL ?? '',
@@ -788,65 +819,42 @@ current date: ${new Date().toISOString()}
     });
 
     try {
-      const response = await jevClient.systemOne({
+      jevResponse = await jevClient.systemOne({
         state: { product: query, context },
-        questions: Object.fromEntries(
-          sitemapUrls.map((url, index) => {
-            return [
-              `${index}`,
-              {
-                type: 'noul',
-                instructions: `
-Does this URL represent the exact sellable product described in the state?
-
-Candidate URL: ${url}
-
-A valid match must encode the correct product identity, product line,
-set/edition, language and packaging/unit-of-sale.
-
-Packaging is identity-defining. A Box, Pack, Bundle, Case, Deck,
-Collector Booster and Play Booster are not interchangeable.
-
-A more specific URL is stronger evidence than a broad or ambiguous URL.
-
-Return a high yes probability only when this URL is a valid match.
-      `.trim(),
-              },
-            ];
-          }),
-        ),
+        questions: questions,
+        model: 'typesafe/jev-1.14.0',
       });
 
-      openAiResponse = await openai.chat.completions.create({
-        model:
-          process.env.LOCAL_LLM === 'true'
-            ? process.env.LOCAL_MODEL_NAME
-            : `gpt-4.1-mini`,
-        temperature: 0,
-        top_p: 0.9,
-        frequency_penalty: 0.05,
-        n: 1,
-        seed: 42,
-        messages: [
-          {
-            role: 'system',
-            content: `Extract product page information - Do not add \`\`\`json fences.
-            - Do not add explanations.
-            - Do not add extra text.
-            Just return valid JSON according to the schema.
-            - Always include the most specific matching URL (even if another URL scores higher), as long as it matches the same product identity.
-            - The output array must only contain valid results. If a result does not meet all rules, it must be excluded before the final answer is formed of 0.9 and over
-            `,
-          },
-          {
-            role: 'user',
-            content: roleObject.content,
-          },
-        ],
-        // text: {
-        //   format: zodTextFormat(sitemapBestLinkSchema, 'links'),
-        // },
-      });
+      // openAiResponse = await openai.chat.completions.create({
+      //   model:
+      //     process.env.LOCAL_LLM === 'true'
+      //       ? process.env.LOCAL_MODEL_NAME
+      //       : `gpt-4.1-mini`,
+      //   temperature: 0,
+      //   top_p: 0.9,
+      //   frequency_penalty: 0.05,
+      //   n: 1,
+      //   seed: 42,
+      //   messages: [
+      //     {
+      //       role: 'system',
+      //       content: `Extract product page information - Do not add \`\`\`json fences.
+      //       - Do not add explanations.
+      //       - Do not add extra text.
+      //       Just return valid JSON according to the schema.
+      //       - Always include the most specific matching URL (even if another URL scores higher), as long as it matches the same product identity.
+      //       - The output array must only contain valid results. If a result does not meet all rules, it must be excluded before the final answer is formed of 0.9 and over
+      //       `,
+      //     },
+      //     {
+      //       role: 'user',
+      //       content: roleObject.content,
+      //     },
+      //   ],
+      //   // text: {
+      //   //   format: zodTextFormat(sitemapBestLinkSchema, 'links'),
+      //   // },
+      // });
     } catch (error) {
       this.logger.log('Error with openai', error);
       throw error;
@@ -855,16 +863,26 @@ Return a high yes probability only when this URL is a valid match.
     // if (!openAiResponse.output_parsed) throw new Error('crawlError');
 
     // const linksResponse = openAiResponse.output_parsed as BestSitesInterface;
-    if (!openAiResponse.choices[0].message?.content)
-      throw new Error('crawlError');
+    if (!jevResponse) throw new Error('crawlError');
 
-    const linksResponse = JSON.parse(
-      openAiResponse.choices[0].message?.content,
-    ) as ParsedLinks[];
-    this.logger.log(openAiResponse);
-    this.logger.log(linksResponse);
+    const links: ParsedLinks[] = sitemapUrls
+      .map((url, index) => ({
+        url,
+        score: jevResponse.answers[`${index}`].noul,
+      }))
+      .filter((link) => link.score > 0.7)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 2);
 
-    return linksResponse;
+    return links;
+
+    // const linksResponse = JSON.parse(
+    //   openAiResponse.choices[0].message?.content,
+    // ) as ParsedLinks[];
+    // this.logger.log(openAiResponse);
+    // this.logger.log(linksResponse);
+
+    // return linksResponse;
   };
 
   whichVariant = async (
