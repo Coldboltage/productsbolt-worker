@@ -211,25 +211,11 @@ export class OpenaiService {
     this.logger.log(assuredMessage);
     writeFileSync('./output.txt', assuredMessage.text, 'utf8');
 
-    // await new Promise((r) => setTimeout(r, 2000000));
-
-    // messagesForPrompt.push(assuredMessage);
     const response = await openai.chat.completions.create({
-      // model: `gpt-4.1-${mode}`,
-      // model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
       model:
-        // process.env.LOCAL_LLM === 'true'
-        //   ? 'qwen/qwen3-4b-2507'
-        //   : `gpt-4.1-mini`,
-        // process.env.LOCAL_LLM === 'true'
-        //   ? 'Qwen/Qwen3-4B-Instruct-2507'
-        //   : `gpt-4.1-mini`,
         process.env.LOCAL_LLM === 'true'
           ? process.env.LOCAL_MODEL_NAME
           : `gpt-4.1-mini`,
-      // model: `gpt-5-nano`,
-      // reasoning_effort: "low",
-      // temperature: 0,
       temperature: 0,
       top_p: 0.9,
       frequency_penalty: 0.05,
