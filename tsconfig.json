@@ -3,6 +3,9 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+
+    "types": ["node", "jest"],
+
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
