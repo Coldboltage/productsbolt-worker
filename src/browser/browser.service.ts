@@ -81,7 +81,7 @@ export class BrowserService {
     const res = await fetch(url);
     const status = res.status;
 
-    if (status >= 400) {
+    if (status === 403 || status === 429) {
       console.error(`URL ${url} will be blocked by Cloudflare: ${status}`);
       return true;
     }
