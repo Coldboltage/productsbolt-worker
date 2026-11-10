@@ -9,8 +9,14 @@ import {
 import { ProductDto } from '../process/dto/product.dto.js';
 import { ShopifyVariant } from 'src/utils/utils.type.js';
 import { writeFileSync } from 'node:fs';
-import { openaiReduceUrlGen } from './constants/openai.constants';
 import { noul, TypeSafeClient, type SystemOneResult } from '@typesafe-ai/sdk';
+
+interface CheckProdutReturn {
+  analysis: string;
+  soft404: boolean;
+  inStock: boolean;
+  price: number;
+}
 
 @Injectable()
 export class OpenaiService {
@@ -573,12 +579,7 @@ successful-HTTP error page.
     productName: string,
     type: ProductType,
     mode: string,
-  ): Promise<{
-    analysis: string;
-    soft404: boolean;
-    inStock: boolean;
-    price: number;
-  }> => {
+  ): Promise<CheckProdutReturn> => {
     const openai = new OpenAI({
       timeout: 3600000,
       maxRetries: 2,
@@ -588,6 +589,31 @@ successful-HTTP error page.
       openai.baseURL = process.env.LOCAL_LMM_URL;
       openai.apiKey = process.env.OPEN_ROUTER_KEY;
     }
+
+    const jevClient = new TypeSafeClient({
+      baseURL: process.env.LOCAL_LMM_URL_JEV ?? '',
+      apiKey: process.env.OPEN_ROUTER_KEY ?? '',
+    });
+
+    const questions: Record<string, ReturnType<typeof noul>> = {
+      soft404: noul('Has the page loaded but presented a 404 error?', {
+        true: 'The page has presented a visible 404 or did not load page/product',
+        false: 'The page page has not presented a 404 and loaded the page',
+      }),
+      inStock: noul(
+        'Can the user take an actionable step to obtain this product right now?',
+        {
+          true: 'The user can purchase, pre-order, reserve, or otherwise order the product right now.',
+          false:
+            'The user cannot currently purchase, pre-order, reserve, or otherwise order the product. Notifications and wishlists are not actionable ordering options.',
+        },
+      ),
+    };
+
+    const jevResponse = await jevClient.systemOne({
+      state: { productPage: content, title },
+      questions: questions,
+    });
 
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
@@ -634,9 +660,6 @@ Note: Some sites have a regular price and a sale price. Always use the sale pric
 Output schema:
 {
   "analysis": "tiny reason",
-  "soft404Description": {'description': "is the page a soft404 which is indicating the page was not corret found"},
-  "soft404": boolean,
-  "inStock": true/false,
   "price": number
 }
       `,
@@ -651,113 +674,6 @@ current date: ${new Date().toISOString()}
         },
       ],
     });
-
-    //  OLD VERSION - THIS WORKED WELL
-    //        const openAiResponse = await openai.chat.completions.create({
-    //       // model: process.env.LOCAL_LLM === "true" ? "openai/gpt-oss-20b" : `gpt-4.1-${mode}`,
-    //       model: process.env.LOCAL_LLM === "true" ? "qwen/qwen3-4b-2507" : `gpt-4.1-${mode}`,
-
-    //       temperature: 0,
-    //       top_p: 0.9,
-    //       frequency_penalty: 0.05,
-    //       n: 1,
-    //       seed: 42,
-    //       messages: [
-    //         {
-    //           role: 'system',
-    //           // content:
-    //           //   `Your task is to extract structured product page information. Always verify product name match and ensure the product type (e.g., box or pack) is strictly respected.
-
-    //           //   - Do not add \`\`\`json fences.
-    //           //   - Do not add explanations.
-    //           //   - Do not add extra text.
-    //           //   Just return valid JSON according to the schema.
-    //           //   `,
-    //           content: `
-    //          - Do not add \`\`\`json fences.
-    //             - Do not add explanations.
-    //             - Do not add extra text.
-    //             Just return valid JSON according to the schema.
-
-    // From the page content, find if the product is in stock and its price. Products which are pre-order and have the ability to order now are considered in stock.
-
-    // Rules (keep simple, priority order):
-    // - If the page contains phrases like "Out of Stock", "Sold Out", "Currently Unavailable",
-    //   "Click here to be notified when it’s back in stock", "Request notification",
-    //   "Notify me when available", "Email me when it's back in stock" → OUT OF STOCK.
-    // - A valid preorder must include an actionable checkout option such as
-    //   "Add to cart", "Add to basket", "Buy now", "Pre-order now", "Reserve now".
-    //   If these are present, treat as IN STOCK (preorder allowed).
-    // - If only "Request notification" or "Notify when available" is present without an actionable checkout, → OUT OF STOCK.
-    // - If nothing matches clearly, default to OUT OF STOCK.
-
-    // Output JSON:
-
-    // {
-    //   "type": "object",
-    //   "properties": {
-    //     "analysis": {
-    //       "type": "string",
-    //       "description": "Extremely concise in as little words justification for why the product is in stock or not. Preorders are considered in stock if a checkout/ordering option is present. If only a notify/request notification is available, it is out of stock."
-    //     },
-    //     "inStock": {
-    //       "type": "boolean",
-    //       "description": "True if product can be ordered or preordered (checkout/reserve available). False if clearly out of stock or only notify options."
-    //     },
-    //     "price": {
-    //       "type": "number",
-    //       "description": "Product price as a number, without currency symbols."
-    //     }
-    //   },
-    //   "required": ["inStock","price"]
-    // }
-    // `
-    //         },
-    //         {
-    //           role: 'user',
-    //           content: `
-    //         From the page content, find if the product is in stock and its price. Products which are pre-order and have the ability to order now, is allowed.
-    //         Product title: "${title}"
-    //         Page content: ${content}
-
-    //         ---
-
-    //         Output JSON
-
-    //             {
-    //         "type": "object",
-    //         "properties": {
-    //           "analysis": {
-    //             "type": "string",
-    //             "description": "Justification for why the product is in stock or not (tldr). Preorders are considered in stock if a checkout/ordering option is present. If the page contains phrases like 'Click here to be notified when it’s back in stock' or 'Request notification', then it's considered out of stock regardless.
-
-    //             IMPORTANT:
-    //             - If "Request notification" or "Notify me when available" appears anywhere in the main product section, the product is OUT OF STOCK.
-    //             - This overrides any generic "Pre-order" wording elsewhere unless an actual actionable button ("Add to cart", "Pre-order now") is clearly present for this product.
-    //             - Do NOT treat "Request notification" as preorder.
-    //             - A valid preorder must include an actual checkout option (e.g., "Add to cart", "Pre-order now").
-    //             "
-    //           },
-    //           "inStock": {
-    //             "type": "boolean",
-    //             "description": "True if the product can be ordered or preordered (checkout/reserve available). False if clearly marked out of stock, or if only a 'request notification' option is available."
-    //           },
-    //           "price": {
-    //             "type": "number",
-    //             "description": "Product price as a number, without currency symbols."
-    //           }
-    //         },
-    //         "required": [
-    //           "inStock",
-    //           "price"
-    //         ]
-    //       }
-    //         `,
-    //         },
-    //       ],
-    //     });
-
-    // this.logger.log(openAiResponse.choices[0].message?.content || '{}');
 
     const productResponse = JSON.parse(
       openAiResponse.choices[0].message?.content || '{}',
@@ -781,7 +697,14 @@ current date: ${new Date().toISOString()}
       'utf8',
     );
 
-    return productResponse;
+    const threshold = 0.7;
+
+    return {
+      analysis: productResponse.analysis,
+      soft404: jevResponse.answers.soft404.noul >= threshold,
+      inStock: jevResponse.answers.inStock.noul >= threshold,
+      price: productResponse.price,
+    };
   };
 
   async ebayPricePoint(
