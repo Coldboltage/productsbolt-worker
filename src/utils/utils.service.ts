@@ -20,6 +20,12 @@ import { ProductInStockWithAnalysisStripped } from 'src/process/entities/process
 import { connect } from 'puppeteer-real-browser';
 import { XMLParser } from 'fast-xml-parser';
 
+interface SitemapCheckSchema {
+  urls: string[];
+  sitemapsVisited: string[];
+  errors: string[];
+}
+
 @Injectable()
 export class UtilsService {
   private readonly logger = new Logger(UtilsService.name);
@@ -268,7 +274,7 @@ export class UtilsService {
     let days = crawlAmount;
     let siteMapAmount = 0;
     let response;
-    let pauseTimer = fast ? 1 : 60000;
+    const pauseTimer = fast ? 1 : 60000;
     do {
       const now = new Date();
       const crawlAmountDaysAgo = new Date();
@@ -323,7 +329,15 @@ export class UtilsService {
           scannedSites = response.sites.filter((site) => site.includes(seed));
         } catch (error) {
           this.logger.error({ error, url: sitemapUrl }, { depth: 5 }); // should show a Z_DATA_ERROR or BrotliDecodeError
-          throw new Error(error);
+          if (typeof error === 'string') {
+            throw new Error(
+              `And Error occured when retrieving the sitemap, error: ${error}`,
+            );
+          } else {
+            throw new Error('Error occured though might not be a string', {
+              cause: error,
+            });
+          }
         }
       }
 

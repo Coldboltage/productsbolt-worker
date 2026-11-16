@@ -332,27 +332,6 @@ export class BrowserService {
         }
       }
 
-      // try {
-      //   testPage = await page.goto(shopifySite ? `${url}.js` : url, {
-      //     waitUntil: ['networkidle2'],
-      //     timeout: 60000,
-      //   });
-      // } catch (error) {
-      //   try {
-      //     testPage = await page.goto(shopifySite ? `${url}.js` : url, {
-      //       waitUntil: ['domcontentloaded'],
-      //       timeout: 60000,
-      //     });
-      //   } catch (error) {
-      //     throw new Error('it_really_did_not_want_to_load');
-      //   }
-      // }
-
-      // const testPage = await page.goto(url, {
-      //   waitUntil: 'domcontentloaded',
-      //   timeout: 60000,
-      // });
-
       // // Optional, safe hydration wait
       // await page.waitForNetworkIdle({ idleTime: 1000, timeout: 10000 });
 

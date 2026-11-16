@@ -41,7 +41,7 @@ import {
   LmStudioReduceLinksPayload,
   LmStudioWebDiscoveryPayload,
 } from 'src/lm-studio/entities/lm-studio.entity.js';
-import { OpenaiService } from '../openai/openai.service.js';
+import { CheckProdutReturn, OpenaiService } from '../openai/openai.service.js';
 import * as cheerio from 'cheerio';
 import { ProductListingsCheckDto } from './dto/product-listings-check.dto.js';
 import { FullCandidatePageDto } from './dto/candidate-page.dto.js';
@@ -928,13 +928,29 @@ export class ProcessService implements OnModuleInit {
     webPageId: string,
     cloudflare: boolean,
   ): Promise<void> {
-    const answer = await this.openaiService.checkProduct(
-      title,
-      allText,
-      query,
-      type,
-      mode,
-    );
+    let answer: CheckProdutReturn = {
+      analysis: '',
+      soft404: false,
+      inStock: false,
+      price: 0,
+    };
+
+    if (shopifySite) {
+      const jsonToObject = JSON.parse(allText);
+      const { price, available } = jsonToObject;
+      answer.price = price / 100;
+      answer.inStock = available;
+    } else {
+      answer = await this.openaiService.checkProduct(
+        title,
+        allText,
+        query,
+        type,
+        mode,
+        shopifySite,
+        cloudflare,
+      );
+    }
 
     if (answer.soft404 === true) {
       try {
@@ -964,17 +980,11 @@ export class ProcessService implements OnModuleInit {
 
     let price: number;
 
-    if (shopifySite && cloudflare === true) {
-      price = answer.price / 100;
-    } else {
-      price = answer.price;
-    }
-
     const updatePackage: UpdatePagePayloadInterface = {
       url,
       shopWebsite,
       inStock: answer.inStock,
-      price: shopifySite && cloudflare === true ? price : answer.price,
+      price: answer.price,
       productName: query,
       webPageId: webPageId,
       hash: hash,

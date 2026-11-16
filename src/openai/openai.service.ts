@@ -11,7 +11,7 @@ import { ShopifyVariant } from 'src/utils/utils.type.js';
 import { writeFileSync } from 'node:fs';
 import { noul, TypeSafeClient, type SystemOneResult } from '@typesafe-ai/sdk';
 
-interface CheckProdutReturn {
+export interface CheckProdutReturn {
   analysis: string;
   soft404: boolean;
   inStock: boolean;
@@ -579,6 +579,8 @@ successful-HTTP error page.
     productName: string,
     type: ProductType,
     mode: string,
+    shopifySite: boolean,
+    cloudflare: boolean,
   ): Promise<CheckProdutReturn> => {
     const openai = new OpenAI({
       timeout: 3600000,
@@ -601,11 +603,20 @@ successful-HTTP error page.
         false: 'The page page has not presented a 404 and loaded the page',
       }),
       inStock: noul(
-        'Can the user take an actionable step to obtain this product right now?',
+        'Is this product currently available from existing stock?',
         {
-          true: 'The user can purchase, pre-order, reserve, or otherwise order the product right now.',
+          true: 'The webpage indicates that the product is physically in stock and available for immediate purchase.',
           false:
-            'The user cannot currently purchase, pre-order, reserve, or otherwise order the product. Notifications and wishlists are not actionable ordering options.',
+            'The product is out of stock, sold out, or only available for pre-order. Back-in-stock notifications and wishlists do not indicate stock availability.',
+        },
+      ),
+      isPurchasable: noul(
+        'Is this product currently available to customers for purchase, including pre-order?',
+        {
+          true: 'The product is available for purchase from existing inventory, or the customer can explicitly place a pre-order for it. An explicit pre-order option counts even when the product has not yet been released.',
+
+          false:
+            'The product cannot currently be ordered. This includes products that are sold out, unavailable, only available for backorder, or offer only wishlist or back-in-stock notification functionality.',
         },
       ),
     };
@@ -613,7 +624,10 @@ successful-HTTP error page.
     const jevResponse = await jevClient.systemOne({
       state: { productPage: content, title },
       questions: questions,
+      model: 'typesafe/jev-1.14.0',
     });
+
+    this.logger.debug(jevResponse.answers);
 
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
@@ -624,12 +638,6 @@ successful-HTTP error page.
     // NEW VERSION TESTING
     const openAiResponse = await openai.chat.completions.create({
       model:
-        // process.env.LOCAL_LLM === 'true'
-        //   ? 'qwen/qwen3-4b-2507'
-        //   : `gpt-4.1-${mode}`,
-        // process.env.LOCAL_LLM === 'true'
-        //   ? 'Qwen/Qwen3-4B-Instruct-2507'
-        //   : `gpt-4.1-mini`,
         process.env.LOCAL_LLM === 'true'
           ? process.env.LOCAL_MODEL_NAME
           : `gpt-4.1-mini`,
@@ -646,20 +654,11 @@ Return only valid JSON.
 No markdown, no explanations, no extra text.
 
 Rules:
-- If the page has "Out of Stock", "Sold Out", "Currently Unavailable", "Page not found", 404,
-  "Request notification", "Click here to be notified when it’s back in stock", or "Notify me when available" → OUT OF STOCK.
-- Preorders are classified as IN STOCK if the page contains an explicit active ordering phrase such as ‘Add to cart’, 'Add to shopping cart', ‘Add to basket’, 'Add to your Basket', ‘Buy now’, ‘Pre-order now’, 'PRE-ORDER NOW', ‘Preorder now’, ‘Reserve now’, or if the JSON returns available=true, which confirms the product can be actively ordered. A future release date does not make a product OUT OF STOCK when an active ordering phrase is present. If the page merely mentions ‘pre-order’ as descriptive text without an active ordering phrase, or if it instead shows wording like ‘Request notification’, ‘Notify me when available’, ‘Out of stock’, ‘Sold Out’, or similar, then the product must be treated as OUT OF STOCK.
-- Important: ‘Pre-order now’ and ‘PRE-ORDER NOW’ are explicit active ordering phrases, not notification phrases. Treat them the same as ‘Add to cart’ or ‘Buy now’, unless the page also contains stronger unavailable wording such as ‘Out of Stock’, ‘Sold Out’, ‘Currently Unavailable’, ‘Request notification’, or ‘Notify me when available’.
-- If unclear, default to OUT OF STOCK. Price should be with vat and if two prices are right beside each other, it'll usually be the higher of the two
-- The price and delievery method are not to be considered at all. 
-- Add To Wishlist must be ignored
-- If a page is found with something like "Loading..", it is impossible to confirm status as parts of the page haven't loaded correctly, thus default to OUT OF STOCK.
+${shopifySite || 'Extract and return the Shopify price exactly as provided in the source (e.g. 9999), without converting, dividing, or reformatting it.'}
 
-Note: Some sites have a regular price and a sale price. Always use the sale price. This is particular with Wix sites
 
 Output schema:
 {
-  "analysis": "tiny reason",
   "price": number
 }
       `,
@@ -678,9 +677,8 @@ current date: ${new Date().toISOString()}
     const productResponse = JSON.parse(
       openAiResponse.choices[0].message?.content || '{}',
     );
-    this.logger.log('asdsadsa');
+
     this.logger.log(productResponse);
-    this.logger.log('asdsadsa');
 
     this.inputTokens += +openAiResponse.usage.prompt_tokens;
     this.outputTokens += +openAiResponse.usage.completion_tokens;
@@ -697,14 +695,20 @@ current date: ${new Date().toISOString()}
       'utf8',
     );
 
-    const threshold = 0.7;
+    const threshold = 0.8;
 
-    return {
+    const result = {
       analysis: productResponse.analysis,
       soft404: jevResponse.answers.soft404.noul >= threshold,
-      inStock: jevResponse.answers.inStock.noul >= threshold,
+      inStock:
+        jevResponse.answers.inStock.noul >= threshold ||
+        jevResponse.answers.isPurchasable.noul >= threshold,
       price: productResponse.price,
     };
+
+    console.log(result);
+
+    return result;
   };
 
   async ebayPricePoint(
@@ -924,7 +928,7 @@ current date: ${new Date().toISOString()}
     });
 
     if (process.env.LOCAL_LLM === 'true') {
-      openai.baseURL = process.env.LOCAL_LMM_URL_JEV;
+      openai.baseURL = process.env.LOCAL_LMM_URL;
       openai.apiKey = process.env.OPEN_ROUTER_KEY;
     }
 

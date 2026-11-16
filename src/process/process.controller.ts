@@ -313,7 +313,6 @@ export class ProcessController {
 
     try {
       this.logger.log('updatePage message captured');
-      this.logger.log(`updatePage message captured`);
       const result = await this.processService.updatePage(checkPageDto);
 
       // ACK message on success
