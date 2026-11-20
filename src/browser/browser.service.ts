@@ -246,7 +246,7 @@ export class BrowserService {
       if (url.length === 0) throw new Error(`no_url_suppled`);
 
       const { browser: headfulBrowser, page: headfulPage } = await connect({
-        headless: false,
+        headless: headless,
         args: [
           // '--window-position=-99999,-99999',
           '--disable-backgrounding-occluded-windows',
@@ -381,6 +381,7 @@ export class BrowserService {
           .querySelectorAll('header, footer, nav, aside')
           .forEach((el) => el.remove());
         const main = document.querySelector('main') || document.body;
+
         return main.innerText;
       });
 
