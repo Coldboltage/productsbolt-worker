@@ -858,7 +858,7 @@ export class ProcessService implements OnModuleInit {
 
     this.logger.log({
       title,
-      allText,
+      // allText,
       query,
       type,
       mode,
