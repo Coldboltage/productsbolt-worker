@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsString,
   IsUrl,
   Min,
@@ -71,4 +72,7 @@ export class LmStudioCheckProductDto {
   @IsBoolean()
   @IsNotEmpty()
   cloudflare: boolean;
+
+  @IsNumber()
+  pagePrice: number;
 }

@@ -581,6 +581,7 @@ successful-HTTP error page.
     mode: string,
     shopifySite: boolean,
     cloudflare: boolean,
+    pagePrice: number,
   ): Promise<CheckProdutReturn> => {
     const openai = new OpenAI({
       timeout: 3600000,
@@ -619,16 +620,42 @@ successful-HTTP error page.
             'The product cannot currently be ordered. This includes products that are sold out, unavailable, only available for backorder, or offer only wishlist or back-in-stock notification functionality.',
         },
       ),
+      priceMatches: noul(
+        'Is the number in productPrice the current selling price of the main product on this page, ignoring currency symbol?',
+        {
+          true: "The amount shown as the main product's current price (next to the title, by Add to Basket) is numerically equal to productPrice. Ignore the currency symbol or code (£, $, €, GBP, etc.) and formatting differences such as 144.95 vs £144.95.",
+          false:
+            "The main product's current price is a different amount from productPrice, or no price is shown.",
+        },
+      ),
     };
 
     const jevResponse = await jevClient.systemOne({
-      state: { productPage: content, title },
+      state: { productPage: content, title, productPrice: pagePrice },
       questions: questions,
       model: 'typesafe/jev-1.14.0',
     });
 
     this.logger.debug(jevResponse.answers);
 
+    const threshold = 0.8;
+    const PRICE_THRESHOLD = 0.7;
+    const { priceMatches } = jevResponse.answers;
+
+    if (priceMatches.noul >= PRICE_THRESHOLD) {
+      const result = {
+        analysis: 'Not checked',
+        soft404: jevResponse.answers.soft404.noul >= threshold,
+        inStock:
+          jevResponse.answers.inStock.noul >= threshold ||
+          jevResponse.answers.isPurchasable.noul >= threshold,
+        price: pagePrice,
+      };
+
+      console.log(result);
+
+      return result;
+    }
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
 
     // 'analysis',
@@ -646,6 +673,7 @@ successful-HTTP error page.
       frequency_penalty: 0.05,
       n: 1,
       seed: 42,
+      // reasoning_effort: 'low',
       messages: [
         {
           role: 'system',
@@ -694,9 +722,6 @@ current date: ${new Date().toISOString()}
       JSON.stringify({ input: this.inputTokens, output: this.outputTokens }),
       'utf8',
     );
-
-    const threshold = 0.8;
-
     const result = {
       analysis: productResponse.analysis,
       soft404: jevResponse.answers.soft404.noul >= threshold,

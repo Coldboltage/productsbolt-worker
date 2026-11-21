@@ -51,6 +51,9 @@ export class CheckPageDto {
 
   @IsString()
   currency: string;
+
+  @IsNumber()
+  pagePrice: number;
 }
 
 export class FullCheckPageDtoPayloadDto {

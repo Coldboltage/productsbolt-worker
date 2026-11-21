@@ -656,6 +656,7 @@ export class ProcessService implements OnModuleInit {
     headless: boolean,
     country: string,
     currency: string,
+    pagePrice: number,
   ): Promise<boolean> {
     // Note, the html discovery part should be it's own function
     // This is for testing for now
@@ -893,6 +894,7 @@ export class ProcessService implements OnModuleInit {
       shopWebsite,
       webPageId,
       cloudflare,
+      pagePrice,
     };
 
     this.lmStudioClient.emit('lmStudioCheckProduct', payload);
@@ -927,6 +929,7 @@ export class ProcessService implements OnModuleInit {
     shopWebsite: string,
     webPageId: string,
     cloudflare: boolean,
+    pagePrice: number,
   ): Promise<void> {
     let answer: CheckProdutReturn = {
       analysis: '',
@@ -949,6 +952,7 @@ export class ProcessService implements OnModuleInit {
         mode,
         shopifySite,
         cloudflare,
+        pagePrice,
       );
     }
 
@@ -1304,6 +1308,7 @@ export class ProcessService implements OnModuleInit {
       checkPageDto.headless,
       checkPageDto.country,
       checkPageDto.currency,
+      checkPageDto.pagePrice,
     );
     return result;
   }
@@ -1835,6 +1840,7 @@ export class ProcessService implements OnModuleInit {
       shopWebsite,
       webPageId,
       cloudflare,
+      pagePrice: page.pagePrice,
     };
 
     this.lmStudioClient.emit('lmStudioCheckProduct', payload);
