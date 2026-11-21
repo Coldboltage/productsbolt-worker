@@ -184,25 +184,27 @@ successful-HTTP error page.
 
       this.logger.debug(jevResponse);
 
-      const response = await openai.chat.completions.create({
-        model:
-          process.env.LOCAL_LLM === 'true'
-            ? process.env.LOCAL_MODEL_NAME
-            : `gpt-4.1-mini`,
-        temperature: 0,
-        top_p: 0.9,
-        frequency_penalty: 0.05,
-        n: 1,
-        seed: 42,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a product-matching assistant. Start by analyzing the product page against the target context. Use this analysis to guide your output of structured product fields. Return ONLY valid JSON (RFC 8259) that conforms to this JSON Schema. All required properties must be present.',
-          },
-          {
-            role: 'user',
-            content: `
+      let response;
+      try {
+        response = await openai.chat.completions.create({
+          model:
+            process.env.LOCAL_LLM === 'true'
+              ? process.env.LOCAL_MODEL_NAME_FREE
+              : `gpt-4.1-mini`,
+          temperature: 0,
+          top_p: 0.9,
+          frequency_penalty: 0.05,
+          n: 1,
+          seed: 42,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are a product-matching assistant. Start by analyzing the product page against the target context. Use this analysis to guide your output of structured product fields. Return ONLY valid JSON (RFC 8259) that conforms to this JSON Schema. All required properties must be present.',
+            },
+            {
+              role: 'user',
+              content: `
               Extract factual product information from this page.
 
               Product title:
@@ -230,14 +232,71 @@ successful-HTTP error page.
               - currencyCode must be an ISO code such as GBP, EUR, or USD.
               - Do not include Markdown fences or text outside the JSON.
               `.trim(),
-          },
-        ],
+            },
+          ],
 
-        // response_format: {
-        //   type: 'json_schema',
-        //   json_schema: schema
-        // }
-      });
+          // response_format: {
+          //   type: 'json_schema',
+          //   json_schema: schema
+          // }
+        });
+      } catch (error) {
+        console.error(error);
+        response = await openai.chat.completions.create({
+          model:
+            process.env.LOCAL_LLM === 'true'
+              ? process.env.LOCAL_MODEL_NAME
+              : `gpt-4.1-mini`,
+          temperature: 0,
+          top_p: 0.9,
+          frequency_penalty: 0.05,
+          n: 1,
+          seed: 42,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are a product-matching assistant. Start by analyzing the product page against the target context. Use this analysis to guide your output of structured product fields. Return ONLY valid JSON (RFC 8259) that conforms to this JSON Schema. All required properties must be present.',
+            },
+            {
+              role: 'user',
+              content: `
+              Extract factual product information from this page.
+
+              Product title:
+              ${title}
+
+              Page content:
+              ${content}
+
+              Return only valid JSON matching this shape:
+
+              {
+                "analysis": "A very short description of what is being sold",
+                "price": A number,
+                "currencyCode": "Currency Code. If you can't find, use the best guess based on site",
+                "conciseReason": "One short factual summary",
+                "detectedVariant": "The explicitly stated product variant",
+                "detectedFullName": "The full product name shown on the page"
+              }
+
+              Rules:
+              - Use only the supplied title and page content.
+              - Do not decide whether this matches the target product. Jev has already done that.
+              - Extract the current selling price, not an old price, RRP, instalment amount, shipping charge, or unrelated product price.
+              - Return null for any value not explicitly supported by the page.
+              - currencyCode must be an ISO code such as GBP, EUR, or USD.
+              - Do not include Markdown fences or text outside the JSON.
+              `.trim(),
+            },
+          ],
+
+          // response_format: {
+          //   type: 'json_schema',
+          //   json_schema: schema
+          // }
+        });
+      }
 
       const responseContent = response.choices[0]?.message?.content;
 
