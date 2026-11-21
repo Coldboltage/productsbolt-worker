@@ -414,7 +414,7 @@ successful-HTTP error page.
     if (priceMatches.noul >= PRICE_THRESHOLD) {
       // if (false) {
       const result = {
-        analysis: 'Not checked',
+        analysis: 'priceMatches.noul >= PRICE_THRESHOLD = true',
         soft404: jevResponse.answers.soft404.noul >= threshold,
         inStock:
           jevResponse.answers.inStock.noul >= threshold ||
@@ -430,7 +430,8 @@ successful-HTTP error page.
     if (isPurchasable.noul <= threshold && inStock.noul <= threshold) {
       // if (false) {
       const result = {
-        analysis: 'Not checked',
+        analysis:
+          'isPurchasable.noul <= threshold && inStock.noul <= threshold = true',
         soft404: jevResponse.answers.soft404.noul >= threshold,
         inStock: false,
         price: +pagePrice,
