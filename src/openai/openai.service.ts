@@ -409,7 +409,7 @@ successful-HTTP error page.
 
     const threshold = 0.8;
     const PRICE_THRESHOLD = 0.7;
-    const { priceMatches } = jevResponse.answers;
+    const { priceMatches, isPurchasable, inStock } = jevResponse.answers;
 
     if (priceMatches.noul >= PRICE_THRESHOLD) {
       // if (false) {
@@ -419,6 +419,20 @@ successful-HTTP error page.
         inStock:
           jevResponse.answers.inStock.noul >= threshold ||
           jevResponse.answers.isPurchasable.noul >= threshold,
+        price: +pagePrice,
+      };
+
+      console.log(result);
+
+      return result;
+    }
+
+    if (isPurchasable.noul <= threshold && inStock.noul <= threshold) {
+      // if (false) {
+      const result = {
+        analysis: 'Not checked',
+        soft404: jevResponse.answers.soft404.noul >= threshold,
+        inStock: false,
         price: +pagePrice,
       };
 
