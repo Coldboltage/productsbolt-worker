@@ -281,296 +281,6 @@ successful-HTTP error page.
       hasMixedSignalsExplain: `Confidence: ${answers.hasMixedSignals.noul}`,
       soft404: answers.soft404.noul >= threshold,
     };
-
-    //     const assuredMessage = {
-    //       type: 'text',
-    //       text: `
-
-    //           -- Information to be used to compare versus the page --
-
-    //           Required Target product name: ${productName}
-    //           Required Expected product type: ${type.toUpperCase()}
-    //           Reference Context with further product rules (DO NOT USE AS EVIDENCE): ${context}
-
-    //           You must follow these rules:
-    //           1) PAGE-ONLY EXTRACTION: First extract facts using ONLY the analysed page title/content. Ignore context completely in this step.
-    //           2) COMPARISON: After extraction, compare those extracted facts to the context to decide MATCH or NO_MATCH.
-    //           3) If the page does not explicitly support something, write "UNKNOWN". Do NOT infer from context.
-
-    //           -- Page Information (EVIDENCE) --
-    //           Analysed Page Product Title: ${title}
-    //           Analysed Page Product Content: ${content}
-    //           Analysed Page URL: ${specificUrl}
-
-    //           -- Notes --
-
-    //           There is a difference betwen a Play Booster Box and a Collector Booster Box. These are two totally different products though they are both boxes.
-
-    //           We will not be incluiding Board Games at all. Any sign of a board game is to be discounted immediately.
-
-    //           Scene boxes are not play booster boxes or collector boxes. They are a different line of products. Scene box by default is always false, we don't stock them.
-
-    //           A deck is not a box. A bundle is not a box. Final Fantasy TCG is different than Magic the Gatherings offerings. A Portfolio is not a binder. A tin product is a distinct product which needs to be mentioned within the context to match. Jumpstart Boosters are different than Play Boosters. There is a difference between Final Fantasy TCG Booster Boxes and Magic the Gathering Final Fantasy Player booster boxes, they are not the same.
-
-    //           Unit-of-sale rule (CRITICAL):
-    //           - Classify the product form based ONLY on what a customer receives when purchasing quantity = 1.
-
-    //           CRITICAL (Product line vs unit-of-sale):
-
-    //           1) Product line:
-    //           - Collector line is TRUE if page text contains “Collector Booster” or “Collector Boosters”.
-    //           - Play line is TRUE if page text contains “Play Booster” or “Play Boosters”.
-
-    //           2) Collector Booster Box match rule:
-    //           - Treat “Collector Booster Display / CDU / 12-count / Full box” as BOX-equivalent.
-    //           - Do NOT require the exact phrase “Collector Booster Box” if:
-    //             product line = Collector Booster AND unit-of-sale = BOX.
-
-    //           - If the page is for another game line (e.g., “Final Fantasy Trading Card Game”, “Opus”), it is NOT the MTG Collector Booster Box unless "Magic: The Gathering" AND "Collector" are explicitly present in the page text.
-
-    //           - Ignore ‘BOX CONTENTS—…’ lines unless the page also explicitly says Box/Display/Case/CDU in the sellable product name/option.
-
-    //           CRITICAL: If the title and URL strongly disagree on unit-of-sale (e.g., title says Pack but URL says Box/Display/Case), treat unit-of-sale as ambiguous and mention “conflicting signals” in the reasoning.
-
-    //               --- JSON Schema to follow strictly and exactly as shown ---
-    //               -- Return ONLY valid JSON (RFC 8259) that conforms to this JSON Schema.
-    //                   All required properties must be present. --
-    //               {
-    //                 "type": "object",
-    //                 "properties": {
-    //                   "target": {
-    //                     "type": "string",
-    //                     "description": "TARGET IDENTITY SUMMARY (use ONLY: Required Target product name + Reference Context). Include: game line/manufacturer, set/edition, product line (Play/Collector/etc), unit (Box/Pack/etc), language if known."
-    //                   },
-    //                   "page": {
-    //                     "type": "string",
-    //                     "description": "PAGE-ONLY identity summary from the analysed title/content. Include: game line/manufacturer, set/edition, product line, unit-of-sale (PACK/BOX/BUNDLE/DECK/TIN/BINDER/UNKNOWN) and the 1-2 strongest page anchors."
-    //                   },
-    //                   "compare": {
-    //                     "type": "string",
-    //                     "description": "Output exactly MATCH or NO_MATCH, then 1–2 sentences. If NO_MATCH, cite the single strongest conflicting marker (e.g., wrong game line, wrong product line, wrong unit-of-sale). If the page shows contradictory identity signals (two or more different product forms/variants implied by title/URL/content), do NOT auto-match; mark NO_MATCH and require human review."
-    //                   },
-    //                   "analysis": {
-    //                     "type": "string",
-    //                     "description": "PAGE-ONLY reasoning: what is being sold, using title/content evidence. If ambiguous/boilerplate, state UNKNOWN and why."
-    //                   },
-    //                   "justifications": {
-    //                     "type": "object",
-    //                     "properties": {
-    //                       "packagingTypeMatchExplain": {
-    //                         "type": "string",
-    //                         "description": "Determine packaging type based on what the customer receives when purchasing.\n\nHard rules (override):\n- If the page explicitly uses the product term 'Deck' (e.g., 'Deck', 'Commander Deck', 'Starter Deck', 'Preconstructed Deck') as the unit-of-sale name, classify as DECK. This must override any pack-count heuristic (even if it includes a sample pack or accessories). A deck/deck box is never BOX.\n- If the page explicitly uses the product term 'Tin' (e.g., 'Tin', 'Collector Tin', 'Mini Tin') as the unit-of-sale name, classify as TIN. This must override any pack-count heuristic (even if it contains multiple packs).\n- If the page explicitly uses the product term 'Binder' (e.g., 'Binder', 'Card Binder', 'Portfolio', 'Album') as the unit-of-sale name, classify as BINDER. This must override any pack-count heuristic (even if it includes promos or packs).\n- If the page explicitly uses the product term 'Bundle' (e.g., 'Bundle', 'Gift Bundle', 'Fat Pack') as the unit-of-sale name, classify as BUNDLE. This must override any pack-count heuristic (even if it contains 8/10/12+ packs).\n\nOtherwise:\n- PACK: A single booster/pack (one pack).\n- BOX: A factory-sealed booster box/display where a box containing multiple booster packs. 'Collector box' counts as BOX. BOX does not mean a generic sealed cardboard box of cards.\n\nIgnore conditional bulk deals like 'if you buy 36 packs you receive a sealed box/case' — that does not change the unit-of-sale packaging type.\n\nPack-count heuristic (fallback only): Only if there is no explicit PACK/BOX/BUNDLE/TIN/BINDER/DECK label.\n\nComparison step: After determining the page packaging type, compare it to the target packaging implied by the Required Target product name and Reference Context; set packagingTypeMatch to true only if they match, otherwise false."
-    //                       },
-    //                       "editionMatchReasoning": {
-    //                         "type": "string",
-    //                         "description": "1 sentence. State the normalized set tokens found on page vs target (e.g., target=marvel spiderman, page=marvel spiderman) and conclude true/false. Do NOT mention packaging/product-line."
-    //                       }
-    //                     },
-    //                     "required": [
-    //                       "packagingTypeMatchExplain",
-    //                       "editionMatchReasoning"
-    //                     ],
-    //                     "additionalProperties": false
-    //                   },
-    //                   "inStock": {
-    //                     "type": "boolean"
-    //                   },
-    //                   "isMainProductPage": {
-    //                     "type": "boolean"
-    //                   },
-    //                   "isNamedProduct": {
-    //                     "type": "boolean",
-    //                     "description": "True only if the page’s PRIMARY product is the same logical product as the target. Use the provided target context (brand/product line, set/edition, language/region, and any identity-defining variant terms like Collector/Limited/Deluxe/Promo/Bundle/Case/Single-pack) to infer identity even when the listing is sloppy. HARD RULE: if the page contains clear markers that the product belongs to a different brand/manufacturer/franchise/game/product line than the target context, isNamedProduct MUST be false, even if some keywords overlap. Also treat identity-defining variants as different products: do not mark true if the page appears to be a different variant (e.g. standard vs collector, box vs case, single pack vs box, different language) unless there is strong supporting evidence on-page that it matches the target variant."
-    //                   },
-    //                   "packagingTypeMatch": {
-    //                     "type": "boolean",
-    //                     "description": "If packaging type matches. BOOSTER = PACK, BOX ≠ PACK, BOX ≠ BUNDLE, BOX ≠ CASE, DISPLAY is BOX-equivalent when it describes the sellable retail unit, Display should always be treated the same as a box in all circumstances. A box and collector box are both boxes. They are considered the same thing in terms of packaging. Therefore if the product being looked for is a collector box and the found product is also a box, they are considered the same packaging type. A bundle is not a box. A product including a card box is for holding individual cards, not he prdoduct, thus should not be put into consideration. If the name and description don't reflect the product, refer to the price. Named Scene boxes and game set are automatically false, we do not want to stock them, classify as Scene box and game set specifically."
-    //                   },
-    //                   "price": {
-    //                     "type": "number"
-    //                   },
-    //                   "currencyCode": {
-    //                     "type": "string"
-    //                   },
-    //                   "detectedVariant": {
-    //                     "type": "string"
-    //                   },
-    //                   "detectedFullName": {
-    //                     "type": "string"
-    //                   },
-    //                   "editionMatch": {
-    //                     "type": "boolean",
-    //                     "description": "SET/EDITION ONLY. True iff the page’s PRIMARY product contains the same normalized set name as the target. NORMALIZE by ignoring apostrophes (’ vs '), hyphens, punctuation, casing, and extra whitespace (e.g., \"Marvel’s Spider-Man\" == \"Marvel Spider-Man\"). HARD RULE: Do NOT use packaging/unit-of-sale words (box/pack/bundle/display/deck/tin/binder/case) and do NOT use product-line words (Play/Collector/Draft/Set/Jumpstart/Prerelease/Kit) to decide. If game/manufacturer differs (e.g., MTG vs FFTCG/Pokemon/One Piece), editionMatch MUST be false."
-    //                   },
-    //                   "hasMixedSignals": {
-    //                     "type": "boolean",
-    //                     "description": "True if the page contains both pack-level cues (e.g., 'per pack', 'cards per pack') and box/display cues (e.g., 'X packs', 'display', 'box of', 'contains X boosters'), which can mislead classification."
-    //                   },
-    //                   "mixedSignalsExplain": {
-    //                     "type": "string",
-    //                     "description": "One sentence naming the conflicting cues (only when hasMixedSignals=true)."
-    //                   },
-    //                   "loadedDataExplain": {
-    //                     "type": "string",
-    //                   },
-    //                   "loadedData": {
-    //                     "type": "boolean",
-    //                     "description": "False if 400+ HTTP error shown or price is not shown"
-    //                   },
-    //                   "soft404": {
-    //                     "type": "boolean",
-    //                   },
-    //                   "conciseReason": {
-    //                     "type": "string",
-    //                     "description": "Explain what is true and false, why you've given them the designation as concise as possible."
-    //                   }
-    //                 },
-    //                 "required": [
-    //                   "target",
-    //                   "page",
-    //                   "compare",
-    //                   "analysis",
-    //                   "inStock",
-    //                   "isMainProductPage",
-    //                   "isNamedProduct",
-    //                   "packagingTypeMatch",
-    //                   "price",
-    //                   "currencyCode",
-    //                   "conciseReason",
-    //                   "detectedVariant",
-    //                   "detectedFullName",
-    //                   "editionMatch",
-    //                   "justifications",
-    //                   "loadedDataExplain",
-    //                   "loadedData",
-    //                   "soft404",
-    //                   "hasMixedSignals",
-    //                   "mixedSignalsExplain"
-    //                 ],
-    //                 "additionalProperties": false
-    //               }
-    // `,
-    //     };
-
-    //     // this.logger.log(assuredMessage);
-    //     writeFileSync('./output.txt', assuredMessage.text, 'utf8');
-
-    //     const response = await openai.chat.completions.create({
-    //       model:
-    //         process.env.LOCAL_LLM === 'true'
-    //           ? process.env.LOCAL_MODEL_NAME
-    //           : `gpt-4.1-mini`,
-    //       temperature: 0,
-    //       top_p: 0.9,
-    //       frequency_penalty: 0.05,
-    //       n: 1,
-    //       seed: 42,
-    //       messages: [
-    //         {
-    //           role: 'system',
-    //           content:
-    //             'You are a product-matching assistant. Start by analyzing the product page against the target context. Use this analysis to guide your output of structured product fields. Return ONLY valid JSON (RFC 8259) that conforms to this JSON Schema. All required properties must be present.',
-    //         },
-    //         {
-    //           role: 'user',
-    //           // content: `Required Target product name: ${productName}
-    //           //     Required Expected product type: ${type.toUpperCase()}
-    //           //     Context: ${context}
-
-    //           //     Analysed Product Title: ${title}
-    //           //     Analaysed Page Content: ${content}
-
-    //           //     --- JSON Schema to follow strictly and exactly as shown ---
-    //           //     {
-    //           //       "type": "object",
-    //           //       "properties": {
-    //           //         "analysis": {
-    //           //           "type": "string",
-    //           //           "description": "Very Concisely in as little words as possible, use this field to reason about what the product fundamentally is, based on all available evidence. Analyze the product title, description, and any contextual information to determine what is actually being sold. This includes identifying the structural nature of the product — such as its format, scale, packaging, or presentation — and not just repeating its name.\n\nThis reasoning step should infer the real-world object the customer would receive if they clicked \"Add to Cart\", regardless of how it is named or marketed. Key signals might include:\n- Quantity indicators (e.g., “12 ×”, “bundle includes”, “contains”, etc.)\n- Packaging references (e.g., “starter set”, “box of”, “individual item”)\n- Functional descriptors (e.g., “preconstructed”, “sealed display”, “sampler”)\n- Variant markers (e.g., language, edition, exclusivity, series)\n\nDo not assume the product type from title or branding alone — interpret it based on described structure and intended delivery. For example, a product named “XYZ Starter Deck” should not be classified as a deck unless it is clearly described as a self-contained deck product.\n\nThis field is not used to decide availability (stock), listing status (main page), or pricing — it is strictly a semantic reasoning step to inform type, naming, and variant matching."
-    //           //         },
-    //           //         "justifications": {
-    //           //           "type": "object",
-    //           //           "description": "For every flag below, very concisely in the least words possible, quote or paraphrase the page snippet that proves it.",
-    //           //           "properties": {
-    //           //             "inStock": { "type": "string" },
-    //           //             "price": { "type": "string" },
-    //           //             "currencyCode": { "type": "string" },
-    //           //             "isMainProductPage": { "type": "string" },
-    //           //             "isNamedProduct": { "type": "string", description: Explain if product title is the same as product name },
-    //           //             "packagingTypeMatch": { "type": "string" },
-    //           //             "editionMatchReasoning": { "type": "string" }
-    //           //           },
-    //           //           "required": [
-    //           //             "inStock",
-    //           //             "price",
-    //           //             "currencyCode",
-    //           //             "isMainProductPage",
-    //           //             "isNamedProduct",
-    //           //             "packagingTypeMatch",
-    //           //             "editionMatchReasoning"
-    //           //           ],
-    //           //           "additionalProperties": false
-    //           //         },
-    //           //         "inStock": { "type": "boolean" },
-    //           //         "isMainProductPage": { "type": "boolean" },
-    //           //         "isNamedProduct": { "type": "boolean" , description: Explain if product title is the same as product name},
-    //           //         "packagingTypeMatch": { "type": "boolean" },
-    //           //         "price": { "type": "number" },
-    //           //         "currencyCode": { "type": "string" },
-    //           //         "conciseReason": { "type": "string" },
-    //           //         "detectedVariant": { "type": "string" },
-    //           //         "detectedFullName": { "type": "string" },
-    //           //         "editionMatch": { "type": "boolean" }
-    //           //       },
-    //           //       "required": [
-    //           //         "analysis",
-    //           //         "inStock",
-    //           //         "isMainProductPage",
-    //           //         "isNamedProduct",
-    //           //         "packagingTypeMatch",
-    //           //         "price",
-    //           //         "currencyCode",
-    //           //         "conciseReason",
-    //           //         "detectedVariant",
-    //           //         "detectedFullName",
-    //           //         "editionMatch",
-    //           //         "justifications"
-    //           //       ],
-    //           //       "additionalProperties": false
-    //           //     }`,
-    //           content: assuredMessage.text,
-    //         },
-    //       ],
-
-    //       // response_format: {
-    //       //   type: 'json_schema',
-    //       //   json_schema: schema
-    //       // }
-    //     });
-
-    //     const json = JSON.parse(response.choices[0].message?.content || '{}');
-
-    //     this.inputTokens += +response.usage.prompt_tokens;
-    //     this.outputTokens += +response.usage.completion_tokens;
-
-    //     this.logger.log('asdsadsa');
-    //     this.logger.log(response.usage);
-    //     this.logger.log('asdsadsa');
-
-    //     this.logger.log({
-    //       message: 'Tokens currently',
-    //       input: this.inputTokens,
-    //       output: this.outputTokens,
-    //     });
-
-    //     writeFileSync(
-    //       './tokens.txt',
-    //       JSON.stringify({ input: this.inputTokens, output: this.outputTokens }),
-    //       'utf8',
-    //     );
-
-    //     this.logger.log(json);
-    //     return json;
   };
 
   checkProduct = async (
@@ -643,13 +353,14 @@ successful-HTTP error page.
     const { priceMatches } = jevResponse.answers;
 
     if (priceMatches.noul >= PRICE_THRESHOLD) {
+      // if (false) {
       const result = {
         analysis: 'Not checked',
         soft404: jevResponse.answers.soft404.noul >= threshold,
         inStock:
           jevResponse.answers.inStock.noul >= threshold ||
           jevResponse.answers.isPurchasable.noul >= threshold,
-        price: pagePrice,
+        price: +pagePrice,
       };
 
       console.log(result);
@@ -663,21 +374,23 @@ successful-HTTP error page.
     // 'price',
 
     // NEW VERSION TESTING
-    const openAiResponse = await openai.chat.completions.create({
-      model:
-        process.env.LOCAL_LLM === 'true'
-          ? process.env.LOCAL_MODEL_NAME
-          : `gpt-4.1-mini`,
-      temperature: 0,
-      top_p: 0.9,
-      frequency_penalty: 0.05,
-      n: 1,
-      seed: 42,
-      // reasoning_effort: 'low',
-      messages: [
-        {
-          role: 'system',
-          content: `
+    let openAiResponse;
+    try {
+      openAiResponse = await openai.chat.completions.create({
+        model:
+          process.env.LOCAL_LLM === 'true'
+            ? process.env.LOCAL_MODEL_NAME_FREE
+            : `gpt-4.1-mini`,
+        temperature: 0,
+        top_p: 0.9,
+        frequency_penalty: 0.05,
+        n: 1,
+        seed: 42,
+        reasoning_effort: 'medium',
+        messages: [
+          {
+            role: 'system',
+            content: `
 Return only valid JSON. 
 No markdown, no explanations, no extra text.
 
@@ -690,17 +403,58 @@ Output schema:
   "price": number
 }
       `,
-        },
-        {
-          role: 'user',
-          content: `
+          },
+          {
+            role: 'user',
+            content: `
 Product title: "${title}"
 Page content: ${content}
 current date: ${new Date().toISOString()}
       `,
-        },
-      ],
-    });
+          },
+        ],
+      });
+    } catch (error) {
+      console.error(error);
+      openAiResponse = await openai.chat.completions.create({
+        model:
+          process.env.LOCAL_LLM === 'true'
+            ? process.env.LOCAL_MODEL_NAME
+            : `gpt-4.1-mini`,
+        temperature: 0,
+        top_p: 0.9,
+        frequency_penalty: 0.05,
+        n: 1,
+        seed: 42,
+        reasoning_effort: 'medium',
+        messages: [
+          {
+            role: 'system',
+            content: `
+Return only valid JSON. 
+No markdown, no explanations, no extra text.
+
+Rules:
+${shopifySite || 'Extract and return the Shopify price exactly as provided in the source (e.g. 9999), without converting, dividing, or reformatting it.'}
+
+
+Output schema:
+{
+  "price": number
+}
+      `,
+          },
+          {
+            role: 'user',
+            content: `
+Product title: "${title}"
+Page content: ${content}
+current date: ${new Date().toISOString()}
+      `,
+          },
+        ],
+      });
+    }
 
     const productResponse = JSON.parse(
       openAiResponse.choices[0].message?.content || '{}',
