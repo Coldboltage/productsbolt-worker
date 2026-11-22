@@ -19,6 +19,7 @@ import { CreateProcessDto } from 'src/process/dto/create-process.dto.js';
 import { ProductInStockWithAnalysisStripped } from 'src/process/entities/process.entity.js';
 import { connect } from 'puppeteer-real-browser';
 import { XMLParser } from 'fast-xml-parser';
+import * as cheerio from 'cheerio';
 
 interface SitemapCheckSchema {
   urls: string[];
@@ -517,6 +518,154 @@ export class UtilsService {
       return { city, province, country, currency };
     } finally {
     }
+  }
+
+  /**
+   * Reads the price the shop publishes for the page itself: the
+   * og:price:amount / product:price:amount meta tags first, then the JSON-LD
+   * offer. These are the shop's own machine readable figures, so they are
+   * authoritative for the price we store and must not be second guessed.
+   *
+   * Returns null when the page publishes nothing usable, or when it publishes
+   * the price in a currency other than the one we asked the shop for.
+   */
+  extractPublishedPrice(
+    html: string,
+    expectedCurrency?: string,
+  ): { price: number; currencyCode: string | null } | null {
+    if (!html) return null;
+
+    let $: cheerio.CheerioAPI;
+    try {
+      $ = cheerio.load(html);
+    } catch (error) {
+      this.logger.error({ error, message: 'could_not_parse_html_for_price' });
+      return null;
+    }
+
+    const metaContent = (selector: string): string | null => {
+      const content = $(selector).first().attr('content');
+      return content ? content.trim() : null;
+    };
+
+    const candidates: Array<{ price: number; currencyCode: string | null }> =
+      [];
+
+    const metaPrice = this.parsePriceAmount(
+      metaContent('meta[property="og:price:amount"]') ??
+        metaContent('meta[property="product:price:amount"]') ??
+        metaContent('meta[itemprop="price"]'),
+    );
+
+    if (metaPrice !== null) {
+      candidates.push({
+        price: metaPrice,
+        currencyCode:
+          metaContent('meta[property="og:price:currency"]') ??
+          metaContent('meta[property="product:price:currency"]') ??
+          metaContent('meta[itemprop="priceCurrency"]'),
+      });
+    }
+
+    const jsonLdPrice = this.extractJsonLdPrice($);
+    if (jsonLdPrice !== null) candidates.push(jsonLdPrice);
+
+    for (const candidate of candidates) {
+      if (!this.currencyMatches(candidate.currencyCode, expectedCurrency)) {
+        this.logger.log({
+          message: 'published_price_currency_mismatch',
+          published: candidate.currencyCode,
+          expected: expectedCurrency,
+        });
+        continue;
+      }
+      return candidate;
+    }
+
+    return null;
+  }
+
+  private currencyMatches(
+    published: string | null,
+    expected?: string,
+  ): boolean {
+    // Only a real ISO code on both sides can rule a price out. Anything else
+    // (no code published, or no code asked for) stays comparable.
+    if (!published || !expected) return true;
+    if (!/^[A-Za-z]{3}$/.test(published) || !/^[A-Za-z]{3}$/.test(expected))
+      return true;
+    return published.toUpperCase() === expected.toUpperCase();
+  }
+
+  private extractJsonLdPrice(
+    $: cheerio.CheerioAPI,
+  ): { price: number; currencyCode: string | null } | null {
+    const queue: unknown[] = [];
+
+    $('script[type="application/ld+json"]').each((_, element) => {
+      const raw = $(element).text();
+      if (!raw) return;
+      try {
+        queue.push(JSON.parse(raw));
+      } catch {
+        // A shop with malformed JSON-LD is not a reason to stop.
+      }
+    });
+
+    while (queue.length > 0) {
+      const node = queue.shift();
+
+      if (Array.isArray(node)) {
+        queue.push(...node);
+        continue;
+      }
+      if (!node || typeof node !== 'object') continue;
+
+      const record = node as Record<string, unknown>;
+      const type = JSON.stringify(record['@type'] ?? '');
+      const currencyCode =
+        typeof record.priceCurrency === 'string'
+          ? record.priceCurrency.trim()
+          : null;
+
+      // Only read a price off something that actually describes an offer,
+      // so a stray number elsewhere in the graph cannot be mistaken for one.
+      if (currencyCode || type.includes('Offer')) {
+        const price = this.parsePriceAmount(record.price ?? record.lowPrice);
+        if (price !== null) return { price, currencyCode };
+      }
+
+      queue.push(...Object.values(record));
+    }
+
+    return null;
+  }
+
+  private parsePriceAmount(value: unknown): number | null {
+    if (typeof value === 'number')
+      return Number.isFinite(value) && value > 0 ? value : null;
+    if (typeof value !== 'string') return null;
+
+    const cleaned = value.replace(/[^0-9.,]/g, '');
+    if (cleaned.length === 0) return null;
+
+    const lastComma = cleaned.lastIndexOf(',');
+    const lastDot = cleaned.lastIndexOf('.');
+    let normalised = cleaned;
+
+    if (lastComma > -1 && lastDot > -1) {
+      // Whichever separator comes last is the decimal one: 1.234,56 / 1,234.56
+      const decimal = lastComma > lastDot ? ',' : '.';
+      const thousands = decimal === ',' ? '.' : ',';
+      normalised = normalised.split(thousands).join('').replace(decimal, '.');
+    } else if (lastComma > -1) {
+      normalised = /,\d{2}$/.test(normalised)
+        ? normalised.replace(',', '.')
+        : normalised.split(',').join('');
+    }
+
+    const price = Number(normalised);
+    return Number.isFinite(price) && price > 0 ? price : null;
   }
 
   datesBetween(

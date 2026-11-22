@@ -5,6 +5,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   IsUrl,
   Min,
@@ -75,4 +76,14 @@ export class LmStudioCheckProductDto {
 
   @IsNumber()
   pagePrice: number;
+
+  @ApiProperty({
+    example: 299.99,
+    description:
+      "The price the shop publishes for the page itself (og:price:amount or JSON-LD offer). Null when the page publishes none, or publishes it in another currency.",
+    nullable: true,
+  })
+  @IsOptional()
+  @IsNumber()
+  publishedPrice?: number | null;
 }

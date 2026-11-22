@@ -216,6 +216,7 @@ export class ProcessController {
       webPageId,
       cloudflare,
       pagePrice,
+      publishedPrice,
     } = createProcessDto;
 
     try {
@@ -233,6 +234,7 @@ export class ProcessController {
         webPageId,
         cloudflare,
         pagePrice,
+        publishedPrice ?? null,
       );
       // ACK message on success
       channel.ack(originalMsg);

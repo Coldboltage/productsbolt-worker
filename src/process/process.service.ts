@@ -667,6 +667,7 @@ export class ProcessService implements OnModuleInit {
     this.logger.log(`shopifySite: ${shopifySite}`);
     let title: string;
     let allText: string;
+    let publishedPrice: number | null = null;
 
     if (shopifySite && cloudflare === false) {
       this.logger.log(`extractShopifyWebsite activated`);
@@ -852,6 +853,10 @@ export class ProcessService implements OnModuleInit {
       title = document.title;
       this.logger.log('Page title:', title);
 
+      publishedPrice =
+        this.utilService.extractPublishedPrice(html, currency)?.price ?? null;
+      this.logger.log({ message: 'publishedPrice', publishedPrice, url });
+
       allText = htmlToText(mainText, {
         wordwrap: false,
       });
@@ -895,6 +900,7 @@ export class ProcessService implements OnModuleInit {
       webPageId,
       cloudflare,
       pagePrice,
+      publishedPrice,
     };
 
     this.lmStudioClient.emit('lmStudioCheckProduct', payload);
@@ -930,6 +936,7 @@ export class ProcessService implements OnModuleInit {
     webPageId: string,
     cloudflare: boolean,
     pagePrice: number,
+    publishedPrice: number | null = null,
   ): Promise<void> {
     let answer: CheckProdutReturn = {
       analysis: '',
@@ -981,6 +988,21 @@ export class ProcessService implements OnModuleInit {
 
     // if (url.includes('games-island'))
     //   answer.price = Math.round(answer.price * 0.81);
+
+    // The shop publishes this price on the page itself, so it is the live
+    // price by definition. Anything we inferred, or carried over from the
+    // last scan, is only a guess at it and must give way.
+    if (publishedPrice !== null && publishedPrice > 0) {
+      if (answer.price !== publishedPrice) {
+        this.logger.log({
+          message: 'price_corrected_to_published_price',
+          url,
+          was: answer.price,
+          publishedPrice,
+        });
+      }
+      answer.price = publishedPrice;
+    }
 
     let price: number;
 
@@ -1803,6 +1825,11 @@ export class ProcessService implements OnModuleInit {
     const cloudflare = page.cloudflare;
     this.logger.log('Page title:', title);
 
+    const publishedPrice =
+      this.utilService.extractPublishedPrice(html, page.currency)?.price ??
+      null;
+    this.logger.log({ message: 'publishedPrice', publishedPrice, url });
+
     const allText = htmlToText(mainText, {
       wordwrap: false,
     });
@@ -1841,6 +1868,7 @@ export class ProcessService implements OnModuleInit {
       webPageId,
       cloudflare,
       pagePrice: page.pagePrice,
+      publishedPrice,
     };
 
     this.lmStudioClient.emit('lmStudioCheckProduct', payload);
