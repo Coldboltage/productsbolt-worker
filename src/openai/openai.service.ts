@@ -9,7 +9,12 @@ import {
 import { ProductDto } from '../process/dto/product.dto.js';
 import { ShopifyVariant } from 'src/utils/utils.type.js';
 import { writeFileSync } from 'node:fs';
-import { noul, TypeSafeClient, type SystemOneResult } from '@typesafe-ai/sdk';
+import {
+  noul,
+  NoulResponse,
+  TypeSafeClient,
+  type SystemOneResult,
+} from '@typesafe-ai/sdk';
 
 export interface CheckProdutReturn {
   analysis: string;
@@ -42,13 +47,13 @@ export class OpenaiService {
 
     if (process.env.LOCAL_LLM === 'true') {
       openai.baseURL = process.env.LOCAL_LMM_URL;
-      openai.apiKey = process.env.OPEN_ROUTER_KEY;
+      openai.apiKey = process.env.COMMAND_CODE_KEY;
     }
     // openai.baseURL = `http://${process.env.LOCAL_LMM_URL}:1234/v1`;
 
     const jevClient = new TypeSafeClient({
       baseURL: process.env.LOCAL_LMM_URL_JEV ?? '',
-      apiKey: process.env.OPEN_ROUTER_KEY ?? '',
+      apiKey: process.env.COMMAND_CODE_KEY ?? '',
     });
 
     const questions = {
@@ -163,6 +168,18 @@ successful-HTTP error page.
     }
 
     let extracted: ExtractedProductData;
+    let answers: {
+      readonly isNamedProduct: NoulResponse;
+      readonly packagingTypeMatch: NoulResponse;
+      readonly editionMatch: NoulResponse;
+      readonly isMainProductPage: NoulResponse;
+      readonly inStock: NoulResponse;
+      readonly loadedData: NoulResponse;
+      readonly soft404: NoulResponse;
+      readonly hasMixedSignals: NoulResponse;
+      readonly isCorrectProduct: NoulResponse;
+    };
+    const threshold = 0.7;
 
     try {
       jevResponse = await jevClient.systemOne({
@@ -185,6 +202,20 @@ successful-HTTP error page.
       this.logger.debug(jevResponse);
 
       let response;
+
+      // Check if soft 404 or even the product in question
+
+      answers = jevResponse.answers;
+
+      if (
+        answers.isMainProductPage.noul >= threshold &&
+        answers.isNamedProduct.noul >= threshold &&
+        answers.packagingTypeMatch.noul >= threshold &&
+        answers.editionMatch.noul >= threshold
+      ) {
+        throw new Error('not_the_product');
+      }
+
       try {
         response = await openai.chat.completions.create({
           model:
@@ -309,9 +340,6 @@ successful-HTTP error page.
       console.log(error);
     }
 
-    const threshold = 0.7;
-    const answers = jevResponse.answers;
-
     return {
       analysis: extracted.analysis,
       inStock: answers.inStock.noul >= threshold,
@@ -359,12 +387,12 @@ successful-HTTP error page.
 
     if (process.env.LOCAL_LLM === 'true') {
       openai.baseURL = process.env.LOCAL_LMM_URL;
-      openai.apiKey = process.env.OPEN_ROUTER_KEY;
+      openai.apiKey = process.env.COMMAND_CODE_KEY;
     }
 
     const jevClient = new TypeSafeClient({
       baseURL: process.env.LOCAL_LMM_URL_JEV ?? '',
-      apiKey: process.env.OPEN_ROUTER_KEY ?? '',
+      apiKey: process.env.COMMAND_CODE_KEY ?? '',
     });
 
     const questions: Record<string, ReturnType<typeof noul>> = {
@@ -782,7 +810,7 @@ current date: ${new Date().toISOString()}
 
     if (process.env.LOCAL_LLM === 'true') {
       openai.baseURL = process.env.LOCAL_LMM_URL;
-      openai.apiKey = process.env.OPEN_ROUTER_KEY;
+      openai.apiKey = process.env.COMMAND_CODE_KEY;
     }
 
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
@@ -829,7 +857,7 @@ deck, individual booster, or otherwise conflicts with the target.
 
     const jevClient = new TypeSafeClient({
       baseURL: process.env.LOCAL_LMM_URL_JEV ?? '',
-      apiKey: process.env.OPEN_ROUTER_KEY ?? '',
+      apiKey: process.env.COMMAND_CODE_KEY ?? '',
     });
 
     try {
@@ -914,7 +942,7 @@ deck, individual booster, or otherwise conflicts with the target.
 
     if (process.env.LOCAL_LLM === 'true') {
       openai.baseURL = process.env.LOCAL_LMM_URL;
-      openai.apiKey = process.env.OPEN_ROUTER_KEY;
+      openai.apiKey = process.env.COMMAND_CODE_KEY;
     }
 
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
@@ -1012,7 +1040,7 @@ deck, individual booster, or otherwise conflicts with the target.
 
     if (process.env.LOCAL_LLM === 'true') {
       openai.baseURL = process.env.LOCAL_LMM_URL;
-      openai.apiKey = process.env.OPEN_ROUTER_KEY;
+      openai.apiKey = process.env.COMMAND_CODE_KEY;
     }
 
     // if (process.env.LOCAL_LLM === "true") openai.baseURL = "http://192.168.1.204:1234/v1"
