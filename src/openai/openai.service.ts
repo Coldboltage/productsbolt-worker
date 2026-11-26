@@ -69,17 +69,20 @@ export class OpenaiService {
 
       packagingTypeMatch: noul(
         `
-    Does the page's primary unit of sale match the target product type?
+Does the page's primary unit of sale match target.type?
 
-    Determine unit of sale by what the customer receives when purchasing quantity 1.
-
-    Display is equivalent to Box when it represents a sealed booster display.
-    A Box containing Packs is still a Box.
-    Descriptions of the contents inside a Box do not make the product a Pack.
-
-    Pack, Box, Case, Bundle, Deck, Tin, Binder, Scene Box
-    and Board Game are different units of sale.
-  `.trim(),
+Unit of sale is what the customer receives when purchasing quantity 1.
+Use page.title, page.url and page.content as evidence.
+Display is equivalent to Box when it represents a sealed booster display.
+A Box containing Packs is still a Box; describing its contents does not make it a Pack.
+Pack, Box, Case, Bundle, Deck, Tin, Binder, Scene Box and Board Game are different units of sale.
+Ignore related, similar or recommended products in page.content.
+`.trim(),
+        {
+          true: 'The page states a unit of sale matching target.type, or states none and nothing contradicts target.type',
+          false:
+            "The page's primary product is clearly a different unit of sale from target.type",
+        },
       ),
 
       editionMatch: noul(
@@ -216,10 +219,25 @@ successful-HTTP error page.
       ) {
         throw new Error('not_the_product', {
           cause: {
-            isMainProductPage: answers.isMainProductPage.noul <= threshold,
-            isNamedProduct: answers.isNamedProduct.noul <= threshold,
-            packagingTypeMatch: answers.packagingTypeMatch.noul <= threshold,
-            editionMatch: answers.editionMatch.noul <= threshold,
+            isMainProductPage: {
+              boolean: answers.isMainProductPage.noul <= threshold,
+              score: answers.isMainProductPage.noul,
+            },
+            isNamedProduct: {
+              boolean: answers.isNamedProduct.noul <= threshold,
+              score: answers.isNamedProduct.noul,
+            },
+            packagingTypeMatch: {
+              boolean: answers.packagingTypeMatch.noul <= threshold,
+              score: answers.packagingTypeMatch.noul,
+            },
+            editionMatch: {
+              boolean: answers.editionMatch.noul <= threshold,
+              score: answers.editionMatch.noul,
+            },
+            websiteUrl: specificUrl,
+            productName,
+            content,
           },
         });
       }
@@ -440,8 +458,6 @@ successful-HTTP error page.
   `.trim(),
       ),
     };
-
-    console.log(content);
 
     const jevResponse = await jevClient.systemOne({
       state: {
