@@ -176,7 +176,7 @@ export class LmStudioService {
     }
 
     const preStrippedResult = singleJob
-      .filter((site) => site.score >= 0.9)
+      .filter((site) => site.score >= 0.7)
       .sort((a, b) => b.score - a.score);
 
     const strippedResult = preStrippedResult.map((site) => site.url);
