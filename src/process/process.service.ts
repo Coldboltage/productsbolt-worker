@@ -465,7 +465,7 @@ export class ProcessService implements OnModuleInit {
         this.logger.log(variantId);
       } else {
         try {
-          if (cloudflare && headless === false) {
+          if (cloudflare) {
             this.logger.log('getPageInfo activated');
             // throw new Error('testing');
             textInformation = await this.browserService.getPageInfo(
@@ -778,7 +778,7 @@ export class ProcessService implements OnModuleInit {
         mainText: string;
       };
       try {
-        if (cloudflare || headless) {
+        if (cloudflare) {
           textInformation = await this.browserService.getPageInfo(
             url,
             headless,
@@ -958,6 +958,7 @@ export class ProcessService implements OnModuleInit {
     }
 
     if (answer.isNamedProduct === false) {
+      console.log({ ...answer, url, query });
       try {
         const response = await fetch(
           `http://${process.env.API_IP}:3000/webpage/delete-and-update-shop-product-page/${webPageId}`,
@@ -981,6 +982,7 @@ export class ProcessService implements OnModuleInit {
     }
 
     if (answer.soft404 === true) {
+      console.log(answer);
       try {
         const response = await fetch(
           `http://${process.env.API_IP}:3000/webpage/not-found-counter/${webPageId}`,
