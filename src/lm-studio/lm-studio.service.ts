@@ -160,7 +160,7 @@ export class LmStudioService {
           version,
           mainUrl,
           context,
-          4,
+          2,
         ),
       );
     }
@@ -192,7 +192,7 @@ export class LmStudioService {
       version,
       mainUrl,
       context,
-      4,
+      2,
     );
 
     const finalStrippedResult = Array.from(

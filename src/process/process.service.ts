@@ -936,9 +936,10 @@ export class ProcessService implements OnModuleInit {
       soft404: false,
       inStock: false,
       price: 0,
+      isNamedProduct: false,
     };
 
-    if (shopifySite) {
+    if (shopifySite && !cloudflare) {
       const jsonToObject = JSON.parse(allText);
       const { price, available } = jsonToObject;
       answer.price = price / 100;
@@ -1260,6 +1261,7 @@ export class ProcessService implements OnModuleInit {
       mode,
       `${base}${seed}`,
       context,
+      2,
     );
 
     const mapFinalBestSites = finalBestSites.map((site) => {

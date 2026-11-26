@@ -209,10 +209,10 @@ successful-HTTP error page.
       answers = jevResponse.answers;
 
       if (
-        answers.isMainProductPage.noul >= threshold &&
+        answers.isMainProductPage.noul <= threshold &&
         answers.isNamedProduct.noul >= threshold &&
-        answers.packagingTypeMatch.noul >= threshold &&
-        answers.editionMatch.noul >= threshold
+        answers.packagingTypeMatch.noul <= threshold &&
+        answers.editionMatch.noul <= threshold
       ) {
         throw new Error('not_the_product');
       }
@@ -427,12 +427,12 @@ successful-HTTP error page.
         },
       ),
       isNamedProduct: noul(
-        "Is the page's primary sellable product the same logical product as productName? Identity includes game/manufacturer, set/edition, product line, language and identity-defining variant.",
-        {
-          true: 'The primary product on the page is the same product as productName in every identity field. Ignore wording, formatting and retailer text.',
-          false:
-            'The primary product differs in any identity field, or the page is a listing/search page. Related or recommended products do not count.',
-        },
+        `
+    Is the page's primary sellable product the same logical product as the target?
+
+    Product identity includes game/manufacturer, set/edition,
+    product line, language and identity-defining variant.
+  `.trim(),
       ),
     };
 
@@ -447,7 +447,7 @@ successful-HTTP error page.
       model: 'typesafe/jev-1.14.0',
     });
 
-    this.logger.debug(jevResponse.answers);
+    console.log(jevResponse.answers.isNamedProduct.noul);
 
     const threshold = 0.8;
     const PRICE_THRESHOLD = 0.7;
@@ -460,7 +460,7 @@ successful-HTTP error page.
         soft404: true,
         inStock: false,
         price: 0,
-        isNamedProduct: isNamedProduct.noul <= threshold,
+        isNamedProduct: isNamedProduct.noul >= threshold,
       };
     }
 
@@ -473,7 +473,7 @@ successful-HTTP error page.
           jevResponse.answers.inStock.noul >= threshold ||
           jevResponse.answers.isPurchasable.noul >= threshold,
         price: +pagePrice,
-        isNamedProduct: isNamedProduct.noul <= threshold,
+        isNamedProduct: isNamedProduct.noul >= threshold,
       };
 
       console.log(result);
@@ -489,7 +489,7 @@ successful-HTTP error page.
         soft404: jevResponse.answers.soft404.noul >= threshold,
         inStock: false,
         price: +pagePrice,
-        isNamedProduct: isNamedProduct.noul <= threshold,
+        isNamedProduct: isNamedProduct.noul >= threshold,
       };
 
       console.log(result);
@@ -612,7 +612,7 @@ current date: ${new Date().toISOString()}
         jevResponse.answers.inStock.noul >= threshold ||
         jevResponse.answers.isPurchasable.noul >= threshold,
       price: productResponse.price,
-      isNamedProduct: isNamedProduct.noul <= threshold,
+      isNamedProduct: isNamedProduct.noul >= threshold,
     };
 
     console.log(result);
@@ -827,6 +827,7 @@ current date: ${new Date().toISOString()}
     version: string,
     mainUrl: string,
     context: string,
+    amount: 2,
   ): Promise<ParsedLinks[]> => {
     // this.logger.log({ sitemapUrls, query, version, mainUrl, context });
 
@@ -941,7 +942,7 @@ deck, individual booster, or otherwise conflicts with the target.
       }))
       .filter((link) => link.score > 0.7)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 2);
+      .slice(0, amount);
 
     return links;
 
