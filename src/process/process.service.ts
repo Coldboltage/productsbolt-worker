@@ -465,7 +465,7 @@ export class ProcessService implements OnModuleInit {
         this.logger.log(variantId);
       } else {
         try {
-          if (cloudflare) {
+          if (cloudflare || headless) {
             this.logger.log('getPageInfo activated');
             // throw new Error('testing');
             textInformation = await this.browserService.getPageInfo(
@@ -778,7 +778,7 @@ export class ProcessService implements OnModuleInit {
         mainText: string;
       };
       try {
-        if (cloudflare) {
+        if (cloudflare || headless) {
           textInformation = await this.browserService.getPageInfo(
             url,
             headless,
