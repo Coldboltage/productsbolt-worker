@@ -428,13 +428,13 @@ successful-HTTP error page.
       ),
       isNamedProduct: noul(
         `
-    Is the page's primary sellable product the same logical product as the target?
+    Is the page's primary sellable product the same logical product as the productName?
 
-    Product identity includes game/manufacturer, set/edition,
-    product line, language and identity-defining variant.
   `.trim(),
       ),
     };
+
+    console.log(content);
 
     const jevResponse = await jevClient.systemOne({
       state: {
@@ -447,9 +447,7 @@ successful-HTTP error page.
       model: 'typesafe/jev-1.14.0',
     });
 
-    console.log(jevResponse.answers.isNamedProduct.noul);
-
-    const threshold = 0.8;
+    const threshold = 0.7;
     const PRICE_THRESHOLD = 0.7;
     const { priceMatches, isPurchasable, inStock, isNamedProduct } =
       jevResponse.answers;
