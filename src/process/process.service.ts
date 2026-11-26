@@ -956,6 +956,29 @@ export class ProcessService implements OnModuleInit {
       );
     }
 
+    if (answer.isNamedProduct === false) {
+      try {
+        const response = await fetch(
+          `http://${process.env.API_IP}:3000/webpage/delete-and-update-shop-product-page/${webPageId}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+            },
+          },
+        );
+        this.logger.log({
+          responseCode: response.status,
+          url: url,
+        });
+        return;
+      } catch (error) {
+        this.logger.error({ error, url: url });
+        return;
+      }
+    }
+
     if (answer.soft404 === true) {
       try {
         const response = await fetch(

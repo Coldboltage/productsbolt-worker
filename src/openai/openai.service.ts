@@ -21,6 +21,7 @@ export interface CheckProdutReturn {
   soft404: boolean;
   inStock: boolean;
   price: number;
+  isNamedProduct: boolean;
 }
 
 @Injectable()
@@ -425,10 +426,23 @@ successful-HTTP error page.
             "The main product's current price is a different amount from productPrice, or no price is shown.",
         },
       ),
+      isNamedProduct: noul(
+        "Is the page's primary sellable product the same logical product as productName? Identity includes game/manufacturer, set/edition, product line, language and identity-defining variant.",
+        {
+          true: 'The primary product on the page is the same product as productName in every identity field. Ignore wording, formatting and retailer text.',
+          false:
+            'The primary product differs in any identity field, or the page is a listing/search page. Related or recommended products do not count.',
+        },
+      ),
     };
 
     const jevResponse = await jevClient.systemOne({
-      state: { productPage: content, title, productPrice: pagePrice },
+      state: {
+        productPage: content,
+        title,
+        productPrice: pagePrice,
+        productName: productName,
+      },
       questions: questions,
       model: 'typesafe/jev-1.14.0',
     });
@@ -437,7 +451,18 @@ successful-HTTP error page.
 
     const threshold = 0.8;
     const PRICE_THRESHOLD = 0.7;
-    const { priceMatches, isPurchasable, inStock } = jevResponse.answers;
+    const { priceMatches, isPurchasable, inStock, isNamedProduct } =
+      jevResponse.answers;
+
+    if (isNamedProduct.noul <= threshold) {
+      return {
+        analysis: '',
+        soft404: true,
+        inStock: false,
+        price: 0,
+        isNamedProduct: isNamedProduct.noul <= threshold,
+      };
+    }
 
     if (priceMatches.noul >= PRICE_THRESHOLD) {
       // if (false) {
@@ -448,6 +473,7 @@ successful-HTTP error page.
           jevResponse.answers.inStock.noul >= threshold ||
           jevResponse.answers.isPurchasable.noul >= threshold,
         price: +pagePrice,
+        isNamedProduct: isNamedProduct.noul <= threshold,
       };
 
       console.log(result);
@@ -463,6 +489,7 @@ successful-HTTP error page.
         soft404: jevResponse.answers.soft404.noul >= threshold,
         inStock: false,
         price: +pagePrice,
+        isNamedProduct: isNamedProduct.noul <= threshold,
       };
 
       console.log(result);
@@ -585,6 +612,7 @@ current date: ${new Date().toISOString()}
         jevResponse.answers.inStock.noul >= threshold ||
         jevResponse.answers.isPurchasable.noul >= threshold,
       price: productResponse.price,
+      isNamedProduct: isNamedProduct.noul <= threshold,
     };
 
     console.log(result);
@@ -799,7 +827,6 @@ current date: ${new Date().toISOString()}
     version: string,
     mainUrl: string,
     context: string,
-    _amount = 4,
   ): Promise<ParsedLinks[]> => {
     // this.logger.log({ sitemapUrls, query, version, mainUrl, context });
 
