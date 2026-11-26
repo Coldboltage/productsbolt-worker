@@ -209,12 +209,19 @@ successful-HTTP error page.
       answers = jevResponse.answers;
 
       if (
-        answers.isMainProductPage.noul <= threshold &&
-        answers.isNamedProduct.noul >= threshold &&
-        answers.packagingTypeMatch.noul <= threshold &&
+        answers.isMainProductPage.noul <= threshold ||
+        answers.isNamedProduct.noul <= threshold ||
+        answers.packagingTypeMatch.noul <= threshold ||
         answers.editionMatch.noul <= threshold
       ) {
-        throw new Error('not_the_product');
+        throw new Error('not_the_product', {
+          cause: {
+            isMainProductPage: answers.isMainProductPage.noul <= threshold,
+            isNamedProduct: answers.isNamedProduct.noul <= threshold,
+            packagingTypeMatch: answers.packagingTypeMatch.noul <= threshold,
+            editionMatch: answers.editionMatch.noul <= threshold,
+          },
+        });
       }
 
       try {
