@@ -19,6 +19,7 @@ import { CreateProcessDto } from 'src/process/dto/create-process.dto.js';
 import { ProductInStockWithAnalysisStripped } from 'src/process/entities/process.entity.js';
 import { connect } from 'puppeteer-real-browser';
 import { XMLParser } from 'fast-xml-parser';
+const Fuse = require('fuse.js');
 
 interface SitemapCheckSchema {
   urls: string[];
@@ -53,9 +54,72 @@ export class UtilsService {
     return url;
   };
 
-  reduceSitemap(urls: string[], query: string) {
-    type Product = { url: string; keywords: string[] };
+  // reduceSitemap(urls: string[], query: string) {
+  //   type Product = { url: string; keywords: string[] };
 
+  //   const extractKeywords = (rawUrl: string): string[] => {
+  //     const noQuery = rawUrl.split(/[?#]/)[0].replace(/\/+$/, '');
+  //     const parts = noQuery.split('/').filter(Boolean);
+
+  //     // grab last non-ID segment (slug)
+  //     let name = decodeURIComponent(parts.pop() || '');
+  //     const looksLikeId = (s: string) =>
+  //       /^[0-9]+$/.test(s) || // numeric
+  //       /^[a-f0-9]{24}$/i.test(s) || // Mongo ObjectId
+  //       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+  //         s,
+  //       ) || // UUID
+  //       (!s.includes('-') && /^[A-Za-z0-9_]{6,64}$/.test(s)); // opaque hash-like
+
+  //     while (name && looksLikeId(name) && parts.length) {
+  //       name = decodeURIComponent(parts.pop() || '');
+  //     }
+
+  //     if (!name) return [];
+
+  //     const cleaned = name
+  //       .toLowerCase()
+  //       .normalize('NFKD')
+  //       .replace(/[\u0300-\u036f]/g, '')
+  //       .replace(/[’'`]/g, '')
+  //       .replace(/[^a-z0-9]+/g, ' ')
+  //       .trim();
+
+  //     return cleaned ? cleaned.split(/\s+/) : [];
+  //   };
+
+  //   const requiredMatches = (n: number) => Math.max(1, Math.floor(0.65 * n));
+
+  //   const countMatches = (productKeys: string[], queryKeys: string[]) =>
+  //     queryKeys.filter((k) => productKeys.includes(k)).length;
+
+  //   const filterProducts = (urls: string[], query: string): string[] => {
+  //     const products = urls.map((url) => ({
+  //       url,
+  //       keywords: extractKeywords(url),
+  //     }));
+  //     const queryKeys = extractKeywords(query);
+  //     const minMatches = requiredMatches(queryKeys.length);
+  //     this.logger.log(queryKeys);
+  //     this.logger.log(minMatches);
+  //     return products
+  //       .filter((p) => countMatches(p.keywords, queryKeys) >= minMatches)
+  //       .map((p) => p.url);
+  //   };
+  //   const result = filterProducts(urls, query);
+  //   return result;
+  // }
+
+  reduceSitemap(
+    urls: string[],
+    query: string,
+  ): {
+    query: string;
+    fuse: number;
+    fuseWords: string[];
+    result: number;
+    resultWords: string[];
+  } {
     const extractKeywords = (rawUrl: string): string[] => {
       const noQuery = rawUrl.split(/[?#]/)[0].replace(/\/+$/, '');
       const parts = noQuery.split('/').filter(Boolean);
@@ -99,14 +163,78 @@ export class UtilsService {
       }));
       const queryKeys = extractKeywords(query);
       const minMatches = requiredMatches(queryKeys.length);
-      this.logger.log(queryKeys);
-      this.logger.log(minMatches);
       return products
         .filter((p) => countMatches(p.keywords, queryKeys) >= minMatches)
         .map((p) => p.url);
     };
     const result = filterProducts(urls, query);
-    return result;
+
+    const normalizeText = (value: string): string =>
+      value
+        .toLowerCase()
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[’'`]/g, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+
+    const fuse = new Fuse(
+      result.map((url) => ({
+        url,
+        slug: normalizeText(
+          decodeURIComponent(
+            url
+              .split(/[?#]/)[0]
+              .replace(/\/+$/, '')
+              .split('/')
+              .filter(Boolean)
+              .pop() || '',
+          ),
+        ),
+      })),
+      {
+        includeScore: true,
+        threshold: 0.35,
+        ignoreLocation: true,
+        minMatchCharLength: 3,
+        keys: ['slug'],
+      },
+    );
+
+    const fuseResult = fuse.search(normalizeText(query)).map((r) => r.item.url);
+
+    // this.logger.debug({
+    //   query,
+    //   fuse: fuseResult.length,
+    //   fuseWords: fuseResult,
+    //   result: result.length,
+    //   resultWords: result,
+    // });
+
+    return {
+      query,
+      fuse: fuseResult.length,
+      fuseWords: fuseResult,
+      result: result.length,
+      resultWords: result,
+    };
+  }
+
+  fuseReduce(urls: string[]) {
+    return urls.map((url) => {
+      const slug = decodeURIComponent(url)
+        .toLowerCase()
+        .replace(/^https?:\/\/[^/]+/, '')
+        .replace(/[-_/]/g, ' ')
+        .replace(/[^\w\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      return {
+        url,
+        slug,
+      };
+    });
   }
 
   filterObviousNonPages = (urls: string[], prefix: string): string[] => {

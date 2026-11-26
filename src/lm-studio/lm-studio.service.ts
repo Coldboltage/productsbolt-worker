@@ -172,6 +172,17 @@ export class LmStudioService {
 
     if (singleJob.length === 0) {
       this.logger.log('No suitable links found by LM Studio');
+      await fetch(
+        `http://${process.env.API_IP}:3000/shop-product/shop-product-links/${shopProductId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+          },
+          body: JSON.stringify({ links: [] }),
+        },
+      );
       throw new Error('no_site_found');
     }
 
@@ -203,6 +214,17 @@ export class LmStudioService {
 
     if (finalStrippedResult.length === 0) {
       this.logger.log('no_links_passed_score');
+      await fetch(
+        `http://${process.env.API_IP}:3000/shop-product/shop-product-links/${shopProductId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.JWT_TOKEN}`,
+          },
+          body: JSON.stringify({ links: [] }),
+        },
+      );
       throw new Error('no_links_passed_scor');
     }
 

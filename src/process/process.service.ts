@@ -1087,10 +1087,15 @@ export class ProcessService implements OnModuleInit {
       sitemapUrls,
     );
 
-    const reducedUrls = this.utilService.reduceSitemap(
+    console.log(foundSitemapUrls.websiteUrls);
+
+    console.log(query);
+    const { resultWords: reducedUrls } = this.utilService.reduceSitemap(
       foundSitemapUrls.websiteUrls,
       query,
     );
+
+    console.log(reducedUrls.length);
 
     this.logger.log(`ReducedUrls: ${reducedUrls.length}`);
 
@@ -1202,118 +1207,6 @@ export class ProcessService implements OnModuleInit {
       currency,
     );
     return true;
-    // if (answer) {
-    //   this.logger.log('Product Found');
-    //   // foundProducts.push({ ...answer, website: `${singleUrl.url}` });
-    //   // this.logger.log(foundProducts);
-    //   return answer;
-    // }
-
-    // Temp change to see if odd websites do not get added
-    throw new Error('no_site_found');
-    if (shopifySite) throw new Error('nothing_else_to_do');
-
-    const bestSitesAllLinks = [];
-
-    this.logger.log(bestSites.length > 0);
-
-    if (bestSites.length > 0) {
-      for (const site of bestSites) {
-        if (site.score < 0.8 || shopifySite === true) continue;
-        bestSitesAllLinks.push(
-          ...(await this.browserService.getLinksFromPage(
-            site.url,
-            country,
-            currency,
-            shopifySite,
-          )),
-        );
-        this.logger.log(bestSitesAllLinks.length);
-      }
-    }
-    // else {
-    //   for (const [index, site] of reducedUrls.entries()) {
-    //     if (index < 2) {
-    //       bestSitesAllLinks.push(
-    //         ...(await this.browserService.getLinksFromPage(site)),
-    //       );
-    //     }
-
-    //   }
-    // }
-
-    const reducedUrlsbestSitesAllLinks = this.utilService.reduceSitemap(
-      bestSitesAllLinks,
-      query,
-    );
-
-    this.logger.log(reducedUrlsbestSitesAllLinks);
-
-    const uniqueBestSitesAllLinks = [...new Set(reducedUrlsbestSitesAllLinks)];
-    this.logger.log(uniqueBestSitesAllLinks.length);
-
-    if (uniqueBestSitesAllLinks.length === 0)
-      throw new Error('No links found to process');
-
-    const finalBestSites = await this.openaiService.crawlFromSitemap(
-      uniqueBestSitesAllLinks,
-      query,
-      mode,
-      `${base}${seed}`,
-      context,
-      2,
-    );
-
-    const mapFinalBestSites = finalBestSites.map((site) => {
-      const normalisedUrl = this.utilService.normalizeUrl(
-        site.url,
-        `https://${base}`,
-      );
-      return normalisedUrl.startsWith('/')
-        ? normalisedUrl.slice(1)
-        : normalisedUrl;
-    });
-
-    const allUrls = this.utilService.gatherLinks(mapFinalBestSites);
-
-    if (allUrls[0]) throw new Error('no link found');
-
-    this.logger.log(`https://${base}${allUrls[0]}`);
-    const answer = await this.test(
-      allUrls,
-      query,
-      type,
-      'mini',
-      context,
-      shopifySite,
-      createProcessDto,
-      cloudflare,
-      createProcessDto.hash,
-      createProcessDto.confirmed,
-      createProcessDto.count,
-      createProcessDto.candidatePages,
-      createProcessDto.expectedPrice,
-      false,
-      'abc',
-      'abc',
-    );
-    if (answer) {
-      this.logger.log('Product Found');
-      // foundProducts.push({ ...answer, website: `${base}${singleUrl}` });
-      return true;
-    }
-
-    // for (const singleUrl of allUrls) {
-    //   this.logger.log(`https://${base}${singleUrl}`);
-    //   const answer = await this.test(`https://${base}${singleUrl}`, query, type);
-    //   if (answer) {
-    //     this.logger.log('Product Found');
-    //     // foundProducts.push({ ...answer, website: `${base}${singleUrl}` });
-    //     return answer;
-    //   }
-    // }
-
-    // this.logger.log(foundProducts);
   }
 
   async updatePage(checkPageDto: CheckPageDto): Promise<boolean> {
