@@ -21,6 +21,7 @@ export interface CheckProdutReturn {
   soft404: boolean;
   inStock: boolean;
   price: number;
+  isNamedProduct: boolean;
 }
 
 @Injectable()
@@ -68,17 +69,20 @@ export class OpenaiService {
 
       packagingTypeMatch: noul(
         `
-    Does the page's primary unit of sale match the target product type?
+Does the page's primary unit of sale match target.type?
 
-    Determine unit of sale by what the customer receives when purchasing quantity 1.
-
-    Display is equivalent to Box when it represents a sealed booster display.
-    A Box containing Packs is still a Box.
-    Descriptions of the contents inside a Box do not make the product a Pack.
-
-    Pack, Box, Case, Bundle, Deck, Tin, Binder, Scene Box
-    and Board Game are different units of sale.
-  `.trim(),
+Unit of sale is what the customer receives when purchasing quantity 1.
+Use page.title, page.url and page.content as evidence.
+Display is equivalent to Box when it represents a sealed booster display.
+A Box containing Packs is still a Box; describing its contents does not make it a Pack.
+Pack, Box, Case, Bundle, Deck, Tin, Binder, Scene Box and Board Game are different units of sale.
+Ignore related, similar or recommended products in page.content.
+`.trim(),
+        {
+          true: 'The page states a unit of sale matching target.type, or states none and nothing contradicts target.type',
+          false:
+            "The page's primary product is clearly a different unit of sale from target.type",
+        },
       ),
 
       editionMatch: noul(
@@ -208,12 +212,34 @@ successful-HTTP error page.
       answers = jevResponse.answers;
 
       if (
-        answers.isMainProductPage.noul >= threshold &&
-        answers.isNamedProduct.noul >= threshold &&
-        answers.packagingTypeMatch.noul >= threshold &&
-        answers.editionMatch.noul >= threshold
+        answers.isMainProductPage.noul <= threshold ||
+        answers.isNamedProduct.noul <= threshold ||
+        answers.packagingTypeMatch.noul <= threshold ||
+        answers.editionMatch.noul <= threshold
       ) {
-        throw new Error('not_the_product');
+        throw new Error('not_the_product', {
+          cause: {
+            isMainProductPage: {
+              boolean: answers.isMainProductPage.noul <= threshold,
+              score: answers.isMainProductPage.noul,
+            },
+            isNamedProduct: {
+              boolean: answers.isNamedProduct.noul <= threshold,
+              score: answers.isNamedProduct.noul,
+            },
+            packagingTypeMatch: {
+              boolean: answers.packagingTypeMatch.noul <= threshold,
+              score: answers.packagingTypeMatch.noul,
+            },
+            editionMatch: {
+              boolean: answers.editionMatch.noul <= threshold,
+              score: answers.editionMatch.noul,
+            },
+            websiteUrl: specificUrl,
+            productName,
+            content,
+          },
+        });
       }
 
       try {
@@ -425,19 +451,39 @@ successful-HTTP error page.
             "The main product's current price is a different amount from productPrice, or no price is shown.",
         },
       ),
+      isNamedProduct: noul(
+        `
+    Is the page's primary sellable product the same logical product as the productName?
+
+  `.trim(),
+      ),
     };
 
     const jevResponse = await jevClient.systemOne({
-      state: { productPage: content, title, productPrice: pagePrice },
+      state: {
+        productPage: content,
+        title,
+        productPrice: pagePrice,
+        productName: productName,
+      },
       questions: questions,
       model: 'typesafe/jev-1.14.0',
     });
 
-    this.logger.debug(jevResponse.answers);
-
-    const threshold = 0.8;
+    const threshold = 0.7;
     const PRICE_THRESHOLD = 0.7;
-    const { priceMatches, isPurchasable, inStock } = jevResponse.answers;
+    const { priceMatches, isPurchasable, inStock, isNamedProduct } =
+      jevResponse.answers;
+
+    if (isNamedProduct.noul <= threshold) {
+      return {
+        analysis: '',
+        soft404: true,
+        inStock: false,
+        price: 0,
+        isNamedProduct: isNamedProduct.noul >= threshold,
+      };
+    }
 
     if (priceMatches.noul >= PRICE_THRESHOLD) {
       // if (false) {
@@ -448,6 +494,7 @@ successful-HTTP error page.
           jevResponse.answers.inStock.noul >= threshold ||
           jevResponse.answers.isPurchasable.noul >= threshold,
         price: +pagePrice,
+        isNamedProduct: isNamedProduct.noul >= threshold,
       };
 
       console.log(result);
@@ -463,6 +510,7 @@ successful-HTTP error page.
         soft404: jevResponse.answers.soft404.noul >= threshold,
         inStock: false,
         price: +pagePrice,
+        isNamedProduct: isNamedProduct.noul >= threshold,
       };
 
       console.log(result);
@@ -585,6 +633,7 @@ current date: ${new Date().toISOString()}
         jevResponse.answers.inStock.noul >= threshold ||
         jevResponse.answers.isPurchasable.noul >= threshold,
       price: productResponse.price,
+      isNamedProduct: isNamedProduct.noul >= threshold,
     };
 
     console.log(result);
@@ -799,7 +848,7 @@ current date: ${new Date().toISOString()}
     version: string,
     mainUrl: string,
     context: string,
-    _amount = 4,
+    amount: 2,
   ): Promise<ParsedLinks[]> => {
     // this.logger.log({ sitemapUrls, query, version, mainUrl, context });
 
@@ -914,7 +963,7 @@ deck, individual booster, or otherwise conflicts with the target.
       }))
       .filter((link) => link.score > 0.7)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 2);
+      .slice(0, amount);
 
     return links;
 
