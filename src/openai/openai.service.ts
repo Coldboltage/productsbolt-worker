@@ -239,12 +239,14 @@ successful-HTTP error page.
           productName,
           content,
         };
+        const host = new URL(specificUrl).hostname;
 
         Sentry.captureMessage('not_the_product', {
           level: 'warning',
           tags: {
             module: 'openai',
           },
+          fingerprint: [host],
           extra: errorObject,
         });
 

@@ -4,6 +4,7 @@ import 'dotenv/config';
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
+  integrations: (defaults) => defaults.filter((i) => i.name !== 'Dedupe'),
   environment: process.env.NEST_ENV ?? 'development',
   enabled:
     process.env.NEST_ENV === 'production' ||
