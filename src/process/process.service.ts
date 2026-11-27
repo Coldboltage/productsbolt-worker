@@ -939,7 +939,8 @@ export class ProcessService implements OnModuleInit {
       isNamedProduct: false,
     };
 
-    if (shopifySite && !cloudflare) {
+    // The information has been grabbed elsewhere, allText just needs to be parsed either directly or ai
+    if (shopifySite) {
       const jsonToObject = JSON.parse(allText);
       const { price, available } = jsonToObject;
       answer.price = price / 100;
