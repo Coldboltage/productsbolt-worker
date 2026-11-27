@@ -15,6 +15,7 @@ import {
   TypeSafeClient,
   type SystemOneResult,
 } from '@typesafe-ai/sdk';
+import * as Sentry from '@sentry/nestjs';
 
 export interface CheckProdutReturn {
   analysis: string;
@@ -217,28 +218,38 @@ successful-HTTP error page.
         answers.packagingTypeMatch.noul <= threshold ||
         answers.editionMatch.noul <= threshold
       ) {
-        throw new Error('not_the_product', {
-          cause: {
-            isMainProductPage: {
-              boolean: answers.isMainProductPage.noul <= threshold,
-              score: answers.isMainProductPage.noul,
-            },
-            isNamedProduct: {
-              boolean: answers.isNamedProduct.noul <= threshold,
-              score: answers.isNamedProduct.noul,
-            },
-            packagingTypeMatch: {
-              boolean: answers.packagingTypeMatch.noul <= threshold,
-              score: answers.packagingTypeMatch.noul,
-            },
-            editionMatch: {
-              boolean: answers.editionMatch.noul <= threshold,
-              score: answers.editionMatch.noul,
-            },
-            websiteUrl: specificUrl,
-            productName,
-            content,
+        const errorObject = {
+          isMainProductPage: {
+            boolean: answers.isMainProductPage.noul >= threshold,
+            score: answers.isMainProductPage.noul,
           },
+          isNamedProduct: {
+            boolean: answers.isNamedProduct.noul >= threshold,
+            score: answers.isNamedProduct.noul,
+          },
+          packagingTypeMatch: {
+            boolean: answers.packagingTypeMatch.noul >= threshold,
+            score: answers.packagingTypeMatch.noul,
+          },
+          editionMatch: {
+            boolean: answers.editionMatch.noul >= threshold,
+            score: answers.editionMatch.noul,
+          },
+          websiteUrl: specificUrl,
+          productName,
+          content,
+        };
+
+        Sentry.captureMessage('not_the_product', {
+          level: 'warning',
+          tags: {
+            module: 'openai',
+          },
+          extra: errorObject,
+        });
+
+        throw new Error('not_the_product', {
+          cause: errorObject,
         });
       }
 
