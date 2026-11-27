@@ -1,6 +1,5 @@
 // main.ts
-import * as amqp from 'amqplib';
-import 'dotenv/config';
+import './instrument';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
